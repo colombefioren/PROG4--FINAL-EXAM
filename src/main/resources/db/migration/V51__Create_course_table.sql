@@ -4,7 +4,7 @@ create table if not exists "course"
     code          varchar(255) not null,
     name          varchar(255) not null,
     credits       integer      not null,
-    total_hours   integer      not null,
+    total_hours   integer,
     student_level student_level,
     track         track,
     is_deleted    boolean      not null default false,

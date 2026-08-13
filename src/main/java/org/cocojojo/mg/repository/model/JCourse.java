@@ -40,7 +40,7 @@ public class JCourse {
   @Column(name = "\"credits\"", nullable = false)
   private Integer credits;
 
-  @Column(name = "\"total_hours\"", nullable = false)
+  @Column(name = "\"total_hours\"")
   private Integer totalHours;
 
   @Column(name = "\"student_level\"")
