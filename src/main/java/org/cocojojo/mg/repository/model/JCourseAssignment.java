@@ -42,6 +42,9 @@ public class JCourseAssignment {
   @Column(name = "academic_year", nullable = false)
   private int academicYear;
 
+  @Column(nullable = false)
+  private int semester;
+
   /**
    * Credits granted for this course as taught to this group this year (defaults to the course's
    * catalog credits, but can be overridden per prom)
