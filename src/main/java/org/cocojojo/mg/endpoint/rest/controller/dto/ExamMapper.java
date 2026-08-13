@@ -21,14 +21,14 @@ public class ExamMapper {
   }
 
   public JExam toDomain(ExamRequest examInfo, JCourseAssignment courseAssignment) {
-    fractionValidator.accept(examInfo.getCoefficient());
+    fractionValidator.accept(examInfo.coefficient());
     return JExam.builder()
-        .id(examInfo.getId())
+        .id(examInfo.id())
         .courseAssignment(courseAssignment)
-        .title(examInfo.getTitle())
-        .examDatetime(examInfo.getExamDatetime())
-        .coefficientNumerator(examInfo.getCoefficient().numerator())
-        .coefficientDenominator(examInfo.getCoefficient().denominator())
+        .title(examInfo.title())
+        .examDatetime(examInfo.examDatetime())
+        .coefficientNumerator(examInfo.coefficient().numerator())
+        .coefficientDenominator(examInfo.coefficient().denominator())
         .build();
   }
 }
