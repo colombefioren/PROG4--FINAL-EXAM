@@ -1,5 +1,6 @@
 package org.cocojojo.mg.endpoint.rest.controller.dto;
 
+import java.util.List;
 import java.util.UUID;
 import lombok.Builder;
 import org.cocojojo.mg.model.enums.Semester;
@@ -12,8 +13,7 @@ public record CourseAssignmentResponse(
     String courseName,
     UUID groupId,
     String groupRef,
-    UUID teacherId,
-    String teacherFullName,
+    List<TeacherResponse> teachers,
     int academicYear,
     Semester semester,
     int credits) {}
