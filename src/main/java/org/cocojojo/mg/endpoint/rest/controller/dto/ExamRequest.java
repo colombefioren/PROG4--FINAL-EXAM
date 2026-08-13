@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.Builder;
+import org.cocojojo.mg.model.Fraction;
 
 @Builder
 public record ExamRequest(

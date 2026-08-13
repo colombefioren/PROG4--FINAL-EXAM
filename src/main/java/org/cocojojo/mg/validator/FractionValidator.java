@@ -1,6 +1,7 @@
-package org.cocojojo.mg.endpoint.rest.controller.dto;
+package org.cocojojo.mg.validator;
 
 import java.util.function.Consumer;
+import org.cocojojo.mg.model.Fraction;
 import org.springframework.stereotype.Component;
 
 @Component

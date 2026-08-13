@@ -1,4 +1,4 @@
-package org.cocojojo.mg.endpoint.rest.controller.dto;
+package org.cocojojo.mg.model;
 
 public record Fraction(int numerator, int denominator) {
   public Fraction {

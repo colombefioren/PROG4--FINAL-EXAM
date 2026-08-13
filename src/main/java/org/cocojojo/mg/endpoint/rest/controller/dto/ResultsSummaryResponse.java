@@ -11,5 +11,4 @@ public record ResultsSummaryResponse(
     String studentStd,
     List<YearlyResultResponse> levels,
     BigDecimal overallAverage,
-    int rank,
     boolean graduate) {}
