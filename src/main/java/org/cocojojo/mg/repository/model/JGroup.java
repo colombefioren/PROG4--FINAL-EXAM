@@ -19,7 +19,7 @@ import lombok.Setter;
 import org.cocojojo.mg.model.enums.Track;
 
 @Entity
-@Table(name = "student_group")
+@Table(name = "\"group\"")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
