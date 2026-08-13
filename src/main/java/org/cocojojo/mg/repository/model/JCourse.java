@@ -45,6 +45,7 @@ public class JCourse {
 
   @EqualsAndHashCode.Exclude @Builder.Default private boolean isDeleted = false;
 
+  // null for L1 courses and any course commom to both tracks
   @Enumerated(STRING)
   @JdbcTypeCode(NAMED_ENUM)
   private Track track;
