@@ -20,7 +20,12 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "\"grade\"")
+@Table(
+    name = "\"grade\"",
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "grade_student_exam_uk",
+            columnNames = {"\"student_id\"", "\"exam_id\""}))
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
