@@ -36,11 +36,15 @@ public class JGradeHistory {
   @Column(name = "previous_value", nullable = false)
   private BigDecimal previousValue;
 
+  @Column(name = "new_value", nullable = false)
+  private BigDecimal newValue;
+
   @Column(nullable = false)
   private String reason;
 
-  @Column(name = "changed_by", nullable = false)
-  private String changedBy;
+  @ManyToOne
+  @JoinColumn(name = "changed_by", nullable = false)
+  private JUser changedBy;
 
   @Column(name = "changed_at", nullable = false)
   private Instant changedAt;
