@@ -16,6 +16,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(name = "\"grade_history\"")
@@ -47,6 +48,7 @@ public class JGradeHistory {
   @JoinColumn(name = "\"changed_by\"", nullable = false)
   private JUser changedBy;
 
+  @CreationTimestamp
   @Column(name = "\"changed_at\"", nullable = false)
   private Instant changedAt;
 }
