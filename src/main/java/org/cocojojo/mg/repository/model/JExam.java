@@ -1,5 +1,7 @@
 package org.cocojojo.mg.repository.model;
 
+import static lombok.AccessLevel.PRIVATE;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -16,6 +17,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.commons.math3.fraction.Fraction;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -42,8 +44,13 @@ public class JExam {
   @Column(name = "\"exam_datetime\"", nullable = false)
   private Instant examDatetime;
 
-  @Column(name = "\"coefficient\"", nullable = false)
-  private BigDecimal coefficient;
+  @Setter(PRIVATE)
+  @Column(name = "\"coefficient_numerator\"", nullable = false)
+  private Integer coefficientNumerator;
+
+  @Setter(PRIVATE)
+  @Column(name = "\"coefficient_denominator\"", nullable = false)
+  private Integer coefficientDenominator;
 
   @CreationTimestamp
   @Column(name = "\"created_at\"", nullable = false, updatable = false)
@@ -52,4 +59,13 @@ public class JExam {
   @UpdateTimestamp
   @Column(name = "\"updated_at\"", nullable = false)
   private Instant updatedAt;
+
+  public Fraction getCoefficientFraction() {
+    return Fraction.getFraction(coefficientNumerator, coefficientDenominator);
+  }
+
+  public void setCoefficientFraction(Fraction fraction) {
+    setCoefficientNumerator(fraction.getNumerator());
+    setCoefficientDenominator(fraction.getDenominator());
+  }
 }
