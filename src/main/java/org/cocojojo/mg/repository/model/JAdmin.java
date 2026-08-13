@@ -1,15 +1,19 @@
 package org.cocojojo.mg.repository.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "user")
+@Table(name = "admin")
+@PrimaryKeyJoinColumn(name = "id")
 @Getter
 @Setter
-@Builder
+@NoArgsConstructor
+@SuperBuilder
 public class JAdmin extends JUser {
 }
