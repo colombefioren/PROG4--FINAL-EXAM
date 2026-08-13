@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import java.util.UUID;
 import lombok.*;
 import org.cocojojo.mg.model.enums.StudentLevel;
+import org.cocojojo.mg.model.enums.Track;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -43,4 +44,8 @@ public class JCourse {
   private StudentLevel studentLevel;
 
   @EqualsAndHashCode.Exclude @Builder.Default private boolean isDeleted = false;
+
+  @Enumerated(STRING)
+  @JdbcTypeCode(NAMED_ENUM)
+  private Track track;
 }
