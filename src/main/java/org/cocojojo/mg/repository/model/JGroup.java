@@ -34,8 +34,8 @@ public class JGroup {
   @JoinColumn(name = "promotion_id", nullable = false)
   private JPromotion promotion;
 
-  @Column(nullable = false)
-  private String name;
+  @Column(nullable = false, unique = true)
+  private String ref;
 
   @Enumerated(EnumType.STRING)
   private Track track;
