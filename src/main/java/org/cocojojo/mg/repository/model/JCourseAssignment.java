@@ -49,13 +49,13 @@ public class JCourseAssignment {
   private JTeacher teacher;
 
   @Column(name = "\"academic_year\"", nullable = false)
-  private int academicYear;
+  private Integer academicYear;
 
   @Column(name = "\"semester\"", nullable = false)
-  private int semester;
+  private Integer semester;
 
   @Column(name = "\"credits\"", nullable = false)
-  private int credits;
+  private Integer credits;
 
   @EqualsAndHashCode.Exclude
   @Builder.Default

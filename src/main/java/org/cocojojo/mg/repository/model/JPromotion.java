@@ -36,7 +36,7 @@ public class JPromotion {
   private String name;
 
   @Column(name = "\"entry_year\"", nullable = false)
-  private int entryYear;
+  private Integer entryYear;
 
   @CreationTimestamp
   @Column(name = "\"created_at\"", nullable = false, updatable = false)

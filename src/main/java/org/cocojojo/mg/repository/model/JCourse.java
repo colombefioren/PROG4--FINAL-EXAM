@@ -38,10 +38,10 @@ public class JCourse {
   private String name;
 
   @Column(name = "\"credits\"", nullable = false)
-  private int credits;
+  private Integer credits;
 
   @Column(name = "\"total_hours\"", nullable = false)
-  private int totalHours;
+  private Integer totalHours;
 
   @Column(name = "\"student_level\"")
   @Enumerated(STRING)
