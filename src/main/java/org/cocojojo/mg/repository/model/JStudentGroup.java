@@ -19,7 +19,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-impTrack mg.hei.notes.model.enums.Track;
 
 @Entity
 @Table(name = "student_group")
