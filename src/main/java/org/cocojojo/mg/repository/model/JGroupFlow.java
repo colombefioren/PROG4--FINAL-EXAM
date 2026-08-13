@@ -36,7 +36,7 @@ public class JGroupFlow {
   @JoinColumn(name = "\"group_id\"", nullable = false)
   private JGroup group;
 
-  @Column(name = "\"group_flow_type\"")
+  @Column(name = "\"group_flow_type\"", nullable = false)
   @Enumerated(STRING)
   @JdbcTypeCode(NAMED_ENUM)
   private GroupFlowType groupFlowType;
