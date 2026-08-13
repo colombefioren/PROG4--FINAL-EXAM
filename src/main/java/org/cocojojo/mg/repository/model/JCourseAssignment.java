@@ -28,8 +28,8 @@ public class JCourseAssignment {
   private UUID id;
 
   @ManyToOne
-  @JoinColumn(name = "promotion_course_id", nullable = false)
-  private JPromotionCourse promotionCourse;
+  @JoinColumn(name = "course_id", nullable = false)
+  private JCourse course;
 
   @ManyToOne
   @JoinColumn(name = "group_id", nullable = false)
@@ -41,4 +41,11 @@ public class JCourseAssignment {
 
   @Column(name = "academic_year", nullable = false)
   private int academicYear;
+
+  /**
+   * Credits granted for this course as taught to this group this year (defaults to the course's
+   * catalog credits, but can be overridden per prom)
+   */
+  @Column(nullable = false)
+  private int credits;
 }
