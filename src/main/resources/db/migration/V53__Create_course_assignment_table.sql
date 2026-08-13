@@ -5,7 +5,7 @@ create table if not exists course_assignment
     group_id      uuid        not null references "group" (id),
     teacher_id    uuid        not null references teacher (id),
     academic_year integer     not null,
-    semester      integer     not null,
+    semester      semester    not null,
     credits       integer     not null,
     is_deleted    boolean     not null default false,
     created_at    timestamptz not null default now(),

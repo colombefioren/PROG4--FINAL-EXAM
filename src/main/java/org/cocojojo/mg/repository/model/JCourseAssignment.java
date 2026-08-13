@@ -1,10 +1,15 @@
 package org.cocojojo.mg.repository.model;
 
+import static jakarta.persistence.EnumType.STRING;
+import static org.hibernate.type.SqlTypes.NAMED_ENUM;
+
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
+import org.cocojojo.mg.model.enums.Semester;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -52,7 +57,9 @@ public class JCourseAssignment {
   private Integer academicYear;
 
   @Column(name = "\"semester\"", nullable = false)
-  private Integer semester;
+  @Enumerated(STRING)
+  @JdbcTypeCode(NAMED_ENUM)
+  private Semester semester;
 
   @Column(name = "\"credits\"", nullable = false)
   private Integer credits;
