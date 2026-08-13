@@ -13,5 +13,4 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class JTeacher extends JUser {
-}
+public class JTeacher extends JUser {}

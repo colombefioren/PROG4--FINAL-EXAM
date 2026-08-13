@@ -33,7 +33,7 @@ public class JCourseAssignment {
 
   @ManyToOne
   @JoinColumn(name = "group_id", nullable = false)
-  private JStudentGroup group;
+  private JGroup group;
 
   @ManyToOne
   @JoinColumn(name = "teacher_id", nullable = false)

@@ -34,7 +34,7 @@ public class JGroupFlow {
 
   @ManyToOne
   @JoinColumn(name = "group_id", nullable = false)
-  private JStudentGroup group;
+  private JGroup group;
 
   @Column(name = "effective_datetime", nullable = false)
   private Instant effectiveDatetime;

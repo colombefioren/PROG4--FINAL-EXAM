@@ -13,5 +13,4 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class JAdmin extends JUser {
-}
+public class JAdmin extends JUser {}
