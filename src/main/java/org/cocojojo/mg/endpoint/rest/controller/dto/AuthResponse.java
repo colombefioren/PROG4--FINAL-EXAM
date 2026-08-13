@@ -1,4 +1,4 @@
-package org.cocojojo.mg.endpoint.rest.controller.health.dto;
+package org.cocojojo.mg.endpoint.rest.controller.dto;
 
 import lombok.Builder;
 
