@@ -1,17 +1,15 @@
 package org.cocojojo.mg.repository.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import static jakarta.persistence.EnumType.STRING;
+import static org.hibernate.type.SqlTypes.NAMED_ENUM;
+
+import jakarta.persistence.*;
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.cocojojo.mg.model.enums.StudentLevel;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "\"course\"")
@@ -20,6 +18,8 @@ import lombok.Setter;
 @Builder
 @Getter
 @Setter
+@SQLDelete(sql = "update \"course\" set is_deleted = true where id = ?")
+@SQLRestriction("is_deleted = false")
 public class JCourse {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -33,4 +33,14 @@ public class JCourse {
 
   @Column(nullable = false)
   private int credits;
+
+  @Column(nullable = false)
+  private int totalHours;
+
+  @Column(name = "\"student_level\"")
+  @Enumerated(STRING)
+  @JdbcTypeCode(NAMED_ENUM)
+  private StudentLevel studentLevel;
+
+  @EqualsAndHashCode.Exclude @Builder.Default private boolean isDeleted = false;
 }
