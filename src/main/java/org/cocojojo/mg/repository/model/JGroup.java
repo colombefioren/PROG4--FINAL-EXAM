@@ -2,6 +2,7 @@ package org.cocojojo.mg.repository.model;
 
 import static jakarta.persistence.EnumType.STRING;
 import static org.hibernate.type.SqlTypes.NAMED_ENUM;
+
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
