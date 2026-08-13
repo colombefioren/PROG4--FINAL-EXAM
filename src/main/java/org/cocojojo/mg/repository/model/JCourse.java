@@ -19,6 +19,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Builder
 @Getter
 @Setter
+@EqualsAndHashCode
 @SQLDelete(sql = "update \"course\" set is_deleted = true where id = ?")
 @SQLRestriction("is_deleted = false")
 public class JCourse {

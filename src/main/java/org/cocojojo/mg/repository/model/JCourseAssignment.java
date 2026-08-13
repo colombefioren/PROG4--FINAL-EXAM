@@ -1,12 +1,12 @@
 package org.cocojojo.mg.repository.model;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(
@@ -19,6 +19,9 @@ import lombok.Setter;
 @Builder
 @Getter
 @Setter
+@EqualsAndHashCode
+@SQLDelete(sql = "update \"course_assignment\" set is_deleted = true where id = ?")
+@SQLRestriction("is_deleted = false")
 public class JCourseAssignment {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -48,4 +51,8 @@ public class JCourseAssignment {
    */
   @Column(nullable = false)
   private int credits;
+
+  @EqualsAndHashCode.Exclude @CreationTimestamp private Instant creationDatetime;
+
+  @EqualsAndHashCode.Exclude @Builder.Default private boolean isDeleted = false;
 }
