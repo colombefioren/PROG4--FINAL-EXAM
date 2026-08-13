@@ -4,13 +4,16 @@ import static jakarta.persistence.EnumType.STRING;
 import static org.hibernate.type.SqlTypes.NAMED_ENUM;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.model.enums.Track;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "\"course\"")
@@ -20,23 +23,24 @@ import org.hibernate.annotations.SQLRestriction;
 @Getter
 @Setter
 @EqualsAndHashCode
-@SQLDelete(sql = "update \"course\" set is_deleted = true where id = ?")
-@SQLRestriction("is_deleted = false")
+@SQLDelete(sql = "update \"course\" set \"is_deleted\" = true where \"id\" = ?")
+@SQLRestriction("\"is_deleted\" = false")
 public class JCourse {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "\"id\"")
   private UUID id;
 
-  @Column(nullable = false, unique = true)
+  @Column(name = "\"code\"", nullable = false, unique = true)
   private String code;
 
-  @Column(nullable = false)
+  @Column(name = "\"name\"", nullable = false)
   private String name;
 
-  @Column(nullable = false)
+  @Column(name = "\"credits\"", nullable = false)
   private int credits;
 
-  @Column(nullable = false)
+  @Column(name = "\"total_hours\"", nullable = false)
   private int totalHours;
 
   @Column(name = "\"student_level\"")
@@ -44,10 +48,23 @@ public class JCourse {
   @JdbcTypeCode(NAMED_ENUM)
   private StudentLevel studentLevel;
 
-  @EqualsAndHashCode.Exclude @Builder.Default private boolean isDeleted = false;
-
-  // null for L1 courses and any course commom to both tracks
+  @Column(name = "\"track\"")
   @Enumerated(STRING)
   @JdbcTypeCode(NAMED_ENUM)
   private Track track;
+
+  @EqualsAndHashCode.Exclude
+  @Builder.Default
+  @Column(name = "\"is_deleted\"")
+  private boolean isDeleted = false;
+
+  @EqualsAndHashCode.Exclude
+  @CreationTimestamp
+  @Column(name = "\"created_at\"", nullable = false, updatable = false)
+  private Instant createdAt;
+
+  @EqualsAndHashCode.Exclude
+  @UpdateTimestamp
+  @Column(name = "\"updated_at\"", nullable = false)
+  private Instant updatedAt;
 }

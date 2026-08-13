@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "teacher")
-@PrimaryKeyJoinColumn(name = "id")
+@Table(name = "\"teacher\"")
+@PrimaryKeyJoinColumn(name = "\"id\"")
 @NoArgsConstructor
 @Getter
 @Setter

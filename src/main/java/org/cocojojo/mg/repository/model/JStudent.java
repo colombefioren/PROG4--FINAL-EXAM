@@ -13,18 +13,18 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "student")
-@PrimaryKeyJoinColumn(name = "id")
+@Table(name = "\"student\"")
+@PrimaryKeyJoinColumn(name = "\"id\"")
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
 @Getter
 @Setter
 public class JStudent extends JUser {
-  @Column(nullable = false, unique = true)
+  @Column(name = "\"std\"", nullable = false, unique = true)
   private String std;
 
   @ManyToOne
-  @JoinColumn(name = "promotion_id", nullable = false)
+  @JoinColumn(name = "\"promotion_id\"", nullable = false)
   private JPromotion promotion;
 }

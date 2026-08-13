@@ -16,9 +16,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "grade_history")
+@Table(name = "\"grade_history\"")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -27,25 +28,30 @@ import lombok.Setter;
 public class JGradeHistory {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "\"id\"")
   private UUID id;
 
   @ManyToOne
-  @JoinColumn(name = "grade_id", nullable = false)
+  @JoinColumn(name = "\"grade_id\"", nullable = false)
   private JGrade grade;
 
-  @Column(name = "previous_value", nullable = false)
+  @Column(name = "\"previous_value\"", nullable = false)
   private BigDecimal previousValue;
 
-  @Column(name = "new_value", nullable = false)
+  @Column(name = "\"new_value\"", nullable = false)
   private BigDecimal newValue;
 
-  @Column(nullable = false)
+  @Column(name = "\"reason\"", nullable = false)
   private String reason;
 
   @ManyToOne
-  @JoinColumn(name = "changed_by", nullable = false)
+  @JoinColumn(name = "\"changed_by\"", nullable = false)
   private JUser changedBy;
 
-  @Column(name = "changed_at", nullable = false)
+  @Column(name = "\"changed_at\"", nullable = false)
   private Instant changedAt;
+
+  @CreationTimestamp
+  @Column(name = "\"created_at\"", nullable = false, updatable = false)
+  private Instant createdAt;
 }

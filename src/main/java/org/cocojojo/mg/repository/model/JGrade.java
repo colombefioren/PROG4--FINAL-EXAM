@@ -16,9 +16,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "grade")
+@Table(name = "\"grade\"")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -27,24 +29,28 @@ import lombok.Setter;
 public class JGrade {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "\"id\"")
   private UUID id;
 
   @ManyToOne
-  @JoinColumn(name = "student_id", nullable = false)
+  @JoinColumn(name = "\"student_id\"", nullable = false)
   private JStudent student;
 
   @ManyToOne
-  @JoinColumn(name = "exam_id", nullable = false)
+  @JoinColumn(name = "\"exam_id\"", nullable = false)
   private JExam exam;
 
-  @Column(nullable = false)
+  @Column(name = "\"value\"", nullable = false)
   private BigDecimal value;
 
+  @Column(name = "\"comment\"")
   private String comment;
 
-  @Column(name = "created_at", nullable = false)
+  @CreationTimestamp
+  @Column(name = "\"created_at\"", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "updated_at", nullable = false)
+  @UpdateTimestamp
+  @Column(name = "\"updated_at\"", nullable = false)
   private Instant updatedAt;
 }
