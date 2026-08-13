@@ -26,6 +26,9 @@ public class JPromotion {
   private UUID id;
 
   @Column(nullable = false, unique = true)
+  private String ref;
+
+  @Column(nullable = false, unique = true)
   private String name;
 
   @Column(name = "entry_year", nullable = false)
