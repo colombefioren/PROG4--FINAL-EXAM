@@ -91,6 +91,7 @@ public class CourseAssignmentService {
   }
 
   private CourseAssignmentResponse upsertOne(CourseAssignmentRequest request) {
+    validator.validateAllAreTeachers(request.teacherIds());
     var course = courseService.getById(request.courseId());
     var group = groupService.getById(request.groupId());
     validateCurriculum(request, course, group);

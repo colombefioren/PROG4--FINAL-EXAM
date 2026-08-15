@@ -3,10 +3,12 @@ package org.cocojojo.mg.validator;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.model.Course;
 import org.cocojojo.mg.model.Group;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
+import org.cocojojo.mg.repository.UserRepository;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
 import org.cocojojo.mg.repository.model.JTeacher;
 import org.cocojojo.mg.repository.model.JUser;
@@ -19,11 +21,24 @@ public class CourseAssignmentValidator {
   private static final int MAX_CREDITS_PER_SEMESTER = 30;
 
   private final CourseAssignmentRepository courseAssignmentRepository;
+  private final UserRepository userRepository;
 
   public void validateIsTeacher(JUser user) {
     if (!(user instanceof JTeacher)) {
       throw new IllegalArgumentException("User " + user.getId() + " is not a teacher");
     }
+  }
+
+  public void validateAllAreTeachers(List<UUID> teacherIds) {
+    teacherIds.forEach(
+        id -> {
+          var user =
+              userRepository
+                  .findById(id)
+                  .orElseThrow(
+                      () -> new ResourceNotFoundException("User with id:" + id + " not found."));
+          validateIsTeacher(user);
+        });
   }
 
   public void validateNotDuplicate(

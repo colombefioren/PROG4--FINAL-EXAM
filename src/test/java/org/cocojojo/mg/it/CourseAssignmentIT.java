@@ -214,7 +214,7 @@ class CourseAssignmentIT extends FacadeIT {
                     course.getId(), group.getId(), List.of(student.getId()), course.getCredits())))
         .exchange()
         .expectStatus()
-        .isNotFound();
+        .isBadRequest();
   }
 
   @Test
