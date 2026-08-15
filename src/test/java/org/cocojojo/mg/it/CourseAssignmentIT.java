@@ -12,11 +12,13 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
+import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.AdminRepository;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.CourseRepository;
+import org.cocojojo.mg.repository.GroupFlowRepository;
 import org.cocojojo.mg.repository.GroupRepository;
 import org.cocojojo.mg.repository.PromotionRepository;
 import org.cocojojo.mg.repository.StudentRepository;
@@ -24,6 +26,7 @@ import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JAdmin;
 import org.cocojojo.mg.repository.model.JCourse;
 import org.cocojojo.mg.repository.model.JGroup;
+import org.cocojojo.mg.repository.model.JGroupFlow;
 import org.cocojojo.mg.repository.model.JPromotion;
 import org.cocojojo.mg.repository.model.JStudent;
 import org.cocojojo.mg.repository.model.JTeacher;
@@ -42,6 +45,7 @@ class CourseAssignmentIT extends FacadeIT {
   @Autowired private CourseRepository courseRepository;
   @Autowired private TeacherRepository teacherRepository;
   @Autowired private StudentRepository studentRepository;
+  @Autowired private GroupFlowRepository groupFlowRepository;
   @Autowired private CourseAssignmentRepository courseAssignmentRepository;
   @Autowired private PasswordEncoder passwordEncoder;
 
@@ -121,14 +125,27 @@ class CourseAssignmentIT extends FacadeIT {
   }
 
   private JStudent createStudent(JPromotion promotion) {
+    return createStudent(promotion, "student-" + UUID.randomUUID() + "@hei.school");
+  }
+
+  private JStudent createStudent(JPromotion promotion, String email) {
     return studentRepository.save(
         JStudent.builder()
             .firstname("Grace")
             .lastname("Hopper")
-            .email("student-" + UUID.randomUUID() + "@hei.school")
+            .email(email)
             .password(passwordEncoder.encode("secret123"))
             .std("STD" + UUID.randomUUID())
             .promotion(promotion)
+            .build());
+  }
+
+  private void joinGroup(JStudent student, JGroup group) {
+    groupFlowRepository.save(
+        JGroupFlow.builder()
+            .student(student)
+            .group(group)
+            .groupFlowType(GroupFlowType.JOIN)
             .build());
   }
 
@@ -312,5 +329,143 @@ class CourseAssignmentIT extends FacadeIT {
         results.stream()
             .noneMatch(
                 a -> a.teachers().stream().anyMatch(t -> t.id().equals(otherTeacher.getId()))));
+  }
+
+  @Test
+  void teacherCannotAccessAnotherTeachersAssignmentById() {
+    var teacher = createTeacher("teacher-owner@hei.school");
+    var otherTeacher = createTeacher();
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var token = adminToken();
+
+    var assignment =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(
+                assignmentRequest(
+                    course.getId(),
+                    group.getId(),
+                    List.of(otherTeacher.getId()),
+                    course.getCredits()))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignment.id())
+        .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void studentCanOnlySeeAssignmentsOfTheirCurrentGroup() {
+    var promotion = createPromotion();
+    var groupA = createGroup(promotion);
+    var groupB = createGroup(promotion);
+    var courseA = createCourse();
+    var courseB = createCourse();
+    var teacher = createTeacher();
+    var student = createStudent(promotion, "student-owner@hei.school");
+    joinGroup(student, groupA);
+    var token = adminToken();
+    var studentToken = loginToken(student.getEmail(), "secret123");
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            assignmentRequest(
+                courseA.getId(), groupA.getId(), List.of(teacher.getId()), courseA.getCredits()))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            assignmentRequest(
+                courseB.getId(), groupB.getId(), List.of(teacher.getId()), courseB.getCredits()))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    var results =
+        webTestClient
+            .get()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + studentToken)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(results);
+    assertTrue(results.stream().allMatch(a -> a.groupId().equals(groupA.getId())));
+  }
+
+  @Test
+  void adminCanFilterAssignmentsByCourse() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var otherCourse = createCourse();
+    var teacher = createTeacher();
+    var token = adminToken();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            assignmentRequest(
+                course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits()))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            assignmentRequest(
+                otherCourse.getId(),
+                group.getId(),
+                List.of(teacher.getId()),
+                otherCourse.getCredits()))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    var results =
+        webTestClient
+            .get()
+            .uri("/course-assignments?course_id=" + course.getId())
+            .header("Authorization", "Bearer " + token)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(results);
+    assertEquals(1, results.size());
+    assertEquals(course.getId(), results.get(0).courseId());
   }
 }
