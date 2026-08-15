@@ -46,6 +46,10 @@ public class GradeHistoryMapper {
         .build();
   }
 
+  public GradeHistoryResponse toResponse(JGradeHistory entity) {
+    return toResponse(toModel(entity));
+  }
+
   public GradeHistoryResponse toResponse(GradeHistory model) {
     return GradeHistoryResponse.builder()
         .id(model.id())

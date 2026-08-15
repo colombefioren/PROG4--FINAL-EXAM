@@ -53,4 +53,8 @@ public class GradeMapper {
         .updatedAt(model.updatedAt())
         .build();
   }
+
+  public GradeResponse toResponse(JGrade entity) {
+    return toResponse(toModel(entity));
+  }
 }
