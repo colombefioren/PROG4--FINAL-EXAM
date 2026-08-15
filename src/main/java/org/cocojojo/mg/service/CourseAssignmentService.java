@@ -7,7 +7,6 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CurriculumStatusResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
-import org.cocojojo.mg.endpoint.rest.controller.exception.InvalidCurriculumException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.CourseAssignmentMapper;
 import org.cocojojo.mg.mapper.CourseMapper;
@@ -79,47 +78,15 @@ public class CourseAssignmentService {
 
   @Transactional
   public List<CourseAssignmentResponse> upsert(List<CourseAssignmentRequest> requests) {
-    validateCeilings(requests);
+    validator.validateCreditCeilings(requests);
     return requests.stream().map(this::upsertOne).toList();
   }
-
-  private void validateCeilings(List<CourseAssignmentRequest> requests) {
-    requests.stream()
-        .map(r -> new GroupYearSemester(r.groupId(), r.academicYear(), r.semester()))
-        .distinct()
-        .forEach(triple -> validateCeiling(triple, requests));
-  }
-
-  private void validateCeiling(GroupYearSemester triple, List<CourseAssignmentRequest> requests) {
-    var existing =
-        repository.findByGroupIdAndAcademicYearAndSemester(
-            triple.groupId(), triple.academicYear(), triple.semester());
-    var replacedIds =
-        requests.stream().filter(r -> r.id() != null).map(CourseAssignmentRequest::id).toList();
-    int existingCredits =
-        existing.stream()
-            .filter(a -> !replacedIds.contains(a.getId()))
-            .mapToInt(JCourseAssignment::getCredits)
-            .sum();
-    int incomingCredits =
-        requests.stream()
-            .filter(
-                r ->
-                    r.groupId().equals(triple.groupId())
-                        && r.academicYear() == triple.academicYear()
-                        && r.semester() == triple.semester())
-            .mapToInt(CourseAssignmentRequest::credits)
-            .sum();
-    validator.validateCreditCeiling(existingCredits + incomingCredits);
-  }
-
-  private record GroupYearSemester(UUID groupId, int academicYear, Semester semester) {}
 
   private CourseAssignmentResponse upsertOne(CourseAssignmentRequest request) {
     validator.validateAllAreTeachers(request.teacherIds());
     var course = courseService.getById(request.courseId());
     var group = groupService.getById(request.groupId());
-    validateCurriculum(request, course, group);
+    validator.validateCurriculum(course, group, request.semester());
 
     var teachers = request.teacherIds().stream().map(teacherService::getById).toList();
     var entity =
@@ -127,19 +94,6 @@ public class CourseAssignmentService {
             ? newAssignment(request, course, group, teachers)
             : updateAssignment(request, course, group, teachers);
     return mapper.toResponse(repository.save(entity));
-  }
-
-  private void validateCurriculum(CourseAssignmentRequest request, Course course, Group group) {
-    validator.validateTrackCompatibility(course, group);
-    if (course.studentLevel() != StudentLevel.of(request.semester())) {
-      throw new InvalidCurriculumException(
-          "Course "
-              + course.code()
-              + " is a "
-              + course.studentLevel()
-              + " course, not compatible with "
-              + request.semester());
-    }
   }
 
   private JCourseAssignment newAssignment(
