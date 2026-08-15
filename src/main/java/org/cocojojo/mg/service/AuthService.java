@@ -26,6 +26,10 @@ public class AuthService {
             .findByEmailIgnoreCase(request.email())
             .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
+    if (user.isDeleted()) {
+      throw new IllegalArgumentException("Invalid credentials");
+    }
+
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
       throw new IllegalArgumentException("Invalid credentials");
     }
