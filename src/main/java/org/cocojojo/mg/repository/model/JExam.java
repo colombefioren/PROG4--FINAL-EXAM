@@ -14,11 +14,14 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.commons.lang3.math.Fraction;
+import org.cocojojo.mg.model.Fraction;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
@@ -28,6 +31,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Builder
 @Getter
 @Setter
+@EqualsAndHashCode
+@SQLDelete(sql = "update \"exam\" set \"is_deleted\" = true where \"id\" = ?")
+@SQLRestriction("\"is_deleted\" = false")
 public class JExam {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -52,20 +58,27 @@ public class JExam {
   @Column(name = "\"coefficient_denominator\"", nullable = false)
   private Integer coefficientDenominator;
 
+  @EqualsAndHashCode.Exclude
+  @Builder.Default
+  @Column(name = "\"is_deleted\"")
+  private boolean isDeleted = false;
+
+  @EqualsAndHashCode.Exclude
   @CreationTimestamp
   @Column(name = "\"created_at\"", nullable = false, updatable = false)
   private Instant createdAt;
 
+  @EqualsAndHashCode.Exclude
   @UpdateTimestamp
   @Column(name = "\"updated_at\"", nullable = false)
   private Instant updatedAt;
 
   public Fraction getCoefficientFraction() {
-    return Fraction.getFraction(coefficientNumerator, coefficientDenominator);
+    return new Fraction(coefficientNumerator, coefficientDenominator);
   }
 
   public void setCoefficientFraction(Fraction fraction) {
-    setCoefficientNumerator(fraction.getNumerator());
-    setCoefficientDenominator(fraction.getDenominator());
+    setCoefficientNumerator(fraction.numerator());
+    setCoefficientDenominator(fraction.denominator());
   }
 }

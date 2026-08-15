@@ -1,0 +1,1 @@
+alter table grade_history alter column previous_value drop not null;

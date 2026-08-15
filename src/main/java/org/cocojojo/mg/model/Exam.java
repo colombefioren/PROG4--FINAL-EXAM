@@ -10,5 +10,4 @@ public record Exam(
     CourseAssignment courseAssignment,
     String title,
     Instant examDatetime,
-    Integer coefficientNumerator,
-    Integer coefficientDenominator) {}
+    Fraction coefficient) {}

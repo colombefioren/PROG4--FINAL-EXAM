@@ -46,7 +46,7 @@ public class JGrade {
   @JoinColumn(name = "\"exam_id\"", nullable = false)
   private JExam exam;
 
-  @Column(name = "\"value\"", nullable = false)
+  @Column(name = "\"value\"", precision = 4, scale = 2, nullable = false)
   private BigDecimal value;
 
   @Column(name = "\"comment\"")
