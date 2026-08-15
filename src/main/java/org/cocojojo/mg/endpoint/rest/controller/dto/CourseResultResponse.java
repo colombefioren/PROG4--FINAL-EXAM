@@ -6,6 +6,9 @@ import lombok.Builder;
 import org.cocojojo.mg.model.enums.ResultStatus;
 import org.cocojojo.mg.model.enums.Track;
 
+/*
+ * TODO: maybe instead of resultStatus we'll add the booleans graded, complete, passed
+ * */
 @Builder
 public record CourseResultResponse(
     UUID courseId,
