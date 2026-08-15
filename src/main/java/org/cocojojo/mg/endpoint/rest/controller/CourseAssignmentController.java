@@ -6,6 +6,8 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
+import org.cocojojo.mg.endpoint.rest.controller.dto.CurriculumStatusResponse;
+import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.service.CourseAssignmentService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,6 +39,14 @@ public class CourseAssignmentController {
   @GetMapping("/{id}")
   public CourseAssignmentResponse getById(@PathVariable UUID id) {
     return service.getById(id);
+  }
+
+  @GetMapping("/curriculum-status")
+  public CurriculumStatusResponse curriculumStatus(
+      @RequestParam("group_id") UUID groupId,
+      @RequestParam("academic_year") int academicYear,
+      @RequestParam Semester semester) {
+    return service.curriculumStatus(groupId, academicYear, semester);
   }
 
   /** Upsert only: existing assignments not present in the payload are left untouched. */

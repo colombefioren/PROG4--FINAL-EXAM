@@ -64,6 +64,8 @@ public class SecurityConfig {
                     .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(PUT, "/course-assignments/*/exams", "/exams/*/grades")
                     .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(GET, "/course-assignments/curriculum-status")
+                    .hasRole("ADMIN")
                     .requestMatchers(PUT, "/course-assignments/**")
                     .hasRole("ADMIN")
                     .requestMatchers(DELETE, "/course-assignments/**")
