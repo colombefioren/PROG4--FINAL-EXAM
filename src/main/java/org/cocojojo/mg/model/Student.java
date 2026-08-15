@@ -11,4 +11,5 @@ public record Student(
     String email,
     String password,
     String std,
-    Promotion promotion) {}
+    Promotion promotion,
+    Group currentGroup) {}
