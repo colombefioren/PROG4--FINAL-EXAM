@@ -9,18 +9,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import org.cocojojo.mg.model.Fraction;
 
-/**
- * Lets an exam coefficient be sent either as a fraction object ({"numerator":1,"denominator":4}), a
- * "1/4" style string, or a plain decimal (0.25 / "0.25"). Decimals are converted to an exact
- * reduced fraction via BigDecimal (never through floating point), so 0.2 becomes exactly 1/5.
- */
 public class FractionDeserializer extends JsonDeserializer<Fraction> {
 
   @Override
   public Fraction deserialize(JsonParser parser, DeserializationContext context)
       throws IOException {
     JsonNode node = parser.getCodec().readTree(parser);
-
     if (node.isObject()) {
       return new Fraction(node.get("numerator").asInt(), node.get("denominator").asInt());
     }
