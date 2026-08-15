@@ -20,6 +20,10 @@ public class CourseMapper {
         .build();
   }
 
+  public CourseResponse toResponse(JCourse entity) {
+    return toResponse(toModel(entity));
+  }
+
   public CourseResponse toResponse(Course model) {
     return CourseResponse.builder()
         .id(model.id())
