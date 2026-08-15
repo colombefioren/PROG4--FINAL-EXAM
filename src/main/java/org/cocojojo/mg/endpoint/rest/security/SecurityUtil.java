@@ -1,4 +1,4 @@
-package org.cocojojo.mg.endpoint.security.utils;
+package org.cocojojo.mg.endpoint.rest.security;
 
 import java.util.Optional;
 import java.util.UUID;
