@@ -7,6 +7,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.CourseRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.CourseMapper;
+import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseRepository;
 import org.cocojojo.mg.repository.model.JCourse;
 import org.springframework.stereotype.Service;
@@ -15,19 +16,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class CourseService {
-  private final CourseRepository repository;
-  private final CourseMapper mapper;
+
+  private final CourseRepository courseRepository;
+  private final CourseMapper courseMapper;
 
   public List<CourseResponse> getAll() {
-    return repository.findAll().stream().map(mapper::toModel).map(mapper::toResponse).toList();
+    return courseRepository.findAll().stream().map(courseMapper::toModel).map(courseMapper::toResponse).toList();
   }
 
   public CourseResponse getById(UUID id) {
-    return mapper.toResponse(mapper.toModel(getEntityOrThrow(id)));
+    return courseMapper.toResponse(courseMapper.toModel(getEntityOrThrow(id)));
   }
 
   public JCourse getEntityOrThrow(UUID id) {
-    return repository
+    return courseRepository
         .findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Course with id: " + id + " not found."));
   }
@@ -42,8 +44,18 @@ public class CourseService {
     course.setTotalHours(request.totalHours());
     course.setStudentLevel(request.studentLevel());
 
-    var saved = repository.save(course);
+    var saved = courseRepository.save(course);
 
-    return mapper.toResponse(mapper.toModel(saved));
+    return courseMapper.toResponse(courseMapper.toModel(saved));
+  }
+
+  public JCourse find(UUID id) {
+    return courseRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Course with id:" + id + " not found."));
+  }
+
+  public List<JCourse> findByStudentLevelOrderByCodeAsc(StudentLevel studentLevel) {
+    return courseRepository.findByStudentLevelOrderByCodeAsc(studentLevel);
   }
 }
