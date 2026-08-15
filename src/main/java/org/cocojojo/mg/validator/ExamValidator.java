@@ -7,11 +7,6 @@ import org.cocojojo.mg.repository.ExamRepository;
 import org.cocojojo.mg.repository.model.JExam;
 import org.springframework.stereotype.Component;
 
-/**
- * A course is fully graded once the coefficients of all its exams sum to 1 (100%). We don't force
- * that sum to reach 1 immediately (exams are usually added incrementally through the term), but we
- * do reject anything that would push the total over 1.
- */
 @Component
 @RequiredArgsConstructor
 public class ExamValidator {
