@@ -1,7 +1,9 @@
 package org.cocojojo.mg.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
@@ -104,7 +106,9 @@ public class CourseAssignmentService {
         null,
         courseMapper.toEntity(course),
         groupMapper.toEntity(group),
-        teachers.stream().map(teacherMapper::toEntity).toList(),
+        teachers.stream()
+            .map(teacherMapper::toEntity)
+            .collect(Collectors.toCollection(ArrayList::new)),
         request.academicYear(),
         request.semester(),
         request.credits());
@@ -121,7 +125,10 @@ public class CourseAssignmentService {
                         "CourseAssignment with id:" + request.id() + " not found."));
     entity.setCourse(courseMapper.toEntity(course));
     entity.setGroup(groupMapper.toEntity(group));
-    entity.setTeachers(teachers.stream().map(teacherMapper::toEntity).toList());
+    entity.setTeachers(
+        teachers.stream()
+            .map(teacherMapper::toEntity)
+            .collect(Collectors.toCollection(ArrayList::new)));
     entity.setAcademicYear(request.academicYear());
     entity.setSemester(request.semester());
     entity.setCredits(request.credits());
