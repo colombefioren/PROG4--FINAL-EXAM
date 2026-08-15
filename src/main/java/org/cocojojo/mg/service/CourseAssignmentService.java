@@ -35,6 +35,19 @@ public class CourseAssignmentService {
   private final CourseAssignmentValidator validator;
   private final SecurityUtil securityUtil;
 
+  public List<CourseAssignmentResponse> getByFilter(UUID groupId, UUID teacherId) {
+    if (securityUtil.isTeacher()) {
+      return getByTeacher(securityUtil.getCurrentUserIdOrThrow());
+    }
+    if (groupId != null) {
+      return getByGroup(groupId);
+    }
+    if (teacherId != null) {
+      return getByTeacher(teacherId);
+    }
+    throw new IllegalArgumentException("group_id or teacher_id is required");
+  }
+
   public List<CourseAssignmentResponse> getByGroup(UUID groupId) {
     return repository.findByGroupId(groupId).stream().map(mapper::toResponse).toList();
   }

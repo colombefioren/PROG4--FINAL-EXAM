@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
 import org.cocojojo.mg.service.CourseAssignmentService;
-import org.cocojojo.mg.util.SecurityUtil;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,22 +22,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class CourseAssignmentController {
 
   private final CourseAssignmentService service;
-  private final SecurityUtil securityUtil;
 
   @GetMapping
   public List<CourseAssignmentResponse> getByFilter(
       @RequestParam(value = "group_id", required = false) UUID groupId,
       @RequestParam(value = "teacher_id", required = false) UUID teacherId) {
-    if (securityUtil.isTeacher()) {
-      return service.getByTeacher(securityUtil.getCurrentUserIdOrThrow());
-    }
-    if (groupId != null) {
-      return service.getByGroup(groupId);
-    }
-    if (teacherId != null) {
-      return service.getByTeacher(teacherId);
-    }
-    throw new IllegalArgumentException("group_id or teacher_id is required");
+    return service.getByFilter(groupId, teacherId);
   }
 
   @GetMapping("/{id}")
