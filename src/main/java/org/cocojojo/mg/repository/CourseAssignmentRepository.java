@@ -15,11 +15,11 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
   @Query(
       """
       select ca from JCourseAssignment ca
-      where (:groupId is null or ca.group.id = :groupId)
-        and (:teacherId is null
+      where (cast(:groupId as uuid) is null or ca.group.id = :groupId)
+        and (cast(:teacherId as uuid) is null
           or exists (select t from ca.teachers t where t.id = :teacherId))
-        and (:courseId is null or ca.course.id = :courseId)
-        and (:academicYear is null or ca.academicYear = :academicYear)
+        and (cast(:courseId as uuid) is null or ca.course.id = :courseId)
+        and (cast(:academicYear as integer) is null or ca.academicYear = :academicYear)
       """)
   List<JCourseAssignment> search(
       @Param("groupId") UUID groupId,
