@@ -14,4 +14,5 @@ public record StudentRequest(
     @NotBlank String lastname,
     @NotBlank @Email String email,
     String password,
-    @NotNull UUID promotionId) {}
+    @NotNull UUID promotionId,
+    UUID groupId) {}
