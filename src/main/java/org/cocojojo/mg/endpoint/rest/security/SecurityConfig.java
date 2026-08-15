@@ -32,7 +32,6 @@ public class SecurityConfig {
                         "/auth/**",
                         "/ping",
                         "/health/**",
-                        "/view/**",
                         "/error",
                         "/v3/api-docs",
                         "/v3/api-docs/**",
@@ -40,6 +39,8 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/swagger-ui/**")
                     .permitAll()
+                    .requestMatchers("/view/**")
+                    .hasRole("ADMIN")
                     .requestMatchers(
                         PUT,
                         "/students/**",
@@ -47,6 +48,8 @@ public class SecurityConfig {
                         "/admins/**",
                         "/promotions/**",
                         "/groups/**")
+                    .hasRole("ADMIN")
+                    .requestMatchers(GET, "/admins/**")
                     .hasRole("ADMIN")
                     .requestMatchers(GET, "/students", "/teachers", "/promotions/*/graduates/xlsx")
                     .hasAnyRole("ADMIN", "TEACHER")
