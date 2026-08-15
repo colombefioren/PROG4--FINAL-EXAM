@@ -1,5 +1,6 @@
 package org.cocojojo.mg.endpoint.rest.security;
 
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PUT;
 
@@ -61,12 +62,12 @@ public class SecurityConfig {
                         "/courses/*",
                         "/promotions/*/graduates/xlsx")
                     .hasAnyRole("ADMIN", "TEACHER")
-                    .requestMatchers(
-                        PUT,
-                        "/course-assignments/**",
-                        "/course-assignments/*/exams",
-                        "/exams/*/grades")
+                    .requestMatchers(PUT, "/course-assignments/*/exams", "/exams/*/grades")
                     .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(PUT, "/course-assignments/**")
+                    .hasRole("ADMIN")
+                    .requestMatchers(DELETE, "/course-assignments/**")
+                    .hasRole("ADMIN")
                     .anyRequest()
                     .authenticated())
         .exceptionHandling(
