@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.Builder;
 
+/*
+ * TODO: examId might be provided in the endpoint and not be here, we'll see
+ * */
 @Builder
 public record GradeRequest(
     @NotNull UUID studentId,
