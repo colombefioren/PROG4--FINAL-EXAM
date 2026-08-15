@@ -13,6 +13,9 @@ import org.cocojojo.mg.mapper.CourseAssignmentMapper;
 import org.cocojojo.mg.mapper.CourseMapper;
 import org.cocojojo.mg.mapper.GroupMapper;
 import org.cocojojo.mg.mapper.TeacherMapper;
+import org.cocojojo.mg.model.Course;
+import org.cocojojo.mg.model.Group;
+import org.cocojojo.mg.model.Teacher;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
@@ -90,8 +93,18 @@ public class CourseAssignmentService {
   private CourseAssignmentResponse upsertOne(CourseAssignmentRequest request) {
     var course = courseService.getById(request.courseId());
     var group = groupService.getById(request.groupId());
-    validator.validateTrackCompatibility(course, group);
+    validateCurriculum(request, course, group);
 
+    var teachers = request.teacherIds().stream().map(teacherService::getById).toList();
+    var entity =
+        request.id() == null
+            ? newAssignment(request, course, group, teachers)
+            : updateAssignment(request, course, group, teachers);
+    return mapper.toResponse(repository.save(entity));
+  }
+
+  private void validateCurriculum(CourseAssignmentRequest request, Course course, Group group) {
+    validator.validateTrackCompatibility(course, group);
     if (course.studentLevel() != StudentLevel.of(request.semester())) {
       throw new InvalidCurriculumException(
           "Course "
@@ -101,38 +114,38 @@ public class CourseAssignmentService {
               + " course, not compatible with "
               + request.semester());
     }
+  }
 
-    var teachers = request.teacherIds().stream().map(teacherService::getById).toList();
+  private JCourseAssignment newAssignment(
+      CourseAssignmentRequest request, Course course, Group group, List<Teacher> teachers) {
+    validator.validateNotDuplicate(
+        null, course.id(), group.id(), request.academicYear(), request.semester());
+    return mapper.toEntity(
+        null,
+        courseMapper.toEntity(course),
+        groupMapper.toEntity(group),
+        teachers.stream().map(teacherMapper::toEntity).toList(),
+        request.academicYear(),
+        request.semester(),
+        request.credits());
+  }
 
-    JCourseAssignment entity;
-    if (request.id() != null) {
-      entity =
-          repository
-              .findById(request.id())
-              .orElseThrow(
-                  () ->
-                      new ResourceNotFoundException(
-                          "CourseAssignment with id:" + request.id() + " not found."));
-      entity.setCourse(courseMapper.toEntity(course));
-      entity.setGroup(groupMapper.toEntity(group));
-      entity.setTeachers(teachers.stream().map(teacherMapper::toEntity).toList());
-      entity.setAcademicYear(request.academicYear());
-      entity.setSemester(request.semester());
-      entity.setCredits(request.credits());
-    } else {
-      validator.validateNotDuplicate(
-          null, course.id(), group.id(), request.academicYear(), request.semester());
-      entity =
-          mapper.toEntity(
-              null,
-              courseMapper.toEntity(course),
-              groupMapper.toEntity(group),
-              teachers.stream().map(teacherMapper::toEntity).toList(),
-              request.academicYear(),
-              request.semester(),
-              request.credits());
-    }
-    return mapper.toResponse(repository.save(entity));
+  private JCourseAssignment updateAssignment(
+      CourseAssignmentRequest request, Course course, Group group, List<Teacher> teachers) {
+    var entity =
+        repository
+            .findById(request.id())
+            .orElseThrow(
+                () ->
+                    new ResourceNotFoundException(
+                        "CourseAssignment with id:" + request.id() + " not found."));
+    entity.setCourse(courseMapper.toEntity(course));
+    entity.setGroup(groupMapper.toEntity(group));
+    entity.setTeachers(teachers.stream().map(teacherMapper::toEntity).toList());
+    entity.setAcademicYear(request.academicYear());
+    entity.setSemester(request.semester());
+    entity.setCredits(request.credits());
+    return entity;
   }
 
   @Transactional
