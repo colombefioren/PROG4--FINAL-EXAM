@@ -17,7 +17,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.commons.lang3.math.Fraction;
+import org.cocojojo.mg.model.Fraction;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -61,11 +61,11 @@ public class JExam {
   private Instant updatedAt;
 
   public Fraction getCoefficientFraction() {
-    return Fraction.getFraction(coefficientNumerator, coefficientDenominator);
+    return new Fraction(coefficientNumerator, coefficientDenominator);
   }
 
   public void setCoefficientFraction(Fraction fraction) {
-    setCoefficientNumerator(fraction.getNumerator());
-    setCoefficientDenominator(fraction.getDenominator());
+    setCoefficientNumerator(fraction.numerator());
+    setCoefficientDenominator(fraction.denominator());
   }
 }

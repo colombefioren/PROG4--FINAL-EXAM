@@ -4,11 +4,17 @@ import jakarta.validation.constraints.Positive;
 
 public record Fraction(int numerator, @Positive int denominator) {
 
-  public static Fraction from(org.apache.commons.lang3.math.Fraction fraction) {
-    return new Fraction(fraction.getNumerator(), fraction.getDenominator());
+  public Fraction {
+    if (denominator == 0) {
+      throw new ArithmeticException("Denominator must not be zero");
+    }
+    int sign = denominator < 0 ? -1 : 1;
+    int divisor = gcd(Math.abs(numerator), Math.abs(denominator));
+    numerator = sign * numerator / divisor;
+    denominator = sign * denominator / divisor;
   }
 
-  public org.apache.commons.lang3.math.Fraction toApacheFraction() {
-    return org.apache.commons.lang3.math.Fraction.getFraction(numerator, denominator);
+  private static int gcd(int a, int b) {
+    return b == 0 ? a : gcd(b, a % b);
   }
 }
