@@ -26,8 +26,10 @@ public class CourseAssignmentController {
   @GetMapping
   public List<CourseAssignmentResponse> getByFilter(
       @RequestParam(value = "group_id", required = false) UUID groupId,
-      @RequestParam(value = "teacher_id", required = false) UUID teacherId) {
-    return service.getByFilter(groupId, teacherId);
+      @RequestParam(value = "teacher_id", required = false) UUID teacherId,
+      @RequestParam(value = "course_id", required = false) UUID courseId,
+      @RequestParam(value = "academic_year", required = false) Integer academicYear) {
+    return service.getByFilter(groupId, teacherId, courseId, academicYear);
   }
 
   @GetMapping("/{id}")
