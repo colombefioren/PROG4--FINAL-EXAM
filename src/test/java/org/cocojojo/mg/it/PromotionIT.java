@@ -26,12 +26,13 @@ class PromotionIT extends FacadeIT {
   @LocalServerPort int port;
   private WebTestClient webTestClient;
   private String adminToken;
+  private String adminEmail;
 
   @BeforeEach
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
-    adminRepository.deleteAll();
-    saveAdmin("admin@hei.school", "secret123", false);
+    adminEmail = "admin-" + uniqueRef().toLowerCase() + "@hei.school";
+    saveAdmin(adminEmail, "secret123", false);
   }
 
   private void saveAdmin(String email, String rawPassword, boolean isDeleted) {
@@ -51,7 +52,7 @@ class PromotionIT extends FacadeIT {
           webTestClient
               .post()
               .uri("/auth/login")
-              .bodyValue(new LoginRequest("admin@hei.school", "secret123"))
+              .bodyValue(new LoginRequest(adminEmail, "secret123"))
               .exchange()
               .expectStatus()
               .isOk()
