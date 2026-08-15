@@ -1,9 +1,13 @@
 package org.cocojojo.mg.mapper;
 
+import java.math.BigDecimal;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeResponse;
 import org.cocojojo.mg.model.Grade;
+import org.cocojojo.mg.repository.model.JExam;
 import org.cocojojo.mg.repository.model.JGrade;
+import org.cocojojo.mg.repository.model.JStudent;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,6 +26,16 @@ public class GradeMapper {
         .comment(entity.getComment())
         .createdAt(entity.getCreatedAt())
         .updatedAt(entity.getUpdatedAt())
+        .build();
+  }
+
+  public JGrade toEntity(UUID id, JStudent student, JExam exam, BigDecimal value, String comment) {
+    return JGrade.builder()
+        .id(id)
+        .student(student)
+        .exam(exam)
+        .value(value)
+        .comment(comment)
         .build();
   }
 

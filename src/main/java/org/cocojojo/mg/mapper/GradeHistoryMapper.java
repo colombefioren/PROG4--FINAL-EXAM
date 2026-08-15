@@ -1,9 +1,13 @@
 package org.cocojojo.mg.mapper;
 
+import java.math.BigDecimal;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeHistoryResponse;
 import org.cocojojo.mg.model.GradeHistory;
+import org.cocojojo.mg.repository.model.JGrade;
 import org.cocojojo.mg.repository.model.JGradeHistory;
+import org.cocojojo.mg.repository.model.JUser;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,6 +26,23 @@ public class GradeHistoryMapper {
         .reason(entity.getReason())
         .changedBy(userMapper.toModel(entity.getChangedBy()))
         .changedAt(entity.getChangedAt())
+        .build();
+  }
+
+  public JGradeHistory toEntity(
+      UUID id,
+      JGrade grade,
+      BigDecimal previousValue,
+      BigDecimal newValue,
+      String reason,
+      JUser changedBy) {
+    return JGradeHistory.builder()
+        .id(id)
+        .grade(grade)
+        .previousValue(previousValue)
+        .newValue(newValue)
+        .reason(reason)
+        .changedBy(changedBy)
         .build();
   }
 
