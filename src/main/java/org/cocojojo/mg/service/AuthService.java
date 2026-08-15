@@ -4,6 +4,7 @@ import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
+import org.cocojojo.mg.endpoint.rest.controller.dto.UserResponse;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
 import org.cocojojo.mg.endpoint.rest.security.SecurityUtil;
 import org.cocojojo.mg.model.enums.Role;
@@ -63,10 +64,14 @@ public class AuthService {
     var token = jwtService.generateToken(user.getId(), user.getEmail(), role);
     return AuthResponse.builder()
         .token(token)
-        .userId(user.getId().toString())
-        .role(role)
-        .firstName(user.getFirstname())
-        .lastName(user.getLastname())
+        .user(
+            UserResponse.builder()
+                .id(user.getId())
+                .firstname(user.getFirstname())
+                .lastname(user.getLastname())
+                .email(user.getEmail())
+                .role(role)
+                .build())
         .build();
   }
 }
