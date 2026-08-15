@@ -4,14 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
+import org.cocojojo.mg.endpoint.rest.security.SecurityUtil;
 import org.cocojojo.mg.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-/**
- * HEI accounts are provisioned by an admin (students and teachers don't self-register), so this
- * service only ever issues tokens for existing accounts.
- */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -19,6 +16,7 @@ public class AuthService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
+  private final SecurityUtil securityUtil;
 
   public AuthResponse login(LoginRequest request) {
     var user =
@@ -30,13 +28,14 @@ public class AuthService {
       throw new IllegalArgumentException("Invalid credentials");
     }
 
-    var token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole());
+    var role = securityUtil.getRole(user);
+    var token = jwtService.generateToken(user.getId(), user.getEmail(), role);
     return AuthResponse.builder()
         .token(token)
         .userId(user.getId().toString())
-        .role(user.getRole())
-        .firstName(user.getFirstName())
-        .lastName(user.getLastName())
+        .role(role)
+        .firstName(user.getFirstname())
+        .lastName(user.getLastname())
         .build();
   }
 }

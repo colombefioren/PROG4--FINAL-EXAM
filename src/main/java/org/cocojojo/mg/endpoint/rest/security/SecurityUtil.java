@@ -4,12 +4,25 @@ import java.util.Optional;
 import java.util.UUID;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.model.enums.Role;
+import org.cocojojo.mg.repository.model.JAdmin;
+import org.cocojojo.mg.repository.model.JStudent;
+import org.cocojojo.mg.repository.model.JUser;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SecurityUtil {
+
+  public Role getRole(JUser user) {
+    if (user instanceof JAdmin) {
+      return Role.ADMIN;
+    }
+    if (user instanceof JStudent) {
+      return Role.STUDENT;
+    }
+    return Role.TEACHER;
+  }
 
   public Authentication getAuthentication() {
     return SecurityContextHolder.getContext().getAuthentication();
