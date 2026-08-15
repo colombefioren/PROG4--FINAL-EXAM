@@ -407,4 +407,234 @@ class ExamIT extends FacadeIT {
         .expectStatus()
         .isUnauthorized();
   }
+
+  @Test
+  void teacherCanCreateExamForCourseTheyTeach() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+
+    var exam =
+        webTestClient
+            .put()
+            .uri("/course-assignments/" + assignment.getId() + "/exams")
+            .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+            .bodyValue(examRequest(assignment.getId(), new Fraction(1, 2)))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(ExamResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(exam);
+    assertEquals(assignment.getId(), exam.courseAssignmentId());
+  }
+
+  @Test
+  void teacherCannotCreateExamForCourseTheyDoNotTeach() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var ownerTeacher = createTeacher();
+    var otherTeacher = createTeacher();
+    var assignment = createAssignment(course, group, ownerTeacher);
+
+    webTestClient
+        .put()
+        .uri("/course-assignments/" + assignment.getId() + "/exams")
+        .header("Authorization", "Bearer " + loginToken(otherTeacher.getEmail(), "secret123"))
+        .bodyValue(examRequest(assignment.getId(), new Fraction(1, 2)))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void teacherCanUpdateExamTheyOwn() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+    var created = createExam(adminToken(), assignment.getId());
+
+    var updated =
+        webTestClient
+            .put()
+            .uri("/course-assignments/" + assignment.getId() + "/exams")
+            .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+            .bodyValue(
+                ExamRequest.builder()
+                    .id(created.id())
+                    .courseAssignmentId(assignment.getId())
+                    .title("Updated " + UUID.randomUUID())
+                    .examDatetime(Instant.parse("2024-06-15T09:00:00Z"))
+                    .coefficient(new Fraction(1, 2))
+                    .build())
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(ExamResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(updated);
+    assertEquals(created.id(), updated.id());
+  }
+
+  @Test
+  void teacherCannotUpdateExamOfCourseTheyDoNotTeach() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var ownerTeacher = createTeacher();
+    var otherTeacher = createTeacher();
+    var assignment = createAssignment(course, group, ownerTeacher);
+    var created = createExam(adminToken(), assignment.getId());
+
+    webTestClient
+        .put()
+        .uri("/course-assignments/" + assignment.getId() + "/exams")
+        .header("Authorization", "Bearer " + loginToken(otherTeacher.getEmail(), "secret123"))
+        .bodyValue(
+            ExamRequest.builder()
+                .id(created.id())
+                .courseAssignmentId(assignment.getId())
+                .title("Hijack " + UUID.randomUUID())
+                .examDatetime(Instant.parse("2024-06-15T09:00:00Z"))
+                .coefficient(new Fraction(1, 2))
+                .build())
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void teacherCanDeleteExamTheyOwn() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+    var created = createExam(adminToken(), assignment.getId());
+
+    webTestClient
+        .delete()
+        .uri("/course-assignments/" + assignment.getId() + "/exams/" + created.id())
+        .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+  }
+
+  @Test
+  void teacherCannotDeleteExamOfCourseTheyDoNotTeach() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var ownerTeacher = createTeacher();
+    var otherTeacher = createTeacher();
+    var assignment = createAssignment(course, group, ownerTeacher);
+    var created = createExam(adminToken(), assignment.getId());
+
+    webTestClient
+        .delete()
+        .uri("/course-assignments/" + assignment.getId() + "/exams/" + created.id())
+        .header("Authorization", "Bearer " + loginToken(otherTeacher.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void teacherCanListExamsOfCourseTheyTeach() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+    var token = adminToken();
+    createExam(token, assignment.getId());
+    createExam(token, assignment.getId());
+
+    var exams =
+        webTestClient
+            .get()
+            .uri("/course-assignments/" + assignment.getId() + "/exams")
+            .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(ExamResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(exams);
+    assertEquals(2, exams.size());
+  }
+
+  @Test
+  void teacherCannotListExamsOfCourseTheyDoNotTeach() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var ownerTeacher = createTeacher();
+    var otherTeacher = createTeacher();
+    var assignment = createAssignment(course, group, ownerTeacher);
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignment.getId() + "/exams")
+        .header("Authorization", "Bearer " + loginToken(otherTeacher.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void teacherCanGetExamByIdOfCourseTheyTeach() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+    var created = createExam(adminToken(), assignment.getId());
+
+    var fetched =
+        webTestClient
+            .get()
+            .uri("/course-assignments/" + assignment.getId() + "/exams/" + created.id())
+            .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(ExamResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(fetched);
+    assertEquals(created.id(), fetched.id());
+  }
+
+  @Test
+  void teacherCannotGetExamByIdOfCourseTheyDoNotTeach() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var ownerTeacher = createTeacher();
+    var otherTeacher = createTeacher();
+    var assignment = createAssignment(course, group, ownerTeacher);
+    var created = createExam(adminToken(), assignment.getId());
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignment.getId() + "/exams/" + created.id())
+        .header("Authorization", "Bearer " + loginToken(otherTeacher.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
 }
