@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentResponse;
 import org.cocojojo.mg.model.Group;
 import org.cocojojo.mg.model.Student;
+import org.cocojojo.mg.model.StudentSummary;
 import org.cocojojo.mg.repository.model.JStudent;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +13,16 @@ import org.springframework.stereotype.Component;
 public class StudentMapper {
 
   private final PromotionMapper promotionMapper;
+
+  public StudentSummary toSummary(JStudent entity) {
+    return StudentSummary.builder()
+        .id(entity.getId())
+        .firstname(entity.getFirstname())
+        .lastname(entity.getLastname())
+        .email(entity.getEmail())
+        .std(entity.getStd())
+        .build();
+  }
 
   public Student toModel(JStudent entity, Group currentGroup) {
     return Student.builder()

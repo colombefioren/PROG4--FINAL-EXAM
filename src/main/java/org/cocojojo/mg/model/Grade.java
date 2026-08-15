@@ -8,7 +8,7 @@ import lombok.Builder;
 @Builder
 public record Grade(
     UUID id,
-    Student student,
+    StudentSummary student,
     Exam exam,
     BigDecimal value,
     String comment,

@@ -6,6 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "\"teacher\"")
@@ -13,4 +14,5 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
+@SuperBuilder
 public class JTeacher extends JUser {}

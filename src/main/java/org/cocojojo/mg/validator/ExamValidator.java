@@ -2,6 +2,7 @@ package org.cocojojo.mg.validator;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.cocojojo.mg.endpoint.rest.controller.exception.InvalidCurriculumException;
 import org.cocojojo.mg.model.Fraction;
 import org.cocojojo.mg.repository.ExamRepository;
 import org.cocojojo.mg.repository.model.JExam;
@@ -23,7 +24,7 @@ public class ExamValidator {
 
     Fraction total = othersSum.plus(coefficient);
     if (total.isGreaterThanOne()) {
-      throw new IllegalArgumentException(
+      throw new InvalidCurriculumException(
           "Sum of exam coefficients for this course assignment would exceed 1 (100%)");
     }
   }
