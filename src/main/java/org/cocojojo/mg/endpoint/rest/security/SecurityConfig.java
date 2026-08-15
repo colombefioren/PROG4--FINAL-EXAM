@@ -56,6 +56,7 @@ public class SecurityConfig {
                         GET,
                         "/students",
                         "/teachers",
+                        "/groups",
                         "/courses",
                         "/courses/*",
                         "/promotions/*/graduates/xlsx")
