@@ -174,14 +174,19 @@ class CourseAssignmentIT extends FacadeIT {
             .uri("/course-assignments")
             .header("Authorization", "Bearer " + adminToken())
             .bodyValue(
-                assignmentRequest(
-                    course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits()))
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        group.getId(),
+                        List.of(teacher.getId()),
+                        course.getCredits())))
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBody(CourseAssignmentResponse.class)
+            .expectBodyList(CourseAssignmentResponse.class)
             .returnResult()
-            .getResponseBody();
+            .getResponseBody()
+            .get(0);
 
     assertNotNull(assignment);
     assertNotNull(assignment.id());
@@ -203,8 +208,9 @@ class CourseAssignmentIT extends FacadeIT {
         .uri("/course-assignments")
         .header("Authorization", "Bearer " + adminToken())
         .bodyValue(
-            assignmentRequest(
-                course.getId(), group.getId(), List.of(student.getId()), course.getCredits()))
+            List.of(
+                assignmentRequest(
+                    course.getId(), group.getId(), List.of(student.getId()), course.getCredits())))
         .exchange()
         .expectStatus()
         .isNotFound();
@@ -218,8 +224,9 @@ class CourseAssignmentIT extends FacadeIT {
     var teacher = createTeacher();
     var token = adminToken();
     var request =
-        assignmentRequest(
-            course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits());
+        List.of(
+            assignmentRequest(
+                course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits()));
 
     webTestClient
         .put()
@@ -254,17 +261,19 @@ class CourseAssignmentIT extends FacadeIT {
             .uri("/course-assignments")
             .header("Authorization", "Bearer " + adminToken())
             .bodyValue(
-                assignmentRequest(
-                    course.getId(),
-                    group.getId(),
-                    List.of(teacherA.getId(), teacherB.getId()),
-                    course.getCredits()))
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        group.getId(),
+                        List.of(teacherA.getId(), teacherB.getId()),
+                        course.getCredits())))
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBody(CourseAssignmentResponse.class)
+            .expectBodyList(CourseAssignmentResponse.class)
             .returnResult()
-            .getResponseBody();
+            .getResponseBody()
+            .get(0);
 
     assertNotNull(assignment);
     assertEquals(2, assignment.teachers().size());
@@ -289,8 +298,9 @@ class CourseAssignmentIT extends FacadeIT {
         .uri("/course-assignments")
         .header("Authorization", "Bearer " + token2)
         .bodyValue(
-            assignmentRequest(
-                course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits()))
+            List.of(
+                assignmentRequest(
+                    course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits())))
         .exchange()
         .expectStatus()
         .isOk();
@@ -300,11 +310,12 @@ class CourseAssignmentIT extends FacadeIT {
         .uri("/course-assignments")
         .header("Authorization", "Bearer " + token2)
         .bodyValue(
-            assignmentRequest(
-                otherCourse.getId(),
-                group.getId(),
-                List.of(otherTeacher.getId()),
-                otherCourse.getCredits()))
+            List.of(
+                assignmentRequest(
+                    otherCourse.getId(),
+                    group.getId(),
+                    List.of(otherTeacher.getId()),
+                    otherCourse.getCredits())))
         .exchange()
         .expectStatus()
         .isOk();
@@ -333,7 +344,7 @@ class CourseAssignmentIT extends FacadeIT {
 
   @Test
   void teacherCannotAccessAnotherTeachersAssignmentById() {
-    var teacher = createTeacher("teacher-owner@hei.school");
+    var teacher = createTeacher("teacher-owner-" + UUID.randomUUID() + "@hei.school");
     var otherTeacher = createTeacher();
     var promotion = createPromotion();
     var group = createGroup(promotion);
@@ -346,17 +357,19 @@ class CourseAssignmentIT extends FacadeIT {
             .uri("/course-assignments")
             .header("Authorization", "Bearer " + token)
             .bodyValue(
-                assignmentRequest(
-                    course.getId(),
-                    group.getId(),
-                    List.of(otherTeacher.getId()),
-                    course.getCredits()))
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        group.getId(),
+                        List.of(otherTeacher.getId()),
+                        course.getCredits())))
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBody(CourseAssignmentResponse.class)
+            .expectBodyList(CourseAssignmentResponse.class)
             .returnResult()
-            .getResponseBody();
+            .getResponseBody()
+            .get(0);
 
     webTestClient
         .get()
@@ -385,8 +398,12 @@ class CourseAssignmentIT extends FacadeIT {
         .uri("/course-assignments")
         .header("Authorization", "Bearer " + token)
         .bodyValue(
-            assignmentRequest(
-                courseA.getId(), groupA.getId(), List.of(teacher.getId()), courseA.getCredits()))
+            List.of(
+                assignmentRequest(
+                    courseA.getId(),
+                    groupA.getId(),
+                    List.of(teacher.getId()),
+                    courseA.getCredits())))
         .exchange()
         .expectStatus()
         .isOk();
@@ -396,8 +413,12 @@ class CourseAssignmentIT extends FacadeIT {
         .uri("/course-assignments")
         .header("Authorization", "Bearer " + token)
         .bodyValue(
-            assignmentRequest(
-                courseB.getId(), groupB.getId(), List.of(teacher.getId()), courseB.getCredits()))
+            List.of(
+                assignmentRequest(
+                    courseB.getId(),
+                    groupB.getId(),
+                    List.of(teacher.getId()),
+                    courseB.getCredits())))
         .exchange()
         .expectStatus()
         .isOk();
@@ -432,8 +453,9 @@ class CourseAssignmentIT extends FacadeIT {
         .uri("/course-assignments")
         .header("Authorization", "Bearer " + token)
         .bodyValue(
-            assignmentRequest(
-                course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits()))
+            List.of(
+                assignmentRequest(
+                    course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits())))
         .exchange()
         .expectStatus()
         .isOk();
@@ -443,11 +465,12 @@ class CourseAssignmentIT extends FacadeIT {
         .uri("/course-assignments")
         .header("Authorization", "Bearer " + token)
         .bodyValue(
-            assignmentRequest(
-                otherCourse.getId(),
-                group.getId(),
-                List.of(teacher.getId()),
-                otherCourse.getCredits()))
+            List.of(
+                assignmentRequest(
+                    otherCourse.getId(),
+                    group.getId(),
+                    List.of(teacher.getId()),
+                    otherCourse.getCredits())))
         .exchange()
         .expectStatus()
         .isOk();
