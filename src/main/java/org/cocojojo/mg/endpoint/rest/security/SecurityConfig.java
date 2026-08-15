@@ -47,11 +47,18 @@ public class SecurityConfig {
                         "/teachers/**",
                         "/admins/**",
                         "/promotions/**",
-                        "/groups/**")
+                        "/groups/**",
+                        "/courses/**")
                     .hasRole("ADMIN")
                     .requestMatchers(GET, "/admins/**")
                     .hasRole("ADMIN")
-                    .requestMatchers(GET, "/students", "/teachers", "/promotions/*/graduates/xlsx")
+                    .requestMatchers(
+                        GET,
+                        "/students",
+                        "/teachers",
+                        "/courses",
+                        "/courses/*",
+                        "/promotions/*/graduates/xlsx")
                     .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(
                         PUT,
