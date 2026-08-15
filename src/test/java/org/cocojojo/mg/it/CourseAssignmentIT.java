@@ -552,4 +552,45 @@ class CourseAssignmentIT extends FacadeIT {
         .expectStatus()
         .isForbidden();
   }
+
+  @Test
+  void creditCeilingRejectsOverloadedSemesterWithoutPersisting() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var teacher = createTeacher();
+    var token = adminToken();
+    var heavyCourse =
+        courseRepository.save(
+            JCourse.builder()
+                .code("UE-" + UUID.randomUUID())
+                .name("Heavy " + UUID.randomUUID())
+                .credits(20)
+                .totalHours(40)
+                .studentLevel(StudentLevel.L1)
+                .build());
+    var otherCourse =
+        courseRepository.save(
+            JCourse.builder()
+                .code("UE-" + UUID.randomUUID())
+                .name("Other " + UUID.randomUUID())
+                .credits(15)
+                .totalHours(30)
+                .studentLevel(StudentLevel.L1)
+                .build());
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            List.of(
+                assignmentRequest(heavyCourse.getId(), group.getId(), List.of(teacher.getId()), 20),
+                assignmentRequest(
+                    otherCourse.getId(), group.getId(), List.of(teacher.getId()), 15)))
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+
+    assertEquals(0, courseAssignmentRepository.count());
+  }
 }
