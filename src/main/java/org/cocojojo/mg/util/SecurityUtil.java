@@ -51,14 +51,15 @@ public class SecurityUtil {
         .filter(authorities -> !authorities.isEmpty())
         .map(authorities -> authorities.iterator().next().getAuthority())
         .map(authority -> authority.replace("ROLE_", ""))
-        .map(
-            name -> {
-              try {
-                return Role.valueOf(name);
-              } catch (IllegalArgumentException e) {
-                return null;
-              }
-            });
+        .map(this::parseRole);
+  }
+
+  private Role parseRole(String name) {
+    try {
+      return Role.valueOf(name);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   public Role getCurrentRoleOrThrow() {
@@ -77,12 +78,13 @@ public class SecurityUtil {
     return getCurrentRole().map(role -> role == Role.STUDENT).orElse(false);
   }
 
+  private boolean isSelf(UUID studentId) {
+    return isStudent() && getCurrentUserId().map(studentId::equals).orElse(false);
+  }
+
   /** A student may only act on their own record; admins may act on anyone's. */
   public void requireSelfOrAdmin(UUID studentId) {
-    if (isAdmin()) {
-      return;
-    }
-    if (isStudent() && getCurrentUserIdOrThrow().equals(studentId)) {
+    if (isAdmin() || isSelf(studentId)) {
       return;
     }
     throw new ForbiddenAccessException("You may only access your own records");
@@ -90,10 +92,7 @@ public class SecurityUtil {
 
   /** Staff (admin/teacher) can look up any student; a student can only look up themself. */
   public void requireSelfOrStaff(UUID studentId) {
-    if (isAdmin() || isTeacher()) {
-      return;
-    }
-    if (isStudent() && getCurrentUserIdOrThrow().equals(studentId)) {
+    if (isAdmin() || isTeacher() || isSelf(studentId)) {
       return;
     }
     throw new ForbiddenAccessException("You may only access your own records");
