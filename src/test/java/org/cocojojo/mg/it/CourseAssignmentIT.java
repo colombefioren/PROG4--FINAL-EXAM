@@ -686,4 +686,139 @@ class CourseAssignmentIT extends FacadeIT {
         .expectStatus()
         .isNotFound();
   }
+
+  @Test
+  void unauthenticatedCannotAccessCourseAssignments() {
+    webTestClient.get().uri("/course-assignments").exchange().expectStatus().isUnauthorized();
+  }
+
+  @Test
+  void teacherCanAccessOwnAssignmentById() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var token = adminToken();
+
+    var assignment =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        group.getId(),
+                        List.of(teacher.getId()),
+                        course.getCredits())))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    var fetched =
+        webTestClient
+            .get()
+            .uri("/course-assignments/" + assignment.id())
+            .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(fetched);
+    assertEquals(assignment.id(), fetched.id());
+  }
+
+  @Test
+  void studentCanAccessOwnGroupAssignmentById() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var student = createStudent(promotion, "student-owner-" + UUID.randomUUID() + "@hei.school");
+    joinGroup(student, group);
+    var token = adminToken();
+
+    var assignment =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        group.getId(),
+                        List.of(teacher.getId()),
+                        course.getCredits())))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    var fetched =
+        webTestClient
+            .get()
+            .uri("/course-assignments/" + assignment.id())
+            .header("Authorization", "Bearer " + loginToken(student.getEmail(), "secret123"))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(fetched);
+    assertEquals(group.getId(), fetched.groupId());
+  }
+
+  @Test
+  void studentCannotAccessAnotherGroupsAssignmentById() {
+    var promotion = createPromotion();
+    var groupA = createGroup(promotion);
+    var groupB = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var student = createStudent(promotion, "student-owner-" + UUID.randomUUID() + "@hei.school");
+    joinGroup(student, groupA);
+    var token = adminToken();
+
+    var assignment =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        groupB.getId(),
+                        List.of(teacher.getId()),
+                        course.getCredits())))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignment.id())
+        .header("Authorization", "Bearer " + loginToken(student.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
 }
