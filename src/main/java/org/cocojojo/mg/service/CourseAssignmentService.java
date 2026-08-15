@@ -80,8 +80,8 @@ public class CourseAssignmentService {
   }
 
   @Transactional
-  public List<CourseAssignmentResponse> crupdate(List<CourseAssignmentRequest> requests) {
-    var saved = requests.stream().map(this::crupdateOne).toList();
+  public List<CourseAssignmentResponse> upsert(List<CourseAssignmentRequest> requests) {
+    var saved = requests.stream().map(this::upsertOne).toList();
     requests.forEach(r -> validateCeiling(r.groupId(), r.academicYear(), r.semester()));
     return saved;
   }
@@ -96,7 +96,7 @@ public class CourseAssignmentService {
     return teachers.stream().map(t -> teacherRepository.getReferenceById(t.id())).toList();
   }
 
-  private CourseAssignmentResponse crupdateOne(CourseAssignmentRequest request) {
+  private CourseAssignmentResponse upsertOne(CourseAssignmentRequest request) {
     var course = courseService.getById(request.courseId());
     var group = groupService.getById(request.groupId());
     validator.validateTrackCompatibility(course, group);

@@ -51,9 +51,9 @@ public class CourseAssignmentController {
 
   /** Upsert only: existing assignments not present in the payload are left untouched. */
   @PutMapping
-  public List<CourseAssignmentResponse> crupdate(
+  public List<CourseAssignmentResponse> upsert(
       @Valid @RequestBody List<CourseAssignmentRequest> requests) {
-    return service.crupdate(requests);
+    return service.upsert(requests);
   }
 
   @DeleteMapping("/{id}")
