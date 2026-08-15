@@ -11,12 +11,15 @@ import org.cocojojo.mg.endpoint.rest.controller.exception.InvalidCurriculumExcep
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.CourseAssignmentMapper;
 import org.cocojojo.mg.mapper.CourseMapper;
+import org.cocojojo.mg.model.Teacher;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.CourseRepository;
 import org.cocojojo.mg.repository.GroupRepository;
+import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
+import org.cocojojo.mg.repository.model.JTeacher;
 import org.cocojojo.mg.util.SecurityUtil;
 import org.cocojojo.mg.validator.CourseAssignmentValidator;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ public class CourseAssignmentService {
   private final CourseAssignmentRepository repository;
   private final CourseRepository courseRepository;
   private final GroupRepository groupRepository;
+  private final TeacherRepository teacherRepository;
   private final CourseService courseService;
   private final TeacherService teacherService;
   private final StudentService studentService;
@@ -88,6 +92,10 @@ public class CourseAssignmentService {
     validator.validateCreditCeiling(assignments);
   }
 
+  private List<JTeacher> teacherEntities(List<Teacher> teachers) {
+    return teachers.stream().map(t -> teacherRepository.getReferenceById(t.id())).toList();
+  }
+
   private CourseAssignmentResponse crupdateOne(CourseAssignmentRequest request) {
     var course = courseService.getById(request.courseId());
     var group = groupService.getById(request.groupId());
@@ -110,7 +118,7 @@ public class CourseAssignmentService {
       entity = getEntity(request.id());
       entity.setCourse(courseRepository.getReferenceById(course.id()));
       entity.setGroup(groupRepository.getReferenceById(group.id()));
-      entity.setTeachers(teachers);
+      entity.setTeachers(teacherEntities(teachers));
       entity.setAcademicYear(request.academicYear());
       entity.setSemester(request.semester());
       entity.setCredits(request.credits());
@@ -122,7 +130,7 @@ public class CourseAssignmentService {
               null,
               courseRepository.getReferenceById(course.id()),
               groupRepository.getReferenceById(group.id()),
-              teachers,
+              teacherEntities(teachers),
               request.academicYear(),
               request.semester(),
               request.credits());
