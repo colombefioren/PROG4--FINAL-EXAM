@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/courses")
 @RequiredArgsConstructor
@@ -30,7 +32,7 @@ public class CourseController {
   }
 
   @PutMapping
-  public CourseResponse upsert(@RequestBody CourseRequest request) {
+  public CourseResponse upsert(@RequestBody @Valid CourseRequest request) {
     return service.upsert(request);
   }
 }
