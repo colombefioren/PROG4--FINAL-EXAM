@@ -17,4 +17,4 @@ public record CourseRequest(
     @NotNull @Min(1) Integer credits,
     @Positive Integer totalHours,
     @NotNull StudentLevel studentLevel,
-    @NotNull Track track) {}
+    Track track) {}
