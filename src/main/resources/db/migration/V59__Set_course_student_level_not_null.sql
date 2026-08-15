@@ -1,0 +1,1 @@
+alter table "course" alter column student_level set not null;
