@@ -44,7 +44,7 @@ public class CourseAssignmentService {
       teacherId = securityUtil.getCurrentUserIdOrThrow();
     }
     if (securityUtil.isStudent()) {
-      groupId = studentService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow()).getId();
+      groupId = studentService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow()).id();
     }
     return repository.search(groupId, teacherId, courseId, academicYear).stream()
         .map(mapper::toResponse)
@@ -61,7 +61,7 @@ public class CourseAssignmentService {
     }
     if (securityUtil.isStudent()) {
       var currentGroup = studentService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow());
-      if (!entity.getGroup().getId().equals(currentGroup.getId())) {
+      if (!entity.getGroup().getId().equals(currentGroup.id())) {
         throw new ForbiddenAccessException("This course assignment is not part of your curriculum");
       }
     }
