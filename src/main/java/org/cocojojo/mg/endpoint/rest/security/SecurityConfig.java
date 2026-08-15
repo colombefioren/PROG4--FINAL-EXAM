@@ -33,7 +33,6 @@ public class SecurityConfig {
                         "/auth/**",
                         "/ping",
                         "/health/**",
-                        "/view/**",
                         "/error",
                         "/v3/api-docs",
                         "/v3/api-docs/**",
@@ -41,6 +40,8 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/swagger-ui/**")
                     .permitAll()
+                    .requestMatchers("/view/**")
+                    .hasRole("ADMIN")
                     .requestMatchers(
                         PUT,
                         "/students/**",
