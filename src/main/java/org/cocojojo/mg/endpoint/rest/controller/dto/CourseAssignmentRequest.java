@@ -17,4 +17,4 @@ public record CourseAssignmentRequest(
     @NotNull @NotEmpty List<UUID> teacherIds,
     @NotNull @Min(2000) @Max(2100) Integer academicYear,
     @NotNull Semester semester,
-    @NotNull @Min(0) Integer credits) {}
+    @NotNull @Min(1) Integer credits) {}
