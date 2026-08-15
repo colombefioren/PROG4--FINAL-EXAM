@@ -14,6 +14,12 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
 
   List<JCourseAssignment> findByTeachers_Id(UUID teacherId);
 
+  List<JCourseAssignment> findByCourseId(UUID courseId);
+
+  List<JCourseAssignment> findByAcademicYear(int academicYear);
+
+  List<JCourseAssignment> findByGroupIdAndTeachers_Id(UUID groupId, UUID teacherId);
+
   List<JCourseAssignment> findByGroupIdAndAcademicYearAndSemester(
       UUID groupId, int academicYear, Semester semester);
 
