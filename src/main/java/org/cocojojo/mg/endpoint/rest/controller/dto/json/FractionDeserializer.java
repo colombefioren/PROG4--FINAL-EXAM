@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import org.cocojojo.mg.model.Fraction;
 
 public class FractionDeserializer extends JsonDeserializer<Fraction> {
@@ -41,7 +42,7 @@ public class FractionDeserializer extends JsonDeserializer<Fraction> {
   private Fraction fromDecimal(BigDecimal decimal) {
     var normalized = decimal.stripTrailingZeros();
     if (normalized.scale() < 0) {
-      normalized = normalized.setScale(0);
+      normalized = normalized.setScale(0, RoundingMode.CEILING);
     }
     var denominator = BigInteger.TEN.pow(normalized.scale());
     var numerator = normalized.unscaledValue();
