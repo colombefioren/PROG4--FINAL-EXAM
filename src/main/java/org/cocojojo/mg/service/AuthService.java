@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.UserResponse;
+import org.cocojojo.mg.endpoint.rest.security.AuthenticatedAccount;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
-import org.cocojojo.mg.endpoint.rest.security.SecurityUtil;
 import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.repository.AdminRepository;
 import org.cocojojo.mg.repository.StudentRepository;
@@ -24,54 +24,46 @@ public class AuthService {
   private final StudentRepository studentRepository;
   private final JwtService jwtService;
   private final PasswordEncoder passwordEncoder;
-  private final SecurityUtil securityUtil;
 
-  public AuthResponse findByEmail(String email) {
+  public AuthenticatedAccount findByEmail(String email) {
     return adminRepository
         .findByEmailIgnoreCase(email)
-        .map(a -> toAuthResponse(a, Role.ADMIN))
-        .or(
-            () ->
-                teacherRepository
-                    .findByEmailIgnoreCase(email)
-                    .map(t -> toAuthResponse(t, Role.TEACHER)))
-        .or(
-            () ->
-                studentRepository
-                    .findByEmailIgnoreCase(email)
-                    .map(s -> toAuthResponse(s, Role.STUDENT)))
+        .map(a -> account(a, Role.ADMIN))
+        .or(() -> teacherRepository.findByEmailIgnoreCase(email).map(t -> account(t, Role.TEACHER)))
+        .or(() -> studentRepository.findByEmailIgnoreCase(email).map(s -> account(s, Role.STUDENT)))
         .orElseThrow(() -> new NoSuchElementException("No account found for email " + email));
   }
 
   public AuthResponse login(LoginRequest request) {
-    var user = findUser(request.email());
-    if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+    var account = findByEmail(request.email());
+    if (!account.enabled()) {
+      throw new IllegalStateException("This account has been disabled");
+    }
+    if (!passwordEncoder.matches(request.password(), account.password())) {
       throw new IllegalArgumentException("Invalid credentials");
     }
-    return toAuthResponse(user, securityUtil.getRole(user));
+
+    var token = jwtService.generateToken(account.id(), account.email(), account.role());
+    var user =
+        UserResponse.builder()
+            .id(account.id())
+            .firstname(account.firstname())
+            .lastname(account.lastname())
+            .email(account.email())
+            .role(account.role())
+            .build();
+    return AuthResponse.builder().token(token).user(user).build();
   }
 
-  private JUser findUser(String email) {
-    return adminRepository
-        .findByEmailIgnoreCase(email)
-        .<JUser>map(a -> a)
-        .or(() -> teacherRepository.findByEmailIgnoreCase(email).map(t -> (JUser) t))
-        .or(() -> studentRepository.findByEmailIgnoreCase(email).map(s -> (JUser) s))
-        .orElseThrow(() -> new NoSuchElementException("No account found for email " + email));
-  }
-
-  private AuthResponse toAuthResponse(JUser user, Role role) {
-    var token = jwtService.generateToken(user.getId(), user.getEmail(), role);
-    return AuthResponse.builder()
-        .token(token)
-        .user(
-            UserResponse.builder()
-                .id(user.getId())
-                .firstname(user.getFirstname())
-                .lastname(user.getLastname())
-                .email(user.getEmail())
-                .role(role)
-                .build())
+  private AuthenticatedAccount account(JUser user, Role role) {
+    return AuthenticatedAccount.builder()
+        .id(user.getId())
+        .firstname(user.getFirstname())
+        .lastname(user.getLastname())
+        .email(user.getEmail())
+        .password(user.getPassword())
+        .enabled(user.isEnabled())
+        .role(role)
         .build();
   }
 }
