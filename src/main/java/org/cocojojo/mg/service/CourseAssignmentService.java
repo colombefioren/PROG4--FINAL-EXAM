@@ -14,8 +14,6 @@ import org.cocojojo.mg.mapper.CourseMapper;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
-import org.cocojojo.mg.repository.CourseRepository;
-import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
 import org.cocojojo.mg.util.SecurityUtil;
 import org.cocojojo.mg.validator.CourseAssignmentValidator;
@@ -27,25 +25,52 @@ import org.springframework.transaction.annotation.Transactional;
 public class CourseAssignmentService {
 
   private final CourseAssignmentRepository repository;
-  private final CourseRepository courseRepository;
-  private final TeacherRepository teacherRepository;
+  private final CourseService courseService;
+  private final TeacherService teacherService;
+  private final StudentService studentService;
   private final GroupService groupService;
   private final CourseAssignmentMapper mapper;
   private final CourseMapper courseMapper;
   private final CourseAssignmentValidator validator;
   private final SecurityUtil securityUtil;
 
-  public List<CourseAssignmentResponse> getByFilter(UUID groupId, UUID teacherId) {
+  public List<CourseAssignmentResponse> getByFilter(
+      UUID groupId, UUID teacherId, UUID courseId, Integer academicYear) {
     if (securityUtil.isTeacher()) {
-      return getByTeacher(securityUtil.getCurrentUserIdOrThrow());
+      var currentTeacherId = securityUtil.getCurrentUserIdOrThrow();
+      if (groupId != null) {
+        return repository.findByGroupIdAndTeachers_Id(groupId, currentTeacherId).stream()
+            .map(mapper::toResponse)
+            .toList();
+      }
+      return getByTeacher(currentTeacherId);
     }
+    if (securityUtil.isStudent()) {
+      return getForCurrentStudent();
+    }
+    return getByFilterAsAdmin(groupId, teacherId, courseId, academicYear);
+  }
+
+  private List<CourseAssignmentResponse> getByFilterAsAdmin(
+      UUID groupId, UUID teacherId, UUID courseId, Integer academicYear) {
     if (groupId != null) {
       return getByGroup(groupId);
     }
     if (teacherId != null) {
       return getByTeacher(teacherId);
     }
-    throw new IllegalArgumentException("group_id or teacher_id is required");
+    if (courseId != null) {
+      return getByCourse(courseId);
+    }
+    if (academicYear != null) {
+      return repository.findByAcademicYear(academicYear).stream().map(mapper::toResponse).toList();
+    }
+    return repository.findAll().stream().map(mapper::toResponse).toList();
+  }
+
+  private List<CourseAssignmentResponse> getForCurrentStudent() {
+    var currentGroup = studentService.findCurrentGroup(securityUtil.getCurrentUserIdOrThrow());
+    return getByGroup(currentGroup.getId());
   }
 
   public List<CourseAssignmentResponse> getByGroup(UUID groupId) {
@@ -56,8 +81,25 @@ public class CourseAssignmentService {
     return repository.findByTeachers_Id(teacherId).stream().map(mapper::toResponse).toList();
   }
 
+  public List<CourseAssignmentResponse> getByCourse(UUID courseId) {
+    return repository.findByCourseId(courseId).stream().map(mapper::toResponse).toList();
+  }
+
   public CourseAssignmentResponse getById(UUID id) {
-    return mapper.toResponse(find(id));
+    var entity = find(id);
+    if (securityUtil.isTeacher()) {
+      var currentTeacherId = securityUtil.getCurrentUserIdOrThrow();
+      if (entity.getTeachers().stream().noneMatch(t -> t.getId().equals(currentTeacherId))) {
+        throw new ForbiddenAccessException("You may only access your own course assignments");
+      }
+    }
+    if (securityUtil.isStudent()) {
+      var currentGroup = studentService.findCurrentGroup(securityUtil.getCurrentUserIdOrThrow());
+      if (!entity.getGroup().getId().equals(currentGroup.getId())) {
+        throw new ForbiddenAccessException("This course assignment is not part of your curriculum");
+      }
+    }
+    return mapper.toResponse(entity);
   }
 
   public JCourseAssignment find(UUID id) {
@@ -87,13 +129,7 @@ public class CourseAssignmentService {
   }
 
   private CourseAssignmentResponse crupdateOne(CourseAssignmentRequest request) {
-    var course =
-        courseRepository
-            .findById(request.courseId())
-            .orElseThrow(
-                () ->
-                    new ResourceNotFoundException(
-                        "Course with id:" + request.courseId() + " not found."));
+    var course = courseService.find(request.courseId());
     var group = groupService.find(request.groupId());
     validator.validateTrackCompatibility(course, group);
 
@@ -107,11 +143,7 @@ public class CourseAssignmentService {
               + request.semester());
     }
 
-    var teachers =
-        request.teacherIds().stream()
-            .map(teacherRepository::findById)
-            .map(o -> o.orElseThrow(() -> new ResourceNotFoundException("Teacher not found")))
-            .toList();
+    var teachers = request.teacherIds().stream().map(teacherService::find).toList();
 
     JCourseAssignment entity;
     if (request.id() != null) {
@@ -161,7 +193,7 @@ public class CourseAssignmentService {
 
     var assignedCourseIds = assignments.stream().map(a -> a.getCourse().getId()).toList();
     var missing =
-        courseRepository.findByStudentLevelOrderByCodeAsc(StudentLevel.of(semester)).stream()
+        courseService.findByStudentLevelOrderByCodeAsc(StudentLevel.of(semester)).stream()
             .filter(c -> c.getTrack() == null || c.getTrack() == group.getTrack())
             .filter(c -> !assignedCourseIds.contains(c.getId()))
             .map(courseMapper::toResponse)
