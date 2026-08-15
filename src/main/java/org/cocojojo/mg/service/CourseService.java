@@ -23,10 +23,10 @@ public class CourseService {
   }
 
   public CourseResponse getById(UUID id) {
-    return mapper.toResponse(mapper.toModel(getByEntityOrThrow(id)));
+    return mapper.toResponse(mapper.toModel(getEntityOrThrow(id)));
   }
 
-  public JCourse getByEntityOrThrow(UUID id) {
+  public JCourse getEntityOrThrow(UUID id) {
     return repository
         .findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Course with id: " + id + " not found."));
@@ -34,10 +34,9 @@ public class CourseService {
 
   @Transactional
   public CourseResponse upsert(CourseRequest request) {
-    var course =
-        request.id() == null ? JCourse.builder().build() : getByEntityOrThrow(request.id());
+    var course = request.id() == null ? JCourse.builder().build() : getEntityOrThrow(request.id());
     course.setName(request.name());
-    course.setCode(request.code());
+    course.setCode(request.code().toUpperCase());
     course.setTrack(request.track());
     course.setCredits(request.credits());
     course.setTotalHours(request.totalHours());
