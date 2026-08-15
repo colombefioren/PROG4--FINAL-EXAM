@@ -14,6 +14,7 @@ import org.cocojojo.mg.mapper.CourseMapper;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
+import org.cocojojo.mg.repository.CourseRepository;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
 import org.cocojojo.mg.util.SecurityUtil;
 import org.cocojojo.mg.validator.CourseAssignmentValidator;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CourseAssignmentService {
 
   private final CourseAssignmentRepository repository;
+  private final CourseRepository courseRepository;
   private final CourseService courseService;
   private final TeacherService teacherService;
   private final StudentService studentService;
@@ -89,12 +91,12 @@ public class CourseAssignmentService {
     var group = groupService.getById(request.groupId());
     validator.validateTrackCompatibility(course, group);
 
-    if (course.getStudentLevel() != StudentLevel.of(request.semester())) {
+    if (course.studentLevel() != StudentLevel.of(request.semester())) {
       throw new InvalidCurriculumException(
           "Course "
-              + course.getCode()
+              + course.code()
               + " is a "
-              + course.getStudentLevel()
+              + course.studentLevel()
               + " course, not compatible with "
               + request.semester());
     }
@@ -104,7 +106,7 @@ public class CourseAssignmentService {
     JCourseAssignment entity;
     if (request.id() != null) {
       entity = getEntity(request.id());
-      entity.setCourse(course);
+      entity.setCourse(courseRepository.getReferenceById(course.id()));
       entity.setGroup(group);
       entity.setTeachers(teachers);
       entity.setAcademicYear(request.academicYear());
@@ -112,11 +114,11 @@ public class CourseAssignmentService {
       entity.setCredits(request.credits());
     } else {
       validator.validateNotDuplicate(
-          null, course.getId(), group.getId(), request.academicYear(), request.semester());
+          null, course.id(), group.getId(), request.academicYear(), request.semester());
       entity =
           mapper.toEntity(
               null,
-              course,
+              courseRepository.getReferenceById(course.id()),
               group,
               teachers,
               request.academicYear(),
@@ -149,9 +151,9 @@ public class CourseAssignmentService {
 
     var assignedCourseIds = assignments.stream().map(a -> a.getCourse().getId()).toList();
     var missing =
-        courseService.findByStudentLevelOrderByCodeAsc(StudentLevel.of(semester)).stream()
-            .filter(c -> c.getTrack() == null || c.getTrack() == group.getTrack())
-            .filter(c -> !assignedCourseIds.contains(c.getId()))
+        courseService.getByStudentLevelOrderByCodeAsc(StudentLevel.of(semester)).stream()
+            .filter(c -> c.track() == null || c.track() == group.getTrack())
+            .filter(c -> !assignedCourseIds.contains(c.id()))
             .map(courseMapper::toResponse)
             .toList();
 

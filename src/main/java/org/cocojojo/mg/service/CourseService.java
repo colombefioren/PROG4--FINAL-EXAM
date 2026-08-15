@@ -7,6 +7,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.CourseRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.CourseMapper;
+import org.cocojojo.mg.model.Course;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseRepository;
 import org.cocojojo.mg.repository.model.JCourse;
@@ -49,13 +50,9 @@ public class CourseService {
     return courseMapper.toResponse(courseMapper.toModel(saved));
   }
 
-  public JCourse getById(UUID id) {
-    return courseRepository
-        .findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Course with id:" + id + " not found."));
-  }
-
-  public List<JCourse> findByStudentLevelOrderByCodeAsc(StudentLevel studentLevel) {
-    return courseRepository.findByStudentLevelOrderByCodeAsc(studentLevel);
+  public List<Course> getByStudentLevelOrderByCodeAsc(StudentLevel studentLevel) {
+    return courseRepository.findByStudentLevelOrderByCodeAsc(studentLevel).stream()
+        .map(courseMapper::toModel)
+        .toList();
   }
 }
