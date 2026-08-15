@@ -1,66 +1,42 @@
 package org.cocojojo.mg.service;
 
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
-import org.cocojojo.mg.endpoint.rest.security.AuthenticatedAccount;
-import org.cocojojo.mg.model.enums.Role;
-import org.cocojojo.mg.repository.AdminRepository;
-import org.cocojojo.mg.repository.StudentRepository;
-import org.cocojojo.mg.repository.TeacherRepository;
+import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
+import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
+import org.cocojojo.mg.endpoint.rest.security.JwtService;
+import org.cocojojo.mg.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * HEI accounts are provisioned by an admin (students and teachers don't self-register), so this
+ * service only ever issues tokens for existing accounts.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-  private final AdminRepository adminRepository;
-  private final TeacherRepository teacherRepository;
-  private final StudentRepository studentRepository;
+  private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtService jwtService;
 
-  public AuthenticatedAccount findByEmail(String email) {
-    return adminRepository
-        .findByEmailIgnoreCase(email)
-        .map(
-            a ->
-                AuthenticatedAccount.builder()
-                    .id(a.getId())
-                    .firstname(a.getFirstname())
-                    .lastname(a.getLastname())
-                    .email(a.getEmail())
-                    .password(a.getPassword())
-                    .enabled(a.isEnabled())
-                    .role(Role.ADMIN)
-                    .build())
-        .or(
-            () ->
-                teacherRepository
-                    .findByEmailIgnoreCase(email)
-                    .map(
-                        t ->
-                            AuthenticatedAccount.builder()
-                                .id(t.getId())
-                                .firstname(t.getFirstname())
-                                .lastname(t.getLastname())
-                                .email(t.getEmail())
-                                .password(t.getPassword())
-                                .enabled(t.isEnabled())
-                                .role(Role.TEACHER)
-                                .build()))
-        .or(
-            () ->
-                studentRepository
-                    .findByEmailIgnoreCase(email)
-                    .map(
-                        s ->
-                            AuthenticatedAccount.builder()
-                                .id(s.getId())
-                                .firstname(s.getFirstname())
-                                .lastname(s.getLastname())
-                                .email(s.getEmail())
-                                .password(s.getPassword())
-                                .enabled(s.isEnabled())
-                                .role(Role.STUDENT)
-                                .build()))
-        .orElseThrow(() -> new NoSuchElementException("No account found for email " + email));
+  public AuthResponse login(LoginRequest request) {
+    var user =
+        userRepository
+            .findByEmailIgnoreCase(request.email())
+            .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+
+    if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+      throw new IllegalArgumentException("Invalid credentials");
+    }
+
+    var token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole());
+    return AuthResponse.builder()
+        .token(token)
+        .userId(user.getId().toString())
+        .role(user.getRole())
+        .firstName(user.getFirstName())
+        .lastName(user.getLastName())
+        .build();
   }
 }
