@@ -6,11 +6,11 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.UserResponse;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
-import org.cocojojo.mg.endpoint.rest.security.SecurityUtil;
 import org.cocojojo.mg.repository.AdminRepository;
 import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JUser;
+import org.cocojojo.mg.util.SecurityUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 

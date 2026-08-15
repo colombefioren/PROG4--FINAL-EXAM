@@ -1,4 +1,4 @@
-package org.cocojojo.mg.endpoint.rest.security;
+package org.cocojojo.mg.util;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -82,6 +82,17 @@ public class SecurityUtil {
   /** A student may only act on their own record; admins may act on anyone's. */
   public void requireSelfOrAdmin(UUID studentId) {
     if (isAdmin()) {
+      return;
+    }
+    if (isStudent() && getCurrentUserIdOrThrow().equals(studentId)) {
+      return;
+    }
+    throw new ForbiddenAccessException("You may only access your own records");
+  }
+
+  /** Staff (admin/teacher) can look up any student; a student can only look up themself. */
+  public void requireSelfOrStaff(UUID studentId) {
+    if (isAdmin() || isTeacher()) {
       return;
     }
     if (isStudent() && getCurrentUserIdOrThrow().equals(studentId)) {
