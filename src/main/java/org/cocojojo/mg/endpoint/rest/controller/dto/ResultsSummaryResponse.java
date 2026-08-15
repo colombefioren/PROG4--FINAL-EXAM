@@ -11,4 +11,4 @@ public record ResultsSummaryResponse(
     String studentStd,
     List<YearlyResultResponse> levels,
     BigDecimal overallAverage,
-    boolean graduate) {}
+    Boolean graduate) {}
