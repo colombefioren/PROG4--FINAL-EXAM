@@ -2,7 +2,6 @@ package org.cocojojo.mg.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.UUID;
 import org.cocojojo.mg.conf.FacadeIT;
@@ -10,9 +9,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.PromotionRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.PromotionResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 class PromotionIT extends FacadeIT {
 
@@ -124,15 +121,12 @@ class PromotionIT extends FacadeIT {
 
   @Test
   void upsertWithoutRequiredFieldsIsRejected() {
-    var exception =
-        assertThrows(
-            WebClientResponseException.class,
-            () ->
-                webTestClient()
-                    .put()
-                    .uri("/promotions")
-                    .bodyValue(PromotionRequest.builder().build())
-                    .exchange());
-    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    webTestClient()
+        .put()
+        .uri("/promotions")
+        .bodyValue(PromotionRequest.builder().build())
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
   }
 }
