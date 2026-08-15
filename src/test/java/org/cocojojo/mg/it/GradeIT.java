@@ -459,4 +459,293 @@ class GradeIT extends FacadeIT {
     assertEquals(0, new BigDecimal("16.5").compareTo(history.get(0).newValue()));
     assertEquals("Recheck", history.get(0).reason());
   }
+
+  @Test
+  void studentCanViewOwnGrades() {
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    saveGrade(exam, student, new BigDecimal("12.0"));
+
+    var grades =
+        webTestClient
+            .get()
+            .uri("/students/{student_id}/grades", student.getId())
+            .header("Authorization", "Bearer " + token(student))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(GradeResponse.class)
+            .returnResult()
+            .getResponseBody();
+    assertNotNull(grades);
+    assertEquals(1, grades.size());
+    assertEquals(student.getId(), grades.get(0).studentId());
+  }
+
+  @Test
+  void studentCannotViewAnotherStudentsGrades() {
+    var student = saveStudent();
+    var other = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .get()
+        .uri("/students/{student_id}/grades", student.getId())
+        .header("Authorization", "Bearer " + token(other))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void teacherSeesOnlyGradesForCoursesTheyTeach() {
+    var teacher = saveTeacher();
+    var otherTeacher = saveTeacher();
+    var student = saveStudent();
+    var taughtExam = saveExam(saveAssignment(teacher));
+    var otherExam = saveExam(saveAssignment(otherTeacher));
+    saveGrade(taughtExam, student, new BigDecimal("12.0"));
+    saveGrade(otherExam, student, new BigDecimal("8.0"));
+
+    var grades =
+        webTestClient
+            .get()
+            .uri("/students/{student_id}/grades", student.getId())
+            .header("Authorization", "Bearer " + token(teacher))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(GradeResponse.class)
+            .returnResult()
+            .getResponseBody();
+    assertNotNull(grades);
+    assertEquals(1, grades.size());
+    assertEquals(taughtExam.getId(), grades.get(0).examId());
+  }
+
+  @Test
+  void adminCanViewAnyStudentsGrades() {
+    var admin = saveAdmin();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    saveGrade(exam, student, new BigDecimal("12.0"));
+
+    var grades =
+        webTestClient
+            .get()
+            .uri("/students/{student_id}/grades", student.getId())
+            .header("Authorization", "Bearer " + token(admin))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(GradeResponse.class)
+            .returnResult()
+            .getResponseBody();
+    assertNotNull(grades);
+    assertEquals(1, grades.size());
+  }
+
+  @Test
+  void studentCanGetOwnGradeById() {
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .get()
+        .uri("/grades/{grade_id}", grade.getId())
+        .header("Authorization", "Bearer " + token(student))
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(GradeResponse.class)
+        .returnResult()
+        .getResponseBody();
+  }
+
+  @Test
+  void studentCannotGetAnotherStudentsGradeById() {
+    var student = saveStudent();
+    var other = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .get()
+        .uri("/grades/{grade_id}", grade.getId())
+        .header("Authorization", "Bearer " + token(other))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void teacherCanGetGradeForCourseTheyTeach() {
+    var teacher = saveTeacher();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(teacher));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .get()
+        .uri("/grades/{grade_id}", grade.getId())
+        .header("Authorization", "Bearer " + token(teacher))
+        .exchange()
+        .expectStatus()
+        .isOk();
+  }
+
+  @Test
+  void teacherCannotGetGradeForCourseTheyDoNotTeach() {
+    var teacher = saveTeacher();
+    var otherTeacher = saveTeacher();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(otherTeacher));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .get()
+        .uri("/grades/{grade_id}", grade.getId())
+        .header("Authorization", "Bearer " + token(teacher))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void adminCanGetAnyGradeById() {
+    var admin = saveAdmin();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .get()
+        .uri("/grades/{grade_id}", grade.getId())
+        .header("Authorization", "Bearer " + token(admin))
+        .exchange()
+        .expectStatus()
+        .isOk();
+  }
+
+  @Test
+  void adminCanDeleteGrade() {
+    var admin = saveAdmin();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .delete()
+        .uri("/grades/{grade_id}", grade.getId())
+        .header("Authorization", "Bearer " + token(admin))
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    webTestClient
+        .get()
+        .uri("/grades/{grade_id}", grade.getId())
+        .header("Authorization", "Bearer " + token(admin))
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void teacherCanDeleteGradeForCourseTheyTeach() {
+    var teacher = saveTeacher();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(teacher));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .delete()
+        .uri("/grades/{grade_id}", grade.getId())
+        .header("Authorization", "Bearer " + token(teacher))
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+  }
+
+  @Test
+  void teacherCannotDeleteGradeForCourseTheyDoNotTeach() {
+    var teacher = saveTeacher();
+    var otherTeacher = saveTeacher();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(otherTeacher));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .delete()
+        .uri("/grades/{grade_id}", grade.getId())
+        .header("Authorization", "Bearer " + token(teacher))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void studentCannotDeleteGrade() {
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .delete()
+        .uri("/grades/{grade_id}", grade.getId())
+        .header("Authorization", "Bearer " + token(student))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void teacherCanViewHistoryForCourseTheyTeach() {
+    var teacher = saveTeacher();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(teacher));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .get()
+        .uri("/grades/{grade_id}/history", grade.getId())
+        .header("Authorization", "Bearer " + token(teacher))
+        .exchange()
+        .expectStatus()
+        .isOk();
+  }
+
+  @Test
+  void teacherCannotViewHistoryForCourseTheyDoNotTeach() {
+    var teacher = saveTeacher();
+    var otherTeacher = saveTeacher();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(otherTeacher));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .get()
+        .uri("/grades/{grade_id}/history", grade.getId())
+        .header("Authorization", "Bearer " + token(teacher))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void studentCannotViewHistory() {
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .get()
+        .uri("/grades/{grade_id}/history", grade.getId())
+        .header("Authorization", "Bearer " + token(student))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
 }
