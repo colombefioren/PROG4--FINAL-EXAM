@@ -35,10 +35,10 @@ public class JGradeHistory {
   @JoinColumn(name = "\"grade_id\"", nullable = false)
   private JGrade grade;
 
-  @Column(name = "\"previous_value\"")
+  @Column(name = "\"previous_value\"", precision = 4, scale = 2)
   private BigDecimal previousValue;
 
-  @Column(name = "\"new_value\"", nullable = false)
+  @Column(name = "\"new_value\"", precision = 4, scale = 2, nullable = false)
   private BigDecimal newValue;
 
   @Column(name = "\"reason\"", nullable = false)
