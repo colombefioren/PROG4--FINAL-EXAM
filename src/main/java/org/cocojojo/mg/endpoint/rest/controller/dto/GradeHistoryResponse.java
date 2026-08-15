@@ -12,5 +12,6 @@ public record GradeHistoryResponse(
     BigDecimal previousValue,
     BigDecimal newValue,
     String reason,
-    String changedBy,
+    UUID changedById,
+    String changedByName,
     Instant changedAt) {}
