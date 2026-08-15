@@ -27,7 +27,7 @@ public class AuthService {
             .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
     if (user.isDeleted()) {
-      throw new IllegalArgumentException("Invalid credentials");
+      throw new IllegalStateException("This account has been disabled");
     }
 
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
