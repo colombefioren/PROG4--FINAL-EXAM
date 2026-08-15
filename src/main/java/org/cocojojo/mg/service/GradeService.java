@@ -179,13 +179,13 @@ public class GradeService {
 
   private JExam getExam(UUID id) {
     return examRepository
-        .findById(id)
+        .findWithDetailsById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Exam with id:" + id + " not found."));
   }
 
   private JGrade getGrade(UUID id) {
     return gradeRepository
-        .findById(id)
+        .findWithDetailsById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Grade with id:" + id + " not found."));
   }
 
