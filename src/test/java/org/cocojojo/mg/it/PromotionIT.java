@@ -5,18 +5,66 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.UUID;
 import org.cocojojo.mg.conf.FacadeIT;
+import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
+import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.PromotionRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.PromotionResponse;
+import org.cocojojo.mg.repository.AdminRepository;
+import org.cocojojo.mg.repository.model.JAdmin;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 class PromotionIT extends FacadeIT {
 
+  @Autowired private AdminRepository adminRepository;
+  @Autowired private PasswordEncoder passwordEncoder;
+
   @LocalServerPort int port;
+  private WebTestClient webTestClient;
+  private String adminToken;
+
+  @BeforeEach
+  void setUp() {
+    webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    adminRepository.deleteAll();
+    saveAdmin("admin@hei.school", "secret123", false);
+  }
+
+  private void saveAdmin(String email, String rawPassword, boolean isDeleted) {
+    adminRepository.save(
+        JAdmin.builder()
+            .firstname("Ada")
+            .lastname("Lovelace")
+            .email(email)
+            .password(passwordEncoder.encode(rawPassword))
+            .isDeleted(isDeleted)
+            .build());
+  }
+
+  private String adminToken() {
+    if (adminToken == null) {
+      adminToken =
+          webTestClient
+              .post()
+              .uri("/auth/login")
+              .bodyValue(new LoginRequest("admin@hei.school", "secret123"))
+              .exchange()
+              .expectStatus()
+              .isOk()
+              .expectBody(AuthResponse.class)
+              .returnResult()
+              .getResponseBody()
+              .token();
+    }
+    return adminToken;
+  }
 
   WebTestClient webTestClient() {
-    return WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    return webTestClient;
   }
 
   private static String uniqueRef() {
@@ -31,6 +79,7 @@ class PromotionIT extends FacadeIT {
         webTestClient()
             .put()
             .uri("/promotions")
+            .header("Authorization", "Bearer " + adminToken())
             .bodyValue(
                 PromotionRequest.builder()
                     .ref(ref)
@@ -51,6 +100,7 @@ class PromotionIT extends FacadeIT {
         webTestClient()
             .get()
             .uri("/promotions/{id}", created.id())
+            .header("Authorization", "Bearer " + adminToken())
             .exchange()
             .expectStatus()
             .isOk()
@@ -70,6 +120,7 @@ class PromotionIT extends FacadeIT {
         webTestClient()
             .put()
             .uri("/promotions")
+            .header("Authorization", "Bearer " + adminToken())
             .bodyValue(
                 PromotionRequest.builder().ref(ref).name("Original name").entryYear(2024).build())
             .exchange()
@@ -83,6 +134,7 @@ class PromotionIT extends FacadeIT {
         webTestClient()
             .put()
             .uri("/promotions")
+            .header("Authorization", "Bearer " + adminToken())
             .bodyValue(
                 PromotionRequest.builder()
                     .id(created.id())
@@ -105,6 +157,7 @@ class PromotionIT extends FacadeIT {
         webTestClient()
             .get()
             .uri("/promotions")
+            .header("Authorization", "Bearer " + adminToken())
             .exchange()
             .expectStatus()
             .isOk()
@@ -124,6 +177,7 @@ class PromotionIT extends FacadeIT {
     webTestClient()
         .put()
         .uri("/promotions")
+        .header("Authorization", "Bearer " + adminToken())
         .bodyValue(PromotionRequest.builder().build())
         .exchange()
         .expectStatus()
