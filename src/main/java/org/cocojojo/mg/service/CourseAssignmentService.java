@@ -37,52 +37,14 @@ public class CourseAssignmentService {
   public List<CourseAssignmentResponse> getByFilter(
       UUID groupId, UUID teacherId, UUID courseId, Integer academicYear) {
     if (securityUtil.isTeacher()) {
-      var currentTeacherId = securityUtil.getCurrentUserIdOrThrow();
-      if (groupId != null) {
-        return repository.findByGroupIdAndTeachers_Id(groupId, currentTeacherId).stream()
-            .map(mapper::toResponse)
-            .toList();
-      }
-      return getByTeacher(currentTeacherId);
+      teacherId = securityUtil.getCurrentUserIdOrThrow();
     }
     if (securityUtil.isStudent()) {
-      return getForCurrentStudent();
+      groupId = studentService.findCurrentGroup(securityUtil.getCurrentUserIdOrThrow()).getId();
     }
-    return getByFilterAsAdmin(groupId, teacherId, courseId, academicYear);
-  }
-
-  private List<CourseAssignmentResponse> getByFilterAsAdmin(
-      UUID groupId, UUID teacherId, UUID courseId, Integer academicYear) {
-    if (groupId != null) {
-      return getByGroup(groupId);
-    }
-    if (teacherId != null) {
-      return getByTeacher(teacherId);
-    }
-    if (courseId != null) {
-      return getByCourse(courseId);
-    }
-    if (academicYear != null) {
-      return repository.findByAcademicYear(academicYear).stream().map(mapper::toResponse).toList();
-    }
-    return repository.findAll().stream().map(mapper::toResponse).toList();
-  }
-
-  private List<CourseAssignmentResponse> getForCurrentStudent() {
-    var currentGroup = studentService.findCurrentGroup(securityUtil.getCurrentUserIdOrThrow());
-    return getByGroup(currentGroup.getId());
-  }
-
-  public List<CourseAssignmentResponse> getByGroup(UUID groupId) {
-    return repository.findByGroupId(groupId).stream().map(mapper::toResponse).toList();
-  }
-
-  public List<CourseAssignmentResponse> getByTeacher(UUID teacherId) {
-    return repository.findByTeachers_Id(teacherId).stream().map(mapper::toResponse).toList();
-  }
-
-  public List<CourseAssignmentResponse> getByCourse(UUID courseId) {
-    return repository.findByCourseId(courseId).stream().map(mapper::toResponse).toList();
+    return repository.search(groupId, teacherId, courseId, academicYear).stream()
+        .map(mapper::toResponse)
+        .toList();
   }
 
   public CourseAssignmentResponse getById(UUID id) {
