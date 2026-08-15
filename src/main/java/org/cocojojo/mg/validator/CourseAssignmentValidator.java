@@ -67,7 +67,10 @@ public class CourseAssignmentValidator {
   }
 
   public void validateCreditCeiling(List<JCourseAssignment> assignments) {
-    int totalCredits = assignments.stream().mapToInt(JCourseAssignment::getCredits).sum();
+    validateCreditCeiling(assignments.stream().mapToInt(JCourseAssignment::getCredits).sum());
+  }
+
+  public void validateCreditCeiling(int totalCredits) {
     if (totalCredits > MAX_CREDITS_PER_SEMESTER) {
       throw new IllegalArgumentException(
           "Total credits "

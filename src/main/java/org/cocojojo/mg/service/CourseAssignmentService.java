@@ -79,16 +79,41 @@ public class CourseAssignmentService {
 
   @Transactional
   public List<CourseAssignmentResponse> upsert(List<CourseAssignmentRequest> requests) {
-    var saved = requests.stream().map(this::upsertOne).toList();
-    requests.forEach(r -> validateCeiling(r.groupId(), r.academicYear(), r.semester()));
-    return saved;
+    validateCeilings(requests);
+    return requests.stream().map(this::upsertOne).toList();
   }
 
-  private void validateCeiling(UUID groupId, int academicYear, Semester semester) {
-    var assignments =
-        repository.findByGroupIdAndAcademicYearAndSemester(groupId, academicYear, semester);
-    validator.validateCreditCeiling(assignments);
+  private void validateCeilings(List<CourseAssignmentRequest> requests) {
+    requests.stream()
+        .map(r -> new GroupYearSemester(r.groupId(), r.academicYear(), r.semester()))
+        .distinct()
+        .forEach(triple -> validateCeiling(triple, requests));
   }
+
+  private void validateCeiling(GroupYearSemester triple, List<CourseAssignmentRequest> requests) {
+    var existing =
+        repository.findByGroupIdAndAcademicYearAndSemester(
+            triple.groupId(), triple.academicYear(), triple.semester());
+    var replacedIds =
+        requests.stream().filter(r -> r.id() != null).map(CourseAssignmentRequest::id).toList();
+    int existingCredits =
+        existing.stream()
+            .filter(a -> !replacedIds.contains(a.getId()))
+            .mapToInt(JCourseAssignment::getCredits)
+            .sum();
+    int incomingCredits =
+        requests.stream()
+            .filter(
+                r ->
+                    r.groupId().equals(triple.groupId())
+                        && r.academicYear() == triple.academicYear()
+                        && r.semester() == triple.semester())
+            .mapToInt(CourseAssignmentRequest::credits)
+            .sum();
+    validator.validateCreditCeiling(existingCredits + incomingCredits);
+  }
+
+  private record GroupYearSemester(UUID groupId, int academicYear, Semester semester) {}
 
   private CourseAssignmentResponse upsertOne(CourseAssignmentRequest request) {
     validator.validateAllAreTeachers(request.teacherIds());
