@@ -112,7 +112,7 @@ public class CourseAssignmentService {
       entity.setCredits(request.credits());
     } else {
       validator.validateNotDuplicate(
-          request.id(), course.getId(), group.getId(), request.academicYear(), request.semester());
+              null, course.getId(), group.getId(), request.academicYear(), request.semester());
       entity =
           mapper.toEntity(
               null,
