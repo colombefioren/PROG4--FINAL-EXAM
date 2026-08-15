@@ -637,4 +637,184 @@ class ExamIT extends FacadeIT {
         .expectStatus()
         .isForbidden();
   }
+
+  @Test
+  void studentCanViewExamsOfTheirCurriculum() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+    var student = createStudent(promotion, "student-" + UUID.randomUUID() + "@hei.school");
+    joinGroup(student, group);
+    var token = adminToken();
+    createExam(token, assignment.getId());
+    createExam(token, assignment.getId());
+
+    var exams =
+        webTestClient
+            .get()
+            .uri("/course-assignments/" + assignment.getId() + "/exams")
+            .header("Authorization", "Bearer " + loginToken(student.getEmail(), "secret123"))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(ExamResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(exams);
+    assertEquals(2, exams.size());
+  }
+
+  @Test
+  void studentCannotViewExamsOutsideCurriculum() {
+    var promotion = createPromotion();
+    var groupA = createGroup(promotion);
+    var groupB = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignmentB = createAssignment(course, groupB, teacher);
+    var student = createStudent(promotion, "student-" + UUID.randomUUID() + "@hei.school");
+    joinGroup(student, groupA);
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignmentB.getId() + "/exams")
+        .header("Authorization", "Bearer " + loginToken(student.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void studentCanGetExamByIdInCurriculum() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+    var student = createStudent(promotion, "student-" + UUID.randomUUID() + "@hei.school");
+    joinGroup(student, group);
+    var created = createExam(adminToken(), assignment.getId());
+
+    var fetched =
+        webTestClient
+            .get()
+            .uri("/course-assignments/" + assignment.getId() + "/exams/" + created.id())
+            .header("Authorization", "Bearer " + loginToken(student.getEmail(), "secret123"))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(ExamResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(fetched);
+    assertEquals(created.id(), fetched.id());
+  }
+
+  @Test
+  void studentCannotGetExamByIdOutsideCurriculum() {
+    var promotion = createPromotion();
+    var groupA = createGroup(promotion);
+    var groupB = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignmentB = createAssignment(course, groupB, teacher);
+    var student = createStudent(promotion, "student-" + UUID.randomUUID() + "@hei.school");
+    joinGroup(student, groupA);
+    var created = createExam(adminToken(), assignmentB.getId());
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignmentB.getId() + "/exams/" + created.id())
+        .header("Authorization", "Bearer " + loginToken(student.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void examCoefficientSumIsRejected() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+    var token = adminToken();
+    createExamWithCoefficient(token, assignment.getId(), new Fraction(3, 4));
+
+    webTestClient
+        .put()
+        .uri("/course-assignments/" + assignment.getId() + "/exams")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(examRequest(assignment.getId(), new Fraction(1, 2)))
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+  }
+
+  @Test
+  void unknownCourseAssignmentIsRejected() {
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + UUID.randomUUID() + "/exams")
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void unknownExamIdIsRejected() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignment.getId() + "/exams/" + UUID.randomUUID())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void courseAssignmentPathMismatchIsRejected() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var courseB = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+    var otherAssignment = createAssignment(courseB, group, teacher);
+
+    webTestClient
+        .put()
+        .uri("/course-assignments/" + assignment.getId() + "/exams")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(examRequest(otherAssignment.getId(), new Fraction(1, 2)))
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+  }
+
+  private ExamResponse createExamWithCoefficient(
+      String token, UUID courseAssignmentId, Fraction coefficient) {
+    return webTestClient
+        .put()
+        .uri("/course-assignments/" + courseAssignmentId + "/exams")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(examRequest(courseAssignmentId, coefficient))
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(ExamResponse.class)
+        .returnResult()
+        .getResponseBody();
+  }
 }
