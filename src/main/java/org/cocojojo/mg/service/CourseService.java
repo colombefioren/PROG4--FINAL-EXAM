@@ -49,7 +49,7 @@ public class CourseService {
     return courseMapper.toResponse(courseMapper.toModel(saved));
   }
 
-  public JCourse find(UUID id) {
+  public JCourse getById(UUID id) {
     return courseRepository
         .findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Course with id:" + id + " not found."));

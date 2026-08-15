@@ -40,7 +40,7 @@ public class CourseAssignmentService {
       teacherId = securityUtil.getCurrentUserIdOrThrow();
     }
     if (securityUtil.isStudent()) {
-      groupId = studentService.findCurrentGroup(securityUtil.getCurrentUserIdOrThrow()).getId();
+      groupId = studentService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow()).getId();
     }
     return repository.search(groupId, teacherId, courseId, academicYear).stream()
         .map(mapper::toResponse)
@@ -48,7 +48,7 @@ public class CourseAssignmentService {
   }
 
   public CourseAssignmentResponse getById(UUID id) {
-    var entity = find(id);
+    var entity = getEntity(id);
     if (securityUtil.isTeacher()) {
       var currentTeacherId = securityUtil.getCurrentUserIdOrThrow();
       if (entity.getTeachers().stream().noneMatch(t -> t.getId().equals(currentTeacherId))) {
@@ -56,7 +56,7 @@ public class CourseAssignmentService {
       }
     }
     if (securityUtil.isStudent()) {
-      var currentGroup = studentService.findCurrentGroup(securityUtil.getCurrentUserIdOrThrow());
+      var currentGroup = studentService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow());
       if (!entity.getGroup().getId().equals(currentGroup.getId())) {
         throw new ForbiddenAccessException("This course assignment is not part of your curriculum");
       }
@@ -64,7 +64,7 @@ public class CourseAssignmentService {
     return mapper.toResponse(entity);
   }
 
-  public JCourseAssignment find(UUID id) {
+  private JCourseAssignment getEntity(UUID id) {
     return repository
         .findById(id)
         .orElseThrow(
@@ -85,8 +85,8 @@ public class CourseAssignmentService {
   }
 
   private CourseAssignmentResponse crupdateOne(CourseAssignmentRequest request) {
-    var course = courseService.find(request.courseId());
-    var group = groupService.find(request.groupId());
+    var course = courseService.getById(request.courseId());
+    var group = groupService.getById(request.groupId());
     validator.validateTrackCompatibility(course, group);
 
     if (course.getStudentLevel() != StudentLevel.of(request.semester())) {
@@ -99,11 +99,11 @@ public class CourseAssignmentService {
               + request.semester());
     }
 
-    var teachers = request.teacherIds().stream().map(teacherService::find).toList();
+    var teachers = request.teacherIds().stream().map(teacherService::getById).toList();
 
     JCourseAssignment entity;
     if (request.id() != null) {
-      entity = find(request.id());
+      entity = getEntity(request.id());
       entity.setCourse(course);
       entity.setGroup(group);
       entity.setTeachers(teachers);
@@ -112,7 +112,7 @@ public class CourseAssignmentService {
       entity.setCredits(request.credits());
     } else {
       validator.validateNotDuplicate(
-              null, course.getId(), group.getId(), request.academicYear(), request.semester());
+          null, course.getId(), group.getId(), request.academicYear(), request.semester());
       entity =
           mapper.toEntity(
               null,
@@ -128,7 +128,7 @@ public class CourseAssignmentService {
 
   @Transactional
   public void delete(UUID id) {
-    var entity = find(id);
+    var entity = getEntity(id);
     if (!securityUtil.isAdmin()) {
       throw new ForbiddenAccessException("Only an admin can remove a course assignment");
     }
@@ -141,7 +141,7 @@ public class CourseAssignmentService {
    */
   public CurriculumStatusResponse curriculumStatus(
       UUID groupId, int academicYear, Semester semester) {
-    var group = groupService.find(groupId);
+    var group = groupService.getById(groupId);
     var assignments =
         repository.findByGroupIdAndAcademicYearAndSemester(groupId, academicYear, semester);
     int assignedCredits = assignments.stream().mapToInt(JCourseAssignment::getCredits).sum();

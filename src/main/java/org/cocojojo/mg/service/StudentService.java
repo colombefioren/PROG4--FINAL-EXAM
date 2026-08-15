@@ -17,13 +17,13 @@ public class StudentService {
   private final StudentRepository studentRepository;
   private final GroupFlowRepository groupFlowRepository;
 
-  public JStudent find(UUID id) {
+  public JStudent getById(UUID id) {
     return studentRepository
         .findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Student with id:" + id + " not found."));
   }
 
-  public JGroup findCurrentGroup(UUID studentId) {
+  public JGroup getCurrentGroup(UUID studentId) {
     return groupFlowRepository
         .findFirstByStudentIdOrderByCreatedAtDesc(studentId)
         .filter(flow -> flow.getGroupFlowType() == GroupFlowType.JOIN)
