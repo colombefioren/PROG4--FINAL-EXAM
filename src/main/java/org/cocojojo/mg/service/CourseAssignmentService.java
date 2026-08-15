@@ -74,19 +74,13 @@ public class CourseAssignmentService {
   @Transactional
   public List<CourseAssignmentResponse> crupdate(List<CourseAssignmentRequest> requests) {
     var saved = requests.stream().map(this::crupdateOne).toList();
-    requests.stream()
-        .map(r -> new GroupSemesterKey(r.groupId(), r.academicYear(), r.semester()))
-        .distinct()
-        .forEach(this::validateCeiling);
+    requests.forEach(r -> validateCeiling(r.groupId(), r.academicYear(), r.semester()));
     return saved;
   }
 
-  private record GroupSemesterKey(UUID groupId, int academicYear, Semester semester) {}
-
-  private void validateCeiling(GroupSemesterKey key) {
+  private void validateCeiling(UUID groupId, int academicYear, Semester semester) {
     var assignments =
-        repository.findByGroupIdAndAcademicYearAndSemester(
-            key.groupId(), key.academicYear(), key.semester());
+        repository.findByGroupIdAndAcademicYearAndSemester(groupId, academicYear, semester);
     validator.validateCreditCeiling(assignments);
   }
 
