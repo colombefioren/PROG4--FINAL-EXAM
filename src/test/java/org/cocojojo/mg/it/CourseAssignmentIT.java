@@ -11,6 +11,7 @@ import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
+import org.cocojojo.mg.endpoint.rest.controller.dto.CurriculumStatusResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
 import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.model.enums.Semester;
@@ -490,5 +491,65 @@ class CourseAssignmentIT extends FacadeIT {
     assertNotNull(results);
     assertEquals(1, results.size());
     assertEquals(course.getId(), results.get(0).courseId());
+  }
+
+  @Test
+  void curriculumStatusIsAdminOnly() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var student = createStudent(promotion);
+    var token = adminToken();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            List.of(
+                assignmentRequest(
+                    course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits())))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    var uri =
+        "/course-assignments/curriculum-status?group_id="
+            + group.getId()
+            + "&academic_year=2024&semester=S1";
+
+    var status =
+        webTestClient
+            .get()
+            .uri(uri)
+            .header("Authorization", "Bearer " + token)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(CurriculumStatusResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(status);
+    assertEquals(Semester.S1, status.semester());
+    assertEquals(course.getCredits(), status.assignedCredits());
+    assertEquals(30, status.targetCredits());
+
+    webTestClient
+        .get()
+        .uri(uri)
+        .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+
+    webTestClient
+        .get()
+        .uri(uri)
+        .header("Authorization", "Bearer " + loginToken(student.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
   }
 }
