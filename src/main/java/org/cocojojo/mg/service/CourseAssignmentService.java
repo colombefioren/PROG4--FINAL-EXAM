@@ -143,10 +143,6 @@ public class CourseAssignmentService {
     repository.delete(entity);
   }
 
-  /**
-   * Non-destructive report: current credit total vs. the 30-credit target, and which catalog UEs
-   * are missing.
-   */
   public CurriculumStatusResponse curriculumStatus(
       UUID groupId, int academicYear, Semester semester) {
     var group = groupService.getById(groupId);

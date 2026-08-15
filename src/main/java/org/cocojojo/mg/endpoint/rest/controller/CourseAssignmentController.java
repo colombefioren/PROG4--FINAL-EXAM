@@ -49,7 +49,6 @@ public class CourseAssignmentController {
     return service.curriculumStatus(groupId, academicYear, semester);
   }
 
-  /** Upsert only: existing assignments not present in the payload are left untouched. */
   @PutMapping
   public List<CourseAssignmentResponse> upsert(
       @Valid @RequestBody List<CourseAssignmentRequest> requests) {
