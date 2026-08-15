@@ -3,6 +3,7 @@ package org.cocojojo.mg.endpoint.rest.controller.dto;
 import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.Builder;
+import org.cocojojo.mg.model.enums.ResultOutcome;
 import org.cocojojo.mg.model.enums.ResultStatus;
 import org.cocojojo.mg.model.enums.Track;
 
@@ -18,4 +19,4 @@ public record CourseResultResponse(
     Track track,
     BigDecimal average,
     ResultStatus resultStatus,
-    boolean passed) {}
+    ResultOutcome outcome) {}
