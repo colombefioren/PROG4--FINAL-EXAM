@@ -1,5 +1,9 @@
 package org.cocojojo.mg.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.cocojojo.mg.endpoint.rest.controller.dto.json.FractionDeserializer;
+
+@JsonDeserialize(using = FractionDeserializer.class)
 public record Fraction(int numerator, int denominator) {
 
   public Fraction {
