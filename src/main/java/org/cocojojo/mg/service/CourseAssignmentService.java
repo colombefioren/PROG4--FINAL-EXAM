@@ -50,7 +50,7 @@ public class CourseAssignmentService {
     if (securityUtil.isStudent()) {
       groupId = studentService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow()).id();
     }
-    return repository.search(groupId, teacherId, courseId, academicYear).stream()
+    return repository.findFilter(groupId, teacherId, courseId, academicYear).stream()
         .map(mapper::toResponse)
         .toList();
   }

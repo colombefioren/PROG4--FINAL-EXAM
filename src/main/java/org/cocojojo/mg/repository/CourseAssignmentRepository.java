@@ -21,7 +21,7 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
         and (cast(:courseId as uuid) is null or ca.course.id = :courseId)
         and (cast(:academicYear as integer) is null or ca.academicYear = :academicYear)
       """)
-  List<JCourseAssignment> search(
+  List<JCourseAssignment> findFilter(
       @Param("groupId") UUID groupId,
       @Param("teacherId") UUID teacherId,
       @Param("courseId") UUID courseId,
