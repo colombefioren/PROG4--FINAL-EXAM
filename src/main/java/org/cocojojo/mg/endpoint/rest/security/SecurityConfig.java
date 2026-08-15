@@ -47,7 +47,8 @@ public class SecurityConfig {
                         "/teachers/**",
                         "/admins/**",
                         "/promotions/**",
-                        "/groups/**")
+                        "/groups/**",
+                        "/courses/**")
                     .hasRole("ADMIN")
                     .requestMatchers(GET, "/admins/**")
                     .hasRole("ADMIN")
