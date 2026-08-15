@@ -748,4 +748,138 @@ class GradeIT extends FacadeIT {
         .expectStatus()
         .isForbidden();
   }
+
+  @Test
+  void upsertUpdateRecordsHistoryWithPreviousValue() {
+    var admin = saveAdmin();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var student = saveStudent();
+
+    upsertGrades(
+        token(admin),
+        exam.getId(),
+        List.of(
+            GradeRequest.builder()
+                .studentId(student.getId())
+                .examId(exam.getId())
+                .value(new BigDecimal("14.0"))
+                .build()));
+    upsertGrades(
+        token(admin),
+        exam.getId(),
+        List.of(
+            GradeRequest.builder()
+                .studentId(student.getId())
+                .examId(exam.getId())
+                .value(new BigDecimal("17.0"))
+                .build()));
+
+    var grade = gradeRepository.findAll().get(0);
+    assertEquals(0, new BigDecimal("17.0").compareTo(grade.getValue()));
+    var history =
+        webTestClient
+            .get()
+            .uri("/grades/{grade_id}/history", grade.getId())
+            .header("Authorization", "Bearer " + token(admin))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(GradeHistoryResponse.class)
+            .returnResult()
+            .getResponseBody();
+    assertNotNull(history);
+    assertEquals(2, history.size());
+    assertEquals(0, new BigDecimal("14.0").compareTo(history.get(0).previousValue()));
+    assertEquals(0, new BigDecimal("17.0").compareTo(history.get(0).newValue()));
+  }
+
+  @Test
+  void teacherCanCorrectGradeForCourseTheyTeach() {
+    var teacher = saveTeacher();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(teacher));
+    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    var corrected =
+        webTestClient
+            .put()
+            .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+            .header("Authorization", "Bearer " + token(teacher))
+            .bodyValue(
+                GradeCorrectionRequest.builder()
+                    .value(new BigDecimal("18.0"))
+                    .reason("Late submission")
+                    .build())
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(GradeResponse.class)
+            .returnResult()
+            .getResponseBody();
+    assertNotNull(corrected);
+    assertEquals(0, new BigDecimal("18.0").compareTo(corrected.value()));
+    assertEquals(grade.getId(), corrected.id());
+  }
+
+  @Test
+  void teacherCannotCorrectGradeForCourseTheyDoNotTeach() {
+    var teacher = saveTeacher();
+    var otherTeacher = saveTeacher();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(otherTeacher));
+    saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .put()
+        .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+        .header("Authorization", "Bearer " + token(teacher))
+        .bodyValue(
+            GradeCorrectionRequest.builder()
+                .value(new BigDecimal("18.0"))
+                .reason("Recheck")
+                .build())
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void studentCannotCorrectGrade() {
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .put()
+        .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+        .header("Authorization", "Bearer " + token(student))
+        .bodyValue(
+            GradeCorrectionRequest.builder()
+                .value(new BigDecimal("18.0"))
+                .reason("Recheck")
+                .build())
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void cannotCorrectGradeThatDoesNotExist() {
+    var admin = saveAdmin();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+
+    webTestClient
+        .put()
+        .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+        .header("Authorization", "Bearer " + token(admin))
+        .bodyValue(
+            GradeCorrectionRequest.builder()
+                .value(new BigDecimal("18.0"))
+                .reason("Recheck")
+                .build())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
 }
