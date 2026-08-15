@@ -11,4 +11,6 @@ public record StudentResponse(
     String lastname,
     String email,
     UUID promotionId,
-    String promotionName) {}
+    String promotionName,
+    UUID currentGroupId,
+    String currentGroupRef) {}
