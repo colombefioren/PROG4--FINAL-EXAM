@@ -16,6 +16,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
 import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
+import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.AdminRepository;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.CourseRepository;
@@ -820,5 +821,167 @@ class CourseAssignmentIT extends FacadeIT {
         .exchange()
         .expectStatus()
         .isForbidden();
+  }
+
+  @Test
+  void adminCanUpdateExistingAssignment() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var token = adminToken();
+
+    var created =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        group.getId(),
+                        List.of(teacher.getId()),
+                        course.getCredits())))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    var updated =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(
+                List.of(
+                    CourseAssignmentRequest.builder()
+                        .id(created.id())
+                        .courseId(course.getId())
+                        .groupId(group.getId())
+                        .teacherIds(List.of(teacher.getId()))
+                        .academicYear(2024)
+                        .semester(Semester.S1)
+                        .credits(8)
+                        .build()))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    assertEquals(created.id(), updated.id());
+    assertEquals(8, updated.credits());
+  }
+
+  @Test
+  void courseLevelMustMatchSemester() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var teacher = createTeacher();
+    var l2Course =
+        courseRepository.save(
+            JCourse.builder()
+                .code("UE-" + UUID.randomUUID())
+                .name("Course " + UUID.randomUUID())
+                .credits(5)
+                .totalHours(20)
+                .studentLevel(StudentLevel.L2)
+                .build());
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(
+            List.of(
+                assignmentRequest(
+                    l2Course.getId(),
+                    group.getId(),
+                    List.of(teacher.getId()),
+                    l2Course.getCredits())))
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+  }
+
+  @Test
+  void trackIncompatibleAssignmentIsRejected() {
+    var promotion = createPromotion();
+    var teacher = createTeacher();
+    var group =
+        groupRepository.save(
+            JGroup.builder()
+                .ref("GRP-" + UUID.randomUUID())
+                .promotion(promotion)
+                .track(Track.TN)
+                .build());
+    var course =
+        courseRepository.save(
+            JCourse.builder()
+                .code("UE-" + UUID.randomUUID())
+                .name("Course " + UUID.randomUUID())
+                .credits(5)
+                .totalHours(20)
+                .studentLevel(StudentLevel.L1)
+                .track(Track.EL)
+                .build());
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(
+            List.of(
+                assignmentRequest(
+                    course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits())))
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+  }
+
+  @Test
+  void unknownTeacherIdIsRejected() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(
+            List.of(
+                assignmentRequest(
+                    course.getId(),
+                    group.getId(),
+                    List.of(UUID.randomUUID()),
+                    course.getCredits())))
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void unknownCourseIdIsRejected() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var teacher = createTeacher();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(
+            List.of(
+                assignmentRequest(UUID.randomUUID(), group.getId(), List.of(teacher.getId()), 5)))
+        .exchange()
+        .expectStatus()
+        .isNotFound();
   }
 }
