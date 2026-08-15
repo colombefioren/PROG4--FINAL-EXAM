@@ -16,7 +16,7 @@ public class GroupFlowMapper {
   public GroupFlow toModel(JGroupFlow entity) {
     return GroupFlow.builder()
         .id(entity.getId())
-        .student(studentMapper.toModel(entity.getStudent(), null))
+        .student(studentMapper.toSummary(entity.getStudent()))
         .group(groupMapper.toModel(entity.getGroup()))
         .groupFlowType(entity.getGroupFlowType())
         .createdAt(entity.getCreatedAt())

@@ -16,7 +16,7 @@ public class GradeMapper {
   public Grade toModel(JGrade entity) {
     return Grade.builder()
         .id(entity.getId())
-        .student(studentMapper.toModel(entity.getStudent(), null))
+        .student(studentMapper.toSummary(entity.getStudent()))
         .exam(examMapper.toModel(entity.getExam()))
         .value(entity.getValue())
         .comment(entity.getComment())

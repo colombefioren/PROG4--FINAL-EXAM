@@ -7,4 +7,4 @@ import org.cocojojo.mg.model.enums.GroupFlowType;
 
 @Builder
 public record GroupFlow(
-    UUID id, Student student, Group group, GroupFlowType groupFlowType, Instant createdAt) {}
+    UUID id, StudentSummary student, Group group, GroupFlowType groupFlowType, Instant createdAt) {}
