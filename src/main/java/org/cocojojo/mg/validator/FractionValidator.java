@@ -9,7 +9,7 @@ public class FractionValidator implements Consumer<Fraction> {
   @Override
   public void accept(Fraction fraction) {
     if (fraction.numerator() <= 0 || fraction.numerator() > fraction.denominator()) {
-      throw new IllegalArgumentException("coefficient must be in (0, 1]");
+      throw new IllegalArgumentException("Coefficient must be in (0, 1]");
     }
   }
 }
