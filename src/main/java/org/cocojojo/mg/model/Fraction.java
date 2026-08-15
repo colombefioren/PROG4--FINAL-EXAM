@@ -1,8 +1,6 @@
 package org.cocojojo.mg.model;
 
-import jakarta.validation.constraints.Positive;
-
-public record Fraction(int numerator, @Positive int denominator) {
+public record Fraction(int numerator, int denominator) {
 
   public Fraction {
     if (denominator == 0) {
