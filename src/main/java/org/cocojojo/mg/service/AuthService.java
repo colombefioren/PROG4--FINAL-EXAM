@@ -6,11 +6,11 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.UserResponse;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
+import org.cocojojo.mg.mapper.UserMapper;
 import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.repository.AdminRepository;
 import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.TeacherRepository;
-import org.cocojojo.mg.repository.model.JUser;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,21 +21,22 @@ public class AuthService {
   private final TeacherRepository teacherRepository;
   private final StudentRepository studentRepository;
   private final JwtService jwtService;
+  private final UserMapper userMapper;
 
   public UserResponse findByEmail(String email) {
     return adminRepository
         .findByEmailIgnoreCase(email)
-        .map(a -> userResponse(a, Role.ADMIN))
+        .map(a -> userMapper.toResponse(userMapper.toModel(a), Role.ADMIN))
         .or(
             () ->
                 teacherRepository
                     .findByEmailIgnoreCase(email)
-                    .map(t -> userResponse(t, Role.TEACHER)))
+                    .map(t -> userMapper.toResponse(userMapper.toModel(t), Role.TEACHER)))
         .or(
             () ->
                 studentRepository
                     .findByEmailIgnoreCase(email)
-                    .map(s -> userResponse(s, Role.STUDENT)))
+                    .map(s -> userMapper.toResponse(userMapper.toModel(s), Role.STUDENT)))
         .orElseThrow(() -> new NoSuchElementException("No account found for email " + email));
   }
 
@@ -43,15 +44,5 @@ public class AuthService {
     var user = findByEmail(request.email());
     var token = jwtService.generateToken(user.id(), user.email(), user.role());
     return AuthResponse.builder().token(token).user(user).build();
-  }
-
-  private UserResponse userResponse(JUser user, Role role) {
-    return UserResponse.builder()
-        .id(user.getId())
-        .firstname(user.getFirstname())
-        .lastname(user.getLastname())
-        .email(user.getEmail())
-        .role(role)
-        .build();
   }
 }
