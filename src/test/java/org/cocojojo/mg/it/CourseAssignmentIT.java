@@ -593,4 +593,97 @@ class CourseAssignmentIT extends FacadeIT {
 
     assertEquals(0, courseAssignmentRepository.count());
   }
+
+  @Test
+  void onlyAdminCanUpsertAssignments() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var student = createStudent(promotion);
+    var payload =
+        List.of(
+            assignmentRequest(
+                course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits()));
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+        .bodyValue(payload)
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + loginToken(student.getEmail(), "secret123"))
+        .bodyValue(payload)
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void onlyAdminCanDeleteAssignments() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var student = createStudent(promotion);
+    var token = adminToken();
+
+    var assignment =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        group.getId(),
+                        List.of(teacher.getId()),
+                        course.getCredits())))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    webTestClient
+        .delete()
+        .uri("/course-assignments/" + assignment.id())
+        .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+
+    webTestClient
+        .delete()
+        .uri("/course-assignments/" + assignment.id())
+        .header("Authorization", "Bearer " + loginToken(student.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+
+    webTestClient
+        .delete()
+        .uri("/course-assignments/" + assignment.id())
+        .header("Authorization", "Bearer " + token)
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignment.id())
+        .header("Authorization", "Bearer " + token)
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
 }
