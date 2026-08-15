@@ -2,7 +2,7 @@ package org.cocojojo.mg.service;
 
 import java.util.List;
 import java.util.UUID;
-
+import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.PromotionRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.PromotionResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
@@ -11,8 +11,6 @@ import org.cocojojo.mg.repository.PromotionRepository;
 import org.cocojojo.mg.repository.model.JPromotion;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -25,8 +23,10 @@ public class PromotionService {
   }
 
   public JPromotion getEntityOrThrow(UUID id) {
-    return repository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Promotion with id: " + id + " not found."));
+    return repository
+        .findById(id)
+        .orElseThrow(
+            () -> new ResourceNotFoundException("Promotion with id: " + id + " not found."));
   }
 
   public PromotionResponse getById(UUID id) {
@@ -35,8 +35,8 @@ public class PromotionService {
 
   @Transactional
   public PromotionResponse upsert(PromotionRequest request) {
-    var promotion = request.id() == null ? JPromotion.builder().build()
-        : getEntityOrThrow(request.id());
+    var promotion =
+        request.id() == null ? JPromotion.builder().build() : getEntityOrThrow(request.id());
     promotion.setRef(request.ref().toUpperCase());
     promotion.setName(request.name());
     promotion.setEntryYear(request.entryYear());
@@ -44,5 +44,4 @@ public class PromotionService {
     var saved = repository.save(promotion);
     return mapper.toResponse(mapper.toModel(saved));
   }
-
 }

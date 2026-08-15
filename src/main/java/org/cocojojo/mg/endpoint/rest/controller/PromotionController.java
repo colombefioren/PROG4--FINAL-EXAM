@@ -1,8 +1,9 @@
 package org.cocojojo.mg.endpoint.rest.controller;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
-
+import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.PromotionRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.PromotionResponse;
 import org.cocojojo.mg.service.PromotionService;
@@ -12,9 +13,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/promotions")
@@ -27,7 +25,7 @@ public class PromotionController {
     return service.getAll();
   }
 
-  @GetMapping("/:id")
+  @GetMapping("/{id}")
   public PromotionResponse getById(@PathVariable UUID id) {
     return service.getById(id);
   }
