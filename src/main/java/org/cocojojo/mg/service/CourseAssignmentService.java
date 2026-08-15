@@ -11,15 +11,12 @@ import org.cocojojo.mg.endpoint.rest.controller.exception.InvalidCurriculumExcep
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.CourseAssignmentMapper;
 import org.cocojojo.mg.mapper.CourseMapper;
-import org.cocojojo.mg.model.Teacher;
+import org.cocojojo.mg.mapper.GroupMapper;
+import org.cocojojo.mg.mapper.TeacherMapper;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
-import org.cocojojo.mg.repository.CourseRepository;
-import org.cocojojo.mg.repository.GroupRepository;
-import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
-import org.cocojojo.mg.repository.model.JTeacher;
 import org.cocojojo.mg.util.SecurityUtil;
 import org.cocojojo.mg.validator.CourseAssignmentValidator;
 import org.springframework.stereotype.Service;
@@ -30,15 +27,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class CourseAssignmentService {
 
   private final CourseAssignmentRepository repository;
-  private final CourseRepository courseRepository;
-  private final GroupRepository groupRepository;
-  private final TeacherRepository teacherRepository;
   private final CourseService courseService;
   private final TeacherService teacherService;
   private final StudentService studentService;
   private final GroupService groupService;
   private final CourseAssignmentMapper mapper;
   private final CourseMapper courseMapper;
+  private final GroupMapper groupMapper;
+  private final TeacherMapper teacherMapper;
   private final CourseAssignmentValidator validator;
   private final SecurityUtil securityUtil;
 
@@ -56,7 +52,13 @@ public class CourseAssignmentService {
   }
 
   public CourseAssignmentResponse getById(UUID id) {
-    var entity = getEntity(id);
+    var entity =
+        repository
+            .findById(id)
+            .orElseThrow(
+                () ->
+                    new ResourceNotFoundException(
+                        "CourseAssignment with id:" + id + " not found."));
     if (securityUtil.isTeacher()) {
       var currentTeacherId = securityUtil.getCurrentUserIdOrThrow();
       if (entity.getTeachers().stream().noneMatch(t -> t.getId().equals(currentTeacherId))) {
@@ -72,13 +74,6 @@ public class CourseAssignmentService {
     return mapper.toResponse(entity);
   }
 
-  private JCourseAssignment getEntity(UUID id) {
-    return repository
-        .findById(id)
-        .orElseThrow(
-            () -> new ResourceNotFoundException("CourseAssignment with id:" + id + " not found."));
-  }
-
   @Transactional
   public List<CourseAssignmentResponse> upsert(List<CourseAssignmentRequest> requests) {
     var saved = requests.stream().map(this::upsertOne).toList();
@@ -90,10 +85,6 @@ public class CourseAssignmentService {
     var assignments =
         repository.findByGroupIdAndAcademicYearAndSemester(groupId, academicYear, semester);
     validator.validateCreditCeiling(assignments);
-  }
-
-  private List<JTeacher> teacherEntities(List<Teacher> teachers) {
-    return teachers.stream().map(t -> teacherRepository.getReferenceById(t.id())).toList();
   }
 
   private CourseAssignmentResponse upsertOne(CourseAssignmentRequest request) {
@@ -115,10 +106,16 @@ public class CourseAssignmentService {
 
     JCourseAssignment entity;
     if (request.id() != null) {
-      entity = getEntity(request.id());
-      entity.setCourse(courseRepository.getReferenceById(course.id()));
-      entity.setGroup(groupRepository.getReferenceById(group.id()));
-      entity.setTeachers(teacherEntities(teachers));
+      entity =
+          repository
+              .findById(request.id())
+              .orElseThrow(
+                  () ->
+                      new ResourceNotFoundException(
+                          "CourseAssignment with id:" + request.id() + " not found."));
+      entity.setCourse(courseMapper.toEntity(course));
+      entity.setGroup(groupMapper.toEntity(group));
+      entity.setTeachers(teachers.stream().map(teacherMapper::toEntity).toList());
       entity.setAcademicYear(request.academicYear());
       entity.setSemester(request.semester());
       entity.setCredits(request.credits());
@@ -128,9 +125,9 @@ public class CourseAssignmentService {
       entity =
           mapper.toEntity(
               null,
-              courseRepository.getReferenceById(course.id()),
-              groupRepository.getReferenceById(group.id()),
-              teacherEntities(teachers),
+              courseMapper.toEntity(course),
+              groupMapper.toEntity(group),
+              teachers.stream().map(teacherMapper::toEntity).toList(),
               request.academicYear(),
               request.semester(),
               request.credits());
@@ -140,7 +137,13 @@ public class CourseAssignmentService {
 
   @Transactional
   public void delete(UUID id) {
-    var entity = getEntity(id);
+    var entity =
+        repository
+            .findById(id)
+            .orElseThrow(
+                () ->
+                    new ResourceNotFoundException(
+                        "CourseAssignment with id:" + id + " not found."));
     if (!securityUtil.isAdmin()) {
       throw new ForbiddenAccessException("Only an admin can remove a course assignment");
     }
