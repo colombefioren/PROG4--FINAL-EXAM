@@ -52,4 +52,8 @@ public class ExamMapper {
         .coefficient(model.coefficient())
         .build();
   }
+
+  public ExamResponse toResponse(JExam entity) {
+    return toResponse(toModel(entity));
+  }
 }
