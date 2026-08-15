@@ -36,6 +36,9 @@ public class AuthService {
 
   public AuthResponse login(LoginRequest request) {
     var user = findByEmail(request.email());
+    if (!user.isEnabled()) {
+      throw new IllegalStateException("This account has been disabled");
+    }
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
       throw new IllegalArgumentException("Invalid credentials");
     }
