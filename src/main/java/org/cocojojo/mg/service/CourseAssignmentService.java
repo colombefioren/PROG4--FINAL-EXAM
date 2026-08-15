@@ -15,6 +15,7 @@ import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.CourseRepository;
+import org.cocojojo.mg.repository.GroupRepository;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
 import org.cocojojo.mg.util.SecurityUtil;
 import org.cocojojo.mg.validator.CourseAssignmentValidator;
@@ -27,6 +28,7 @@ public class CourseAssignmentService {
 
   private final CourseAssignmentRepository repository;
   private final CourseRepository courseRepository;
+  private final GroupRepository groupRepository;
   private final CourseService courseService;
   private final TeacherService teacherService;
   private final StudentService studentService;
@@ -107,19 +109,19 @@ public class CourseAssignmentService {
     if (request.id() != null) {
       entity = getEntity(request.id());
       entity.setCourse(courseRepository.getReferenceById(course.id()));
-      entity.setGroup(group);
+      entity.setGroup(groupRepository.getReferenceById(group.id()));
       entity.setTeachers(teachers);
       entity.setAcademicYear(request.academicYear());
       entity.setSemester(request.semester());
       entity.setCredits(request.credits());
     } else {
       validator.validateNotDuplicate(
-          null, course.id(), group.getId(), request.academicYear(), request.semester());
+          null, course.id(), group.id(), request.academicYear(), request.semester());
       entity =
           mapper.toEntity(
               null,
               courseRepository.getReferenceById(course.id()),
-              group,
+              groupRepository.getReferenceById(group.id()),
               teachers,
               request.academicYear(),
               request.semester(),
@@ -152,7 +154,7 @@ public class CourseAssignmentService {
     var assignedCourseIds = assignments.stream().map(a -> a.getCourse().getId()).toList();
     var missing =
         courseService.getByStudentLevelOrderByCodeAsc(StudentLevel.of(semester)).stream()
-            .filter(c -> c.track() == null || c.track() == group.getTrack())
+            .filter(c -> c.track() == null || c.track() == group.track())
             .filter(c -> !assignedCourseIds.contains(c.id()))
             .map(courseMapper::toResponse)
             .toList();

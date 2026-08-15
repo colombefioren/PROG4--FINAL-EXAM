@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.model.Course;
+import org.cocojojo.mg.model.Group;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
-import org.cocojojo.mg.repository.model.JGroup;
 import org.cocojojo.mg.repository.model.JTeacher;
 import org.cocojojo.mg.repository.model.JUser;
 import org.springframework.stereotype.Component;
@@ -37,17 +37,17 @@ public class CourseAssignmentValidator {
     }
   }
 
-  public void validateTrackCompatibility(Course course, JGroup group) {
-    if (course.track() != null && group.getTrack() != null && course.track() != group.getTrack()) {
+  public void validateTrackCompatibility(Course course, Group group) {
+    if (course.track() != null && group.track() != null && course.track() != group.track()) {
       throw new IllegalArgumentException(
           "Course "
               + course.code()
               + " belongs to track "
               + course.track()
               + " but the group "
-              + group.getRef()
+              + group.ref()
               + " is on track "
-              + group.getTrack());
+              + group.track());
     }
   }
 
