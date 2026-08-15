@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
@@ -53,6 +54,21 @@ class CourseAssignmentIT extends FacadeIT {
     courseAssignmentRepository.deleteAll();
   }
 
+  private String loginToken(String email, String rawPassword) {
+    return Objects.requireNonNull(
+            webTestClient
+                .post()
+                .uri("/auth/login")
+                .bodyValue(new LoginRequest(email, rawPassword))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody(AuthResponse.class)
+                .returnResult()
+                .getResponseBody())
+        .token();
+  }
+
   private String adminToken() {
     var email = "admin-" + UUID.randomUUID() + "@hei.school";
     adminRepository.save(
@@ -62,25 +78,15 @@ class CourseAssignmentIT extends FacadeIT {
             .email(email)
             .password(passwordEncoder.encode("secret123"))
             .build());
-    return webTestClient
-        .post()
-        .uri("/auth/login")
-        .bodyValue(new LoginRequest(email, "secret123"))
-        .exchange()
-        .expectStatus()
-        .isOk()
-        .expectBody(AuthResponse.class)
-        .returnResult()
-        .getResponseBody()
-        .token();
+    return loginToken(email, "secret123");
   }
 
-  private JPromotion createPromotion(int entryYear) {
+  private JPromotion createPromotion() {
     return promotionRepository.save(
         JPromotion.builder()
             .ref("PROMO-" + UUID.randomUUID())
             .name("PROMO-" + UUID.randomUUID())
-            .entryYear(entryYear)
+            .entryYear(2024)
             .build());
   }
 
@@ -89,23 +95,27 @@ class CourseAssignmentIT extends FacadeIT {
         JGroup.builder().ref("GRP-" + UUID.randomUUID()).promotion(promotion).build());
   }
 
-  private JCourse createCourse(StudentLevel level, int credits) {
+  private JCourse createCourse() {
     return courseRepository.save(
         JCourse.builder()
             .code("UE-" + UUID.randomUUID())
             .name("Course " + UUID.randomUUID())
-            .credits(credits)
+            .credits(5)
             .totalHours(20)
-            .studentLevel(level)
+            .studentLevel(StudentLevel.L1)
             .build());
   }
 
   private JTeacher createTeacher() {
+    return createTeacher("teacher-" + UUID.randomUUID() + "@hei.school");
+  }
+
+  private JTeacher createTeacher(String email) {
     return teacherRepository.save(
         JTeacher.builder()
             .firstname("Alan")
             .lastname("Turing")
-            .email("teacher-" + UUID.randomUUID() + "@hei.school")
+            .email(email)
             .password(passwordEncoder.encode("secret123"))
             .build());
   }
@@ -136,9 +146,9 @@ class CourseAssignmentIT extends FacadeIT {
 
   @Test
   void adminCanCreateACourseAssignment() {
-    var promotion = createPromotion(2024);
+    var promotion = createPromotion();
     var group = createGroup(promotion);
-    var course = createCourse(StudentLevel.L1, 5);
+    var course = createCourse();
     var teacher = createTeacher();
 
     var assignment =
@@ -166,9 +176,9 @@ class CourseAssignmentIT extends FacadeIT {
 
   @Test
   void cannotAssignAStudentAsTeacher() {
-    var promotion = createPromotion(2024);
+    var promotion = createPromotion();
     var group = createGroup(promotion);
-    var course = createCourse(StudentLevel.L1, 5);
+    var course = createCourse();
     var student = createStudent(promotion);
 
     webTestClient
@@ -185,9 +195,9 @@ class CourseAssignmentIT extends FacadeIT {
 
   @Test
   void duplicateAssignmentIsRejected() {
-    var promotion = createPromotion(2024);
+    var promotion = createPromotion();
     var group = createGroup(promotion);
-    var course = createCourse(StudentLevel.L1, 5);
+    var course = createCourse();
     var teacher = createTeacher();
     var token = adminToken();
     var request =
@@ -215,9 +225,9 @@ class CourseAssignmentIT extends FacadeIT {
 
   @Test
   void sameCourseCanBeCoTaughtByTwoTeachers() {
-    var promotion = createPromotion(2024);
+    var promotion = createPromotion();
     var group = createGroup(promotion);
-    var course = createCourse(StudentLevel.L1, 5);
+    var course = createCourse();
     var teacherA = createTeacher();
     var teacherB = createTeacher();
 
@@ -243,5 +253,64 @@ class CourseAssignmentIT extends FacadeIT {
     assertEquals(2, assignment.teachers().size());
     assertTrue(assignment.teachers().stream().anyMatch(t -> t.id().equals(teacherA.getId())));
     assertTrue(assignment.teachers().stream().anyMatch(t -> t.id().equals(teacherB.getId())));
+  }
+
+  @Test
+  void teacherScopedCourseAssignmentListIgnoresQueryParamOverride() {
+    var teacher = createTeacher("teacher-owner@hei.school");
+    var otherTeacher = createTeacher();
+    var token = loginToken(teacher.getEmail(), "secret123");
+
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var otherCourse = createCourse();
+    var token2 = adminToken();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token2)
+        .bodyValue(
+            assignmentRequest(
+                course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits()))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token2)
+        .bodyValue(
+            assignmentRequest(
+                otherCourse.getId(),
+                group.getId(),
+                List.of(otherTeacher.getId()),
+                otherCourse.getCredits()))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    var results =
+        webTestClient
+            .get()
+            .uri("/course-assignments?teacher_id=" + otherTeacher.getId())
+            .header("Authorization", "Bearer " + token)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(results);
+    assertTrue(
+        results.stream()
+            .allMatch(a -> a.teachers().stream().anyMatch(t -> t.id().equals(teacher.getId()))));
+    assertTrue(
+        results.stream()
+            .noneMatch(
+                a -> a.teachers().stream().anyMatch(t -> t.id().equals(otherTeacher.getId()))));
   }
 }
