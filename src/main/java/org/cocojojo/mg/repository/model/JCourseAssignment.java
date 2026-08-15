@@ -5,6 +5,8 @@ import static org.hibernate.type.SqlTypes.NAMED_ENUM;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.*;
 import org.cocojojo.mg.model.enums.Semester;
@@ -20,13 +22,7 @@ import org.hibernate.annotations.UpdateTimestamp;
     uniqueConstraints =
         @UniqueConstraint(
             name = "course_assignment_uk",
-            columnNames = {
-              "\"course_id\"",
-              "\"teacher_id\"",
-              "\"group_id\"",
-              "\"academic_year\"",
-              "\"semester\""
-            }))
+            columnNames = {"\"course_id\"", "\"group_id\"", "\"academic_year\"", "\"semester\""}))
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -49,9 +45,14 @@ public class JCourseAssignment {
   @JoinColumn(name = "\"group_id\"", nullable = false)
   private JGroup group;
 
-  @ManyToOne
-  @JoinColumn(name = "\"teacher_id\"", nullable = false)
-  private JTeacher teacher;
+  @ManyToMany
+  @JoinTable(
+      name = "\"course_assignment_teacher\"",
+      joinColumns = @JoinColumn(name = "\"course_assignment_id\""),
+      inverseJoinColumns = @JoinColumn(name = "\"teacher_id\""))
+  @EqualsAndHashCode.Exclude
+  @Builder.Default
+  private List<JTeacher> teachers = new ArrayList<>();
 
   @Column(name = "\"academic_year\"", nullable = false)
   private Integer academicYear;

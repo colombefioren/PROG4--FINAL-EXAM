@@ -43,7 +43,7 @@ public class JCourse {
   @Column(name = "\"total_hours\"")
   private Integer totalHours;
 
-  @Column(name = "\"student_level\"")
+  @Column(name = "\"student_level\"", nullable = false)
   @Enumerated(STRING)
   @JdbcTypeCode(NAMED_ENUM)
   private StudentLevel studentLevel;
