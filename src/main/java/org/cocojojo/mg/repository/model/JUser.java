@@ -46,11 +46,6 @@ public class JUser {
 
   @EqualsAndHashCode.Exclude
   @Builder.Default
-  @Column(name = "\"enabled\"", nullable = false)
-  private boolean enabled = true;
-
-  @EqualsAndHashCode.Exclude
-  @Builder.Default
   @Column(name = "\"is_deleted\"")
   private boolean isDeleted = false;
 
