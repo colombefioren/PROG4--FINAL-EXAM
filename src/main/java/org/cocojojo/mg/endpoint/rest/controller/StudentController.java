@@ -1,0 +1,53 @@
+package org.cocojojo.mg.endpoint.rest.controller;
+
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.cocojojo.mg.endpoint.rest.controller.dto.GroupFlowResponse;
+import org.cocojojo.mg.endpoint.rest.controller.dto.MoveStudentGroupRequest;
+import org.cocojojo.mg.endpoint.rest.controller.dto.StudentRequest;
+import org.cocojojo.mg.endpoint.rest.controller.dto.StudentResponse;
+import org.cocojojo.mg.service.GroupFlowService;
+import org.cocojojo.mg.service.StudentService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/students")
+@RequiredArgsConstructor
+public class StudentController {
+  private final StudentService studentService;
+  private final GroupFlowService groupFlowService;
+
+  @GetMapping
+  public List<StudentResponse> getAll() {
+    return studentService.getAll();
+  }
+
+  @GetMapping("/{id}")
+  public StudentResponse getById(@PathVariable UUID id) {
+    return studentService.getById(id);
+  }
+
+  @PutMapping
+  public StudentResponse upsert(@RequestBody @Valid StudentRequest request) {
+    return studentService.upsert(request);
+  }
+
+  @GetMapping("/{id}/group_flows")
+  public List<GroupFlowResponse> getGroupFlows(@PathVariable UUID id) {
+    studentService.assertAdminOrSelf(id);
+    return groupFlowService.getHistory(id);
+  }
+
+  @PutMapping("/{id}/group_flows")
+  public GroupFlowResponse moveToGroup(
+      @PathVariable UUID id, @RequestBody @Valid MoveStudentGroupRequest request) {
+    return groupFlowService.move(studentService.getEntityOrThrow(id), request);
+  }
+}
