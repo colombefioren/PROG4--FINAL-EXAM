@@ -1,0 +1,1 @@
+alter table "user" add column enabled boolean not null default true;
