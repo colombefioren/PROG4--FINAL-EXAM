@@ -440,8 +440,41 @@ class GraduatesIT extends FacadeIT {
             .groupFlowType(GroupFlowType.JOIN)
             .build());
 
-    // The student's curriculum follows their latest track (EL), not the first (TN).
-    var exams = createCurriculum(elGroup);
+    // Courses from BOTH groups the student passed through count toward the curriculum,
+    // while the reported track follows the most recently joined group (EL).
+    var tnExams = createCurriculum(tnGroup);
+    var elExams = createCurriculum(elGroup);
+    saveGrade(tnExams.get(0), student, new BigDecimal("14"));
+    saveGrade(tnExams.get(1), student, new BigDecimal("15"));
+    saveGrade(tnExams.get(2), student, new BigDecimal("16"));
+    saveGrade(elExams.get(0), student, new BigDecimal("14"));
+    saveGrade(elExams.get(1), student, new BigDecimal("15"));
+    saveGrade(elExams.get(2), student, new BigDecimal("16"));
+
+    var graduates = getGraduates(token(admin), promotion.getId());
+
+    assertEquals(1, graduates.size());
+    assertEquals(student.getStd(), graduates.get(0).std());
+    assertEquals(Track.EL, graduates.get(0).track());
+  }
+
+  @Test
+  void catalogCourseNeverAssignedDoesNotBlockGraduation() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    var assignedL1 = saveCourse(StudentLevel.L1, null);
+    var assignedL2 = saveCourse(StudentLevel.L2, Track.TN);
+    var assignedL3 = saveCourse(StudentLevel.L3, Track.TN);
+    // A catalog course at L2 that the promotion never assigns (course substitution).
+    saveCourse(StudentLevel.L2, Track.TN);
+
+    var exams =
+        List.of(
+            saveExam(saveAssignment(assignedL1, group, Semester.S1)),
+            saveExam(saveAssignment(assignedL2, group, Semester.S3)),
+            saveExam(saveAssignment(assignedL3, group, Semester.S5)));
     saveGrade(exams.get(0), student, new BigDecimal("14"));
     saveGrade(exams.get(1), student, new BigDecimal("15"));
     saveGrade(exams.get(2), student, new BigDecimal("16"));
@@ -450,7 +483,6 @@ class GraduatesIT extends FacadeIT {
 
     assertEquals(1, graduates.size());
     assertEquals(student.getStd(), graduates.get(0).std());
-    assertEquals(Track.EL, graduates.get(0).track());
   }
 
   @Test
