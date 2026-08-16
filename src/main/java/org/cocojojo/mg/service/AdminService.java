@@ -7,7 +7,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.AdminResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.AdminMapper;
 import org.cocojojo.mg.repository.AdminRepository;
-import org.cocojojo.mg.validator.AdminValidator;
+import org.cocojojo.mg.util.SecurityUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,12 +18,12 @@ public class AdminService {
 
   private final AdminRepository adminRepository;
   private final AdminMapper mapper;
-  private final AdminValidator validator;
+  private final SecurityUtil securityUtil;
   private final PasswordEncoder passwordEncoder;
 
   @Transactional
   public AdminResponse update(UUID adminId, AdminRequest request) {
-    validator.validateIsSelf(adminId);
+    securityUtil.requireSelf(adminId);
     var entity =
         adminRepository
             .findById(adminId)
