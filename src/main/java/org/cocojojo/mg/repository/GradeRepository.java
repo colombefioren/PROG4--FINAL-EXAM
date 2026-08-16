@@ -2,6 +2,7 @@ package org.cocojojo.mg.repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.repository.model.JGrade;
@@ -18,8 +19,17 @@ public interface GradeRepository extends JpaRepository<JGrade, UUID> {
       attributePaths = {
         "exam",
         "exam.courseAssignment",
-        "exam.courseAssignment.course",
-        "exam.courseAssignment.teachers"
+        "exam.courseAssignment.teachers",
+        "student"
+      })
+  List<JGrade> findByExamId(UUID examId);
+
+  @EntityGraph(
+      attributePaths = {
+        "exam",
+        "exam.courseAssignment",
+        "exam.courseAssignment.teachers",
+        "student"
       })
   List<JGrade> findByStudentId(UUID studentId);
 
@@ -35,10 +45,30 @@ public interface GradeRepository extends JpaRepository<JGrade, UUID> {
         "exam",
         "exam.courseAssignment",
         "exam.courseAssignment.course",
-        "exam.courseAssignment.teachers"
+        "exam.courseAssignment.teachers",
+        "student"
       })
   List<JGrade> findByStudentAndCourseAndSemesters(
       @Param("studentId") UUID studentId,
       @Param("courseId") UUID courseId,
       @Param("semesters") Collection<Semester> semesters);
+
+  @EntityGraph(
+      attributePaths = {
+        "exam",
+        "exam.courseAssignment",
+        "exam.courseAssignment.course",
+        "exam.courseAssignment.teachers",
+        "student"
+      })
+  Optional<JGrade> findWithDetailsById(UUID id);
+
+  @EntityGraph(
+      attributePaths = {
+        "exam",
+        "exam.courseAssignment",
+        "exam.courseAssignment.teachers",
+        "student"
+      })
+  Optional<JGrade> findByExamIdAndStudentId(UUID examId, UUID studentId);
 }
