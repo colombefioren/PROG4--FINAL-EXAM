@@ -33,13 +33,6 @@ public class ExamValidator {
     }
   }
 
-  public void validateCourseAssignmentMatchesPath(UUID pathId, UUID bodyId) {
-    if (!pathId.equals(bodyId)) {
-      throw new IllegalArgumentException(
-          "courseAssignmentId " + bodyId + " does not match the course assignment in the path");
-    }
-  }
-
   public void validateTeacherTeaches(UUID teacherId, CourseAssignment assignment) {
     boolean teaches =
         assignment.teachers().stream().anyMatch(teacher -> teacher.id().equals(teacherId));

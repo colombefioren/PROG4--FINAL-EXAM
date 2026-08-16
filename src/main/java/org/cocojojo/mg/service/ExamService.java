@@ -60,7 +60,6 @@ public class ExamService {
 
   @Transactional
   public ExamResponse upsert(UUID courseAssignmentId, ExamRequest request) {
-    validator.validateCourseAssignmentMatchesPath(courseAssignmentId, request.courseAssignmentId());
     var assignmentEntity =
         courseAssignmentRepository
             .findById(courseAssignmentId)
