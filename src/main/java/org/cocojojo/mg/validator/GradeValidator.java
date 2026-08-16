@@ -4,21 +4,11 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.model.CourseAssignment;
-import org.cocojojo.mg.model.Grade;
-import org.cocojojo.mg.util.SecurityUtil;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class GradeValidator {
-
-  private final SecurityUtil securityUtil;
-
-  public void validateExamMatchesPath(UUID pathExamId, UUID bodyExamId) {
-    if (!pathExamId.equals(bodyExamId)) {
-      throw new IllegalArgumentException("examId in the body must match the exam in the path");
-    }
-  }
 
   public void validateTeacherTeaches(UUID teacherId, CourseAssignment assignment) {
     boolean teaches =
