@@ -499,6 +499,39 @@ class GraduatesIT extends FacadeIT {
   }
 
   @Test
+  void adminCanSeePromotionsUiPageWithBasicAuth() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+
+    webTestClient
+        .get()
+        .uri("/ui/promotions")
+        .headers(headers -> headers.setBasicAuth(admin.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(String.class)
+        .consumeWith(
+            body -> {
+              var html = new String(body.getResponseBody());
+              assertTrue(html.contains(promotion.getRef()));
+              assertTrue(html.contains("Download Graduate List"));
+            });
+  }
+
+  @Test
+  void uiPagePromptsForBasicAuthWhenUnauthenticated() {
+    webTestClient
+        .get()
+        .uri("/ui/promotions")
+        .exchange()
+        .expectStatus()
+        .isUnauthorized()
+        .expectHeader()
+        .valueEquals("WWW-Authenticate", "Basic realm=\"hei\"");
+  }
+
+  @Test
   void unauthenticatedCannotSeePromotionsUiPage() {
     webTestClient.get().uri("/ui/promotions").exchange().expectStatus().isUnauthorized();
   }
