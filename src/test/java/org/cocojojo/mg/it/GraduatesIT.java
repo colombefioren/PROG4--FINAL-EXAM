@@ -532,6 +532,19 @@ class GraduatesIT extends FacadeIT {
   }
 
   @Test
+  void teacherCannotSeePromotionsUiPageWithBasicAuth() {
+    var teacher = saveTeacher();
+
+    webTestClient
+        .get()
+        .uri("/ui/promotions")
+        .headers(headers -> headers.setBasicAuth(teacher.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
   void unauthenticatedCannotSeePromotionsUiPage() {
     webTestClient.get().uri("/ui/promotions").exchange().expectStatus().isUnauthorized();
   }
