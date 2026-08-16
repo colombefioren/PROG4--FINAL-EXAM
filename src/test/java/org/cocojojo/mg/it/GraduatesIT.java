@@ -3,15 +3,21 @@ package org.cocojojo.mg.it;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.SneakyThrows;
 import org.cocojojo.mg.conf.FacadeIT;
+import org.cocojojo.mg.endpoint.rest.controller.dto.GraduateExportResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GraduateResponse;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
+import org.cocojojo.mg.file.bucket.BucketComponent;
 import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.model.enums.Semester;
@@ -40,6 +46,7 @@ import org.cocojojo.mg.repository.model.JTeacher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -58,6 +65,8 @@ class GraduatesIT extends FacadeIT {
   @Autowired private CourseAssignmentRepository courseAssignmentRepository;
   @Autowired private ExamRepository examRepository;
   @Autowired private GradeRepository gradeRepository;
+  @MockBean private BucketComponent bucketComponent;
+
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private JwtService jwtService;
 
@@ -65,8 +74,13 @@ class GraduatesIT extends FacadeIT {
   private WebTestClient webTestClient;
 
   @BeforeEach
+  @SneakyThrows
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    when(bucketComponent.presign(any(), any()))
+        .thenReturn(
+            URI.create("https://dummy-bucket.s3.eu-west-3.amazonaws.com/graduates/list.xlsx")
+                .toURL());
     gradeRepository.deleteAll();
     examRepository.deleteAll();
     courseAssignmentRepository.deleteAll();
@@ -338,6 +352,34 @@ class GraduatesIT extends FacadeIT {
   }
 
   @Test
+  void adminCanExportGraduateListAsPresignedUrl() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    var exams = createCurriculum(group);
+    saveGrade(exams.get(0), student, new BigDecimal("14"));
+    saveGrade(exams.get(1), student, new BigDecimal("15"));
+    saveGrade(exams.get(2), student, new BigDecimal("16"));
+
+    var body =
+        webTestClient
+            .get()
+            .uri("/admin/promotions/{promotion_id}/graduates", promotion.getId())
+            .header("Authorization", "Bearer " + token(admin))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(GraduateExportResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(body);
+    assertNotNull(body.url());
+    assertTrue(body.url().startsWith("https://dummy-bucket"));
+  }
+
+  @Test
   void teacherCannotExportGraduateList() {
     var teacher = saveTeacher();
     var promotion = savePromotion();
@@ -349,6 +391,16 @@ class GraduatesIT extends FacadeIT {
         .exchange()
         .expectStatus()
         .isForbidden();
+  }
+
+  @Test
+  void unauthenticatedCannotExportGraduateList() {
+    webTestClient
+        .get()
+        .uri("/admin/promotions/{promotion_id}/graduates", UUID.randomUUID())
+        .exchange()
+        .expectStatus()
+        .isUnauthorized();
   }
 
   @Test
