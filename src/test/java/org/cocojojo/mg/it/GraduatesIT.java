@@ -94,7 +94,7 @@ class GraduatesIT extends FacadeIT {
   }
 
   private String unique(String prefix) {
-    return prefix + SEQUENCE.incrementAndGet() + "@hei.school";
+    return "grad-" + prefix + SEQUENCE.incrementAndGet() + "@hei.school";
   }
 
   private JAdmin saveAdmin() {
@@ -120,8 +120,8 @@ class GraduatesIT extends FacadeIT {
   private JPromotion savePromotion() {
     return promotionRepository.save(
         JPromotion.builder()
-            .ref("PROMO" + SEQUENCE.incrementAndGet())
-            .name("Promotion " + SEQUENCE.incrementAndGet())
+            .ref("GRAD-PROMO" + SEQUENCE.incrementAndGet())
+            .name("GRAD Promotion " + SEQUENCE.incrementAndGet())
             .entryYear(2023)
             .build());
   }
@@ -130,7 +130,7 @@ class GraduatesIT extends FacadeIT {
     return groupRepository.save(
         JGroup.builder()
             .promotion(promotion)
-            .ref("GRP" + SEQUENCE.incrementAndGet())
+            .ref("GRAD-GRP" + SEQUENCE.incrementAndGet())
             .track(track)
             .build());
   }
@@ -143,7 +143,7 @@ class GraduatesIT extends FacadeIT {
                 .lastname("Turing")
                 .email(unique("student"))
                 .password(passwordEncoder.encode("secret123"))
-                .std("STD" + SEQUENCE.incrementAndGet())
+                .std("GRAD-STD" + SEQUENCE.incrementAndGet())
                 .promotion(promotion)
                 .build());
     groupFlowRepository.save(
@@ -158,7 +158,7 @@ class GraduatesIT extends FacadeIT {
   private JCourse saveCourse(StudentLevel level, Track track) {
     return courseRepository.save(
         JCourse.builder()
-            .code("CODE" + SEQUENCE.incrementAndGet())
+            .code("GRAD-CODE" + SEQUENCE.incrementAndGet())
             .name("Course " + SEQUENCE.incrementAndGet())
             .credits(4)
             .totalHours(30)
