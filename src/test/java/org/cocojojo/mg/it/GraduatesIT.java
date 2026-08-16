@@ -1,6 +1,7 @@
 package org.cocojojo.mg.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,10 +45,12 @@ import org.cocojojo.mg.repository.model.JGroupFlow;
 import org.cocojojo.mg.repository.model.JPromotion;
 import org.cocojojo.mg.repository.model.JStudent;
 import org.cocojojo.mg.repository.model.JTeacher;
+import org.cocojojo.mg.service.ResultService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -67,6 +70,8 @@ class GraduatesIT extends FacadeIT {
   @Autowired private ExamRepository examRepository;
   @Autowired private GradeRepository gradeRepository;
   @MockBean private BucketComponent bucketComponent;
+  @Autowired private JdbcTemplate jdbcTemplate;
+  @Autowired private ResultService resultService;
 
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private JwtService jwtService;
@@ -184,6 +189,41 @@ class GraduatesIT extends FacadeIT {
             .semester(semester)
             .credits(course.getCredits())
             .build());
+  }
+
+  @Test
+  void courseWithPartialCoefficientWeightIsNotComplete() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    var course = saveCourse(StudentLevel.L1, null);
+    var assignment = saveAssignment(course, group, Semester.S1);
+    var quarterExam =
+        examRepository.save(
+            JExam.builder()
+                .courseAssignment(assignment)
+                .title("Q1 " + SEQUENCE.incrementAndGet())
+                .examDatetime(Instant.parse("2025-06-01T08:00:00Z"))
+                .coefficientNumerator(1)
+                .coefficientDenominator(4)
+                .build());
+    saveGrade(quarterExam, student, new BigDecimal("16"));
+
+    var summary = resultService.computeResultsSummary(student.getId());
+    var l1 =
+        summary.levels().stream()
+            .filter(l -> l.level() == StudentLevel.L1)
+            .findFirst()
+            .orElseThrow();
+    // Only a quarter of the course weight has been scheduled and graded: not complete.
+    assertFalse(l1.complete().booleanValue());
+    assertFalse(l1.courses().get(0).complete().booleanValue());
+    assertFalse(l1.courses().get(0).passed().booleanValue());
+
+    // ... and the student is therefore not a graduate.
+    var graduates = getGraduates(token(admin), promotion.getId());
+    assertTrue(graduates.isEmpty());
   }
 
   private JExam saveExam(JCourseAssignment assignment) {
