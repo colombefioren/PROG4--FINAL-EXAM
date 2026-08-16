@@ -16,7 +16,7 @@ import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundExcept
 import org.cocojojo.mg.model.enums.ResultStatus;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.model.enums.Track;
-import org.cocojojo.mg.repository.CourseRepository;
+import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.GradeRepository;
 import org.cocojojo.mg.repository.GroupFlowRepository;
 import org.cocojojo.mg.repository.StudentRepository;
@@ -31,18 +31,16 @@ import org.springframework.stereotype.Service;
 public class ResultService {
 
   private static final BigDecimal PASSING_GRADE = new BigDecimal("10");
-  private static final List<StudentLevel> UPPER_LEVELS = List.of(StudentLevel.L2, StudentLevel.L3);
 
   private final StudentRepository studentRepository;
   private final GroupFlowRepository groupFlowRepository;
-  private final CourseRepository courseRepository;
+  private final CourseAssignmentRepository courseAssignmentRepository;
   private final GradeRepository gradeRepository;
 
-  /** Full 3-year summary: L1 common courses plus L2/L3 courses of the student's track. */
+  /** Full 3-year summary: every course assigned to the student's groups, averaged per course. */
   public ResultsSummaryResponse computeResultsSummary(UUID studentId) {
     var student = getStudent(studentId);
-    var track = trackOf(student);
-    var curriculum = curriculumOf(student, track);
+    var curriculum = curriculumOf(student);
     var averagesByCourse = averagesByCourse(studentId);
 
     var levels = new ArrayList<YearlyResultResponse>();
@@ -107,7 +105,7 @@ public class ResultService {
   }
 
   /** A student's track is the track of the group they most recently joined. */
-  private Track trackOf(JStudent student) {
+  public Track trackOf(JStudent student) {
     return groupFlowRepository.findByStudentId(student.getId()).stream()
         .max(Comparator.comparing(JGroupFlow::getCreatedAt))
         .map(JGroupFlow::getGroup)
@@ -115,16 +113,20 @@ public class ResultService {
         .orElse(null);
   }
 
-  /** Curriculum: L1 common courses plus L2/L3 courses of the student's track. */
-  private List<JCourse> curriculumOf(JStudent student, Track track) {
-    var l1 = courseRepository.findByStudentLevel(StudentLevel.L1);
-    if (track == null) {
-      return l1;
+  /** Curriculum: the distinct courses assigned to the groups the student joined. */
+  private List<JCourse> curriculumOf(JStudent student) {
+    var groupIds =
+        groupFlowRepository.findByStudentId(student.getId()).stream()
+            .map(JGroupFlow::getGroup)
+            .map(JGroup::getId)
+            .toList();
+    if (groupIds.isEmpty()) {
+      return List.of();
     }
-    var upper = courseRepository.findByStudentLevelInAndTrack(UPPER_LEVELS, track);
-    var result = new ArrayList<JCourse>(l1);
-    result.addAll(upper);
-    return result;
+    return courseAssignmentRepository.findByGroupIdIn(groupIds).stream()
+        .map(a -> a.getCourse())
+        .distinct()
+        .toList();
   }
 
   /** Map course id -> average of the student's grades on exams of that course. */
