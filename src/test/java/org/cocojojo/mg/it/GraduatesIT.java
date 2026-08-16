@@ -403,4 +403,45 @@ class GraduatesIT extends FacadeIT {
         .expectStatus()
         .isForbidden();
   }
+
+  @Test
+  void adminCanSeePromotionsUiPage() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+
+    var body =
+        webTestClient
+            .get()
+            .uri("/ui/promotions")
+            .header("Authorization", "Bearer " + token(admin))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(body);
+    assertTrue(body.contains(promotion.getRef()));
+    assertTrue(body.contains("Download Graduate List"));
+    assertTrue(body.contains("/promotions/" + promotion.getId() + "/graduates/download"));
+  }
+
+  @Test
+  void teacherCannotSeePromotionsUiPage() {
+    var teacher = saveTeacher();
+
+    webTestClient
+        .get()
+        .uri("/ui/promotions")
+        .header("Authorization", "Bearer " + token(teacher))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void unauthenticatedCannotSeePromotionsUiPage() {
+    webTestClient.get().uri("/ui/promotions").exchange().expectStatus().isUnauthorized();
+  }
 }
