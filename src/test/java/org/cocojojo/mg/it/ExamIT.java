@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.cocojojo.mg.conf.FacadeIT;
@@ -37,7 +38,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -804,13 +804,36 @@ class ExamIT extends FacadeIT {
         .isBadRequest();
   }
 
-  private ExamResponse createExamWithCoefficient(
+  private void createExamWithCoefficient(
       String token, UUID courseAssignmentId, Fraction coefficient) {
-    return webTestClient
+    webTestClient
         .put()
         .uri("/course-assignments/" + courseAssignmentId + "/exams")
         .header("Authorization", "Bearer " + token)
         .bodyValue(examRequest(courseAssignmentId, coefficient))
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(ExamResponse.class)
+        .returnResult();
+  }
+
+  private ExamResponse createExamWithRawCoefficient(
+      String token, UUID courseAssignmentId, Object coefficient) {
+    return webTestClient
+        .put()
+        .uri("/course-assignments/" + courseAssignmentId + "/exams")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            Map.of(
+                "courseAssignmentId",
+                courseAssignmentId.toString(),
+                "title",
+                "Raw coeff " + UUID.randomUUID(),
+                "examDatetime",
+                Instant.parse("2024-06-01T09:00:00Z"),
+                "coefficient",
+                coefficient))
         .exchange()
         .expectStatus()
         .isOk()
@@ -820,52 +843,47 @@ class ExamIT extends FacadeIT {
   }
 
   @Test
-  void adminCanCreateExamWithDecimalCoefficient() {
-    var promotion = createPromotion();
-    var group = createGroup(promotion);
-    var course = createCourse();
-    var teacher = createTeacher();
-    var assignment = createAssignment(course, group, teacher);
+  void adminCanCreateExamWithRawCoefficientForms() {
     var token = adminToken();
 
     var quarter =
-        webTestClient
-            .put()
-            .uri("/course-assignments/" + assignment.getId() + "/exams")
-            .header("Authorization", "Bearer " + token)
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(
-                "{\"courseAssignmentId\":\""
-                    + assignment.getId()
-                    + "\",\"title\":\"Quarter"
-                    + " coeff\",\"examDatetime\":\"2024-06-01T09:00:00Z\",\"coefficient\":0.25}")
-            .exchange()
-            .expectStatus()
-            .isOk()
-            .expectBody(ExamResponse.class)
-            .returnResult()
-            .getResponseBody();
+        createExamWithRawCoefficient(token, createAssignmentFor(createTeacher()).getId(), 0.25);
     assertNotNull(quarter);
     assertEquals(new Fraction(1, 4), quarter.coefficient());
 
     var half =
-        webTestClient
-            .put()
-            .uri("/course-assignments/" + assignment.getId() + "/exams")
-            .header("Authorization", "Bearer " + token)
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(
-                "{\"courseAssignmentId\":\""
-                    + assignment.getId()
-                    + "\",\"title\":\"Half"
-                    + " coeff\",\"examDatetime\":\"2024-06-01T09:00:00Z\",\"coefficient\":0.5}")
-            .exchange()
-            .expectStatus()
-            .isOk()
-            .expectBody(ExamResponse.class)
-            .returnResult()
-            .getResponseBody();
+        createExamWithRawCoefficient(token, createAssignmentFor(createTeacher()).getId(), 0.5);
     assertNotNull(half);
     assertEquals(new Fraction(1, 2), half.coefficient());
+
+    var third =
+        createExamWithRawCoefficient(token, createAssignmentFor(createTeacher()).getId(), "1/3");
+    assertNotNull(third);
+    assertEquals(new Fraction(1, 3), third.coefficient());
+  }
+
+  @Test
+  void teacherCanCreateExamWithRawCoefficientForms() {
+    var teacher = createTeacher();
+    var token = loginToken(teacher.getEmail(), "secret123");
+
+    var quarter = createExamWithRawCoefficient(token, createAssignmentFor(teacher).getId(), 0.25);
+    assertNotNull(quarter);
+    assertEquals(new Fraction(1, 4), quarter.coefficient());
+
+    var half = createExamWithRawCoefficient(token, createAssignmentFor(teacher).getId(), 0.5);
+    assertNotNull(half);
+    assertEquals(new Fraction(1, 2), half.coefficient());
+
+    var third = createExamWithRawCoefficient(token, createAssignmentFor(teacher).getId(), "1/3");
+    assertNotNull(third);
+    assertEquals(new Fraction(1, 3), third.coefficient());
+  }
+
+  private JCourseAssignment createAssignmentFor(JTeacher teacher) {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    return createAssignment(course, group, teacher);
   }
 }
