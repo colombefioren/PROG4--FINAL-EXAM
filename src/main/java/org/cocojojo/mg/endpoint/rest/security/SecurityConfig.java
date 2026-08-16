@@ -39,7 +39,7 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/swagger-ui/**")
                     .permitAll()
-                    .requestMatchers("/view/**")
+                    .requestMatchers("/view/**", "/ui/**")
                     .hasRole("ADMIN")
                     .requestMatchers(
                         PUT,

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Graduate Lists</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 2rem;
+      }
+      table {
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 0.5rem 1rem;
+        text-align: left;
+      }
+      a {
+        color: #1a73e8;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Promotions</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Name</th>
+          <th>Entry year</th>
+          <th>Graduate list</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="promotion : ${promotions}">
+          <td th:text="${promotion.ref()}">REF</td>
+          <td th:text="${promotion.name()}">Name</td>
+          <td th:text="${promotion.entryYear()}">2025</td>
+          <td>
+            <a
+              th:href="@{/promotions/{id}/graduates/download(id=${promotion.id()})}"
+              th:text="'Download Graduate List'"
+            >
+              Download Graduate List
+            </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
