@@ -43,13 +43,13 @@ public class GradeService {
   private final SecurityUtil securityUtil;
 
   public List<GradeResponse> getByExamId(UUID examId) {
-    var exam = getExam(examId);
+    var exam = getExamOrThrow(examId);
     requireCanManageExam(courseAssignmentMapper.toModel(exam.getCourseAssignment()));
     return gradeRepository.findByExamId(examId).stream().map(mapper::toResponse).toList();
   }
 
   public GradeResponse getByExamIdAndStudentId(UUID examId, UUID studentId) {
-    var exam = getExam(examId);
+    var exam = getExamOrThrow(examId);
     requireCanManageExam(courseAssignmentMapper.toModel(exam.getCourseAssignment()));
     var entity =
         gradeRepository
@@ -64,7 +64,7 @@ public class GradeService {
   @Transactional
   public List<GradeResponse> upsert(UUID examId, List<GradeRequest> requests) {
     requests.forEach(r -> validator.validateExamMatchesPath(examId, r.examId()));
-    var exam = getExam(examId);
+    var exam = getExamOrThrow(examId);
     requireCanManageExam(courseAssignmentMapper.toModel(exam.getCourseAssignment()));
     var changedBy =
         userRepository
@@ -75,7 +75,7 @@ public class GradeService {
 
   @Transactional
   public GradeResponse correct(UUID examId, UUID studentId, GradeCorrectionRequest request) {
-    var exam = getExam(examId);
+    var exam = getExamOrThrow(examId);
     requireCanManageExam(courseAssignmentMapper.toModel(exam.getCourseAssignment()));
     var entity =
         gradeRepository
@@ -115,7 +115,7 @@ public class GradeService {
   }
 
   public GradeResponse getById(UUID gradeId) {
-    var entity = getGrade(gradeId);
+    var entity = getGradeOrThrow(gradeId);
     if (securityUtil.isAdmin()) {
       return mapper.toResponse(entity);
     }
@@ -133,13 +133,13 @@ public class GradeService {
 
   @Transactional
   public void delete(UUID gradeId) {
-    var entity = getGrade(gradeId);
+    var entity = getGradeOrThrow(gradeId);
     requireCanManageExam(courseAssignmentMapper.toModel(entity.getExam().getCourseAssignment()));
     gradeRepository.delete(entity);
   }
 
   public List<GradeHistoryResponse> getHistory(UUID gradeId) {
-    var entity = getGrade(gradeId);
+    var entity = getGradeOrThrow(gradeId);
     if (securityUtil.isAdmin()) {
       return history(entity);
     }
@@ -190,13 +190,13 @@ public class GradeService {
         historyMapper.toEntity(null, grade, previousValue, newValue, reason, changedBy));
   }
 
-  private JExam getExam(UUID id) {
+  private JExam getExamOrThrow(UUID id) {
     return examRepository
         .findWithDetailsById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Exam with id:" + id + " not found."));
   }
 
-  private JGrade getGrade(UUID id) {
+  private JGrade getGradeOrThrow(UUID id) {
     return gradeRepository
         .findWithDetailsById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Grade with id:" + id + " not found."));
