@@ -63,8 +63,8 @@ public class GradeController {
 
   @DeleteMapping("/grades/{gradeId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void delete(@PathVariable UUID gradeId) {
-    gradeService.delete(gradeId);
+  public void delete(@PathVariable UUID gradeId, @Valid @RequestBody GradeDeleteRequest request) {
+    gradeService.delete(gradeId, request.reason());
   }
 
   @GetMapping("/grades/{gradeId}/history")

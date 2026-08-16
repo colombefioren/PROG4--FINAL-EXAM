@@ -125,16 +125,16 @@ public class GradeService {
           courseAssignmentMapper.toModel(entity.getExam().getCourseAssignment()));
     }
     if (securityUtil.isStudent()) {
-      validator.validateStudentOwnsGrade(
-          securityUtil.getCurrentUserIdOrThrow(), mapper.toModel(entity));
+      securityUtil.requireSelfOrAdmin(entity.getStudent().getId());
     }
     return mapper.toResponse(entity);
   }
 
   @Transactional
-  public void delete(UUID gradeId) {
+  public void delete(UUID gradeId, String reason) {
     var entity = getGradeOrThrow(gradeId);
     requireCanManageExam(courseAssignmentMapper.toModel(entity.getExam().getCourseAssignment()));
+    recordHistory(entity, entity.getValue(), null, reason, currentUser());
     gradeRepository.delete(entity);
   }
 
@@ -200,6 +200,12 @@ public class GradeService {
     return gradeRepository
         .findWithDetailsById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Grade with id:" + id + " not found."));
+  }
+
+  private JUser currentUser() {
+    return userRepository
+        .findById(securityUtil.getCurrentUserIdOrThrow())
+        .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
   }
 
   private void requireCanManageExam(CourseAssignment assignment) {
