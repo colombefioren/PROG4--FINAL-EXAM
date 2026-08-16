@@ -40,15 +40,38 @@
           <td th:text="${promotion.name()}">Name</td>
           <td th:text="${promotion.entryYear()}">2025</td>
           <td>
-            <a
-              th:href="@{/admin/promotions/{id}/graduates(id=${promotion.id()})}"
-              th:text="'Download Graduate List'"
+            <button
+              type="button"
+              class="graduate-download"
+              th:attr="data-promotion-id=${promotion.id()}"
             >
               Download Graduate List
-            </a>
+            </button>
           </td>
         </tr>
       </tbody>
     </table>
+    <script th:inline="none">
+      document.querySelectorAll('.graduate-download').forEach((button) => {
+        button.addEventListener('click', () =>
+          downloadGraduateList(button.dataset.promotionId),
+        );
+      });
+
+      async function downloadGraduateList(promotionId) {
+        try {
+          const response = await fetch(
+            `/promotions/${promotionId}/graduates/export`,
+          );
+          if (!response.ok) {
+            throw new Error(`Export failed with status ${response.status}`);
+          }
+          const body = await response.json();
+          window.location.href = body.url;
+        } catch (error) {
+          alert(error.message);
+        }
+      }
+    </script>
   </body>
 </html>
