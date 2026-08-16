@@ -136,8 +136,10 @@ class TeacherIT extends FacadeIT {
 
   @Test
   void adminCanListTeachers() {
-    createTeacher(uniqueEmail());
-    createTeacher(uniqueEmail());
+    var emailA = uniqueEmail();
+    var emailB = uniqueEmail();
+    createTeacher(emailA);
+    createTeacher(emailB);
 
     var teachers =
         webTestClient
@@ -149,9 +151,11 @@ class TeacherIT extends FacadeIT {
             .isOk()
             .expectBodyList(TeacherResponse.class)
             .returnResult()
-            .getResponseBody();
+            .getResponseBody()
+            .stream()
+            .filter(t -> t.email().equals(emailA) || t.email().equals(emailB))
+            .toList();
 
-    assertNotNull(teachers);
     assertEquals(2, teachers.size());
   }
 
