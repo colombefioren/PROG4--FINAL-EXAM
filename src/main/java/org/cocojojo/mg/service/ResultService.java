@@ -9,6 +9,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.CourseResultResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.ResultsSummaryResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.YearlyResultResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
+import org.cocojojo.mg.model.Fraction;
 import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.model.enums.Track;
@@ -45,6 +46,7 @@ public class ResultService {
     var overallAverage =
         creditWeightedAverage(
             levels.stream()
+                .filter(l -> l.overallAverage() != null)
                 .map(l -> new WeightedValue(l.overallAverage(), l.totalCredits()))
                 .toList());
     var graduate = levels.stream().allMatch(YearlyResultResponse::complete);
@@ -139,11 +141,21 @@ public class ResultService {
             ? null
             : weightedSum.divide(totalCoefficient, 2, RoundingMode.HALF_UP);
 
-    int expectedExamCount =
-        examRepository
-            .findByCourseAndSemestersAndGroups(course.getId(), semesters, groupIds)
-            .size();
-    boolean complete = expectedExamCount > 0 && grades.size() == expectedExamCount;
+    var scheduledExams =
+        examRepository.findByCourseAndSemestersAndGroups(course.getId(), semesters, groupIds);
+    // A course is complete only when every currently scheduled exam is graded AND the graded
+    // exams cover the full 1.0 coefficient weight. The exam-count check alone would call a
+    // course "complete" after a single 1/4 exam is graded, even though 3/4 of its weight has
+    // not been scheduled yet.
+    boolean allScheduledGraded =
+        !scheduledExams.isEmpty() && grades.size() == scheduledExams.size();
+    var gradedCoefficientSum =
+        grades.stream()
+            .map(grade -> grade.getExam().getCoefficientFraction())
+            .reduce(Fraction::plus)
+            .orElseThrow();
+    boolean fullWeightGraded = gradedCoefficientSum.equals(new Fraction(1, 1));
+    boolean complete = allScheduledGraded && fullWeightGraded;
     boolean passed = complete && average != null && average.compareTo(PASS_THRESHOLD) >= 0;
 
     return CourseResultResponse.builder()
@@ -187,7 +199,7 @@ public class ResultService {
             () -> new ResourceNotFoundException("Student with id:" + studentId + " not found."));
   }
 
-  private BigDecimal toDecimal(org.cocojojo.mg.model.Fraction fraction) {
+  private BigDecimal toDecimal(Fraction fraction) {
     return BigDecimal.valueOf(fraction.numerator())
         .divide(BigDecimal.valueOf(fraction.denominator()), 6, RoundingMode.HALF_UP);
   }
