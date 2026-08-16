@@ -17,16 +17,4 @@ public class GradeValidator {
       throw new ForbiddenAccessException("You may only manage grades for courses you teach");
     }
   }
-
-  public void validateIsStudentSelf(UUID studentId) {
-    if (!securityUtil.getCurrentUserIdOrThrow().equals(studentId)) {
-      throw new ForbiddenAccessException("You may only access your own grades");
-    }
-  }
-
-  public void validateStudentOwnsGrade(UUID studentId, Grade grade) {
-    if (!grade.student().id().equals(studentId)) {
-      throw new ForbiddenAccessException("This grade is not yours");
-    }
-  }
 }

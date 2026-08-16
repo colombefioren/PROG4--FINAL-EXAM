@@ -80,22 +80,13 @@ public class GradeService {
                 () ->
                     new ResourceNotFoundException(
                         "Grade not found for exam " + examId + " and student " + studentId));
-    recordHistory(
-        entity,
-        entity.getValue(),
-        request.value(),
-        request.reason(),
-        userRepository
-            .findById(securityUtil.getCurrentUserIdOrThrow())
-            .orElseThrow(() -> new IllegalStateException("Authenticated user not found")));
+    recordHistory(entity, entity.getValue(), request.value(), request.reason(), currentUser());
     entity.setValue(request.value());
     return mapper.toResponse(entity);
   }
 
   public List<GradeResponse> getByStudentId(UUID studentId) {
-    if (securityUtil.isStudent()) {
-      validator.validateIsStudentSelf(studentId);
-    }
+    securityUtil.requireSelfOrStaff(studentId);
     var grades = gradeRepository.findByStudentId(studentId);
     if (securityUtil.isTeacher()) {
       var teacherId = securityUtil.getCurrentUserIdOrThrow();
@@ -148,7 +139,7 @@ public class GradeService {
     throw new ForbiddenAccessException("Only teachers and admins can view grade history");
   }
 
-  private GradeResponse upsertOne(GradeRequest request, JExam exam, JUser changedBy) {
+  private GradeResponse createOne(GradeRequest request, JExam exam, JUser changedBy) {
     var student =
         studentRepository
             .findById(request.studentId())
