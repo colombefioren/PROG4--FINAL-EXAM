@@ -37,7 +37,7 @@ public class GraduateListService {
    * course of their curriculum (L1 common + L2/L3 of their track) averages 10 or more.
    */
   public List<GraduateResponse> getGraduates(UUID promotionId) {
-    getPromotion(promotionId);
+    assertPromotionExists(promotionId);
     var students = studentRepository.findByPromotionIdOrderByLastnameAscFirstnameAsc(promotionId);
 
     var graduates =
@@ -110,7 +110,7 @@ public class GraduateListService {
     return bucketComponent.presign(bucketKey, PRESIGN_EXPIRATION).toString();
   }
 
-  private void getPromotion(UUID promotionId) {
+  private void assertPromotionExists(UUID promotionId) {
     if (!promotionRepository.existsById(promotionId)) {
       throw new ResourceNotFoundException("Promotion with id:" + promotionId + " not found.");
     }
