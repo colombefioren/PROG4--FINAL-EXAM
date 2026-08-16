@@ -34,6 +34,12 @@ public class ResultService {
   private final ExamRepository examRepository;
   private final GradeRepository gradeRepository;
 
+  /** The yearly result of a single level, e.g. for the transcript PDF. */
+  public YearlyResultResponse computeYearlyResult(UUID studentId, StudentLevel level) {
+    var student = findStudent(studentId);
+    return computeYearlyResult(student, level, studentGroupIds(studentId));
+  }
+
   public ResultsSummaryResponse computeResultsSummary(UUID studentId) {
     var student = findStudent(studentId);
     var groupIds = studentGroupIds(studentId);

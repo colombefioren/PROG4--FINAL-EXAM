@@ -3,6 +3,7 @@ package org.cocojojo.mg.endpoint.rest.security;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -58,6 +59,8 @@ public class SecurityConfig {
                     .requestMatchers(
                         GET, "/students", "/teachers", "/groups", "/courses", "/courses/*")
                     .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(POST, "/students/*/yearly_results/*/transcript")
+                    .authenticated()
                     .requestMatchers(
                         GET, "/promotions/*/graduates", "/promotions/*/graduates/export")
                     .hasRole("ADMIN")
