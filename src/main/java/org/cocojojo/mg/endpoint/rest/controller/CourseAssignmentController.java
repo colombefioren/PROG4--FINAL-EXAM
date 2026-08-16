@@ -29,10 +29,10 @@ public class CourseAssignmentController {
 
   @GetMapping
   public List<CourseAssignmentResponse> getByFilter(
-      @RequestParam(value = "group_id", required = false) UUID groupId,
-      @RequestParam(value = "teacher_id", required = false) UUID teacherId,
-      @RequestParam(value = "course_id", required = false) UUID courseId,
-      @RequestParam(value = "academic_year", required = false) Integer academicYear) {
+      @RequestParam(required = false) UUID groupId,
+      @RequestParam(required = false) UUID teacherId,
+      @RequestParam(required = false) UUID courseId,
+      @RequestParam(required = false) Integer academicYear) {
     return service.getByFilter(groupId, teacherId, courseId, academicYear);
   }
 
@@ -43,12 +43,12 @@ public class CourseAssignmentController {
 
   @GetMapping("/curriculum-status")
   public CurriculumStatusResponse curriculumStatus(
-      @RequestParam("group_id") UUID groupId,
-      @RequestParam("academic_year") int academicYear,
-      @RequestParam Semester semester) {
+      @RequestParam UUID groupId, @RequestParam int academicYear, @RequestParam Semester semester) {
     return service.curriculumStatus(groupId, academicYear, semester);
   }
 
+  // Bulk on purpose: building a curriculum means assigning many courses to a group at once,
+  // and one request lets the validator check the per-semester credit ceiling across the batch.
   @PutMapping
   public List<CourseAssignmentResponse> upsert(
       @Valid @RequestBody List<CourseAssignmentRequest> requests) {
