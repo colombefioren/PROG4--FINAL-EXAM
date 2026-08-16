@@ -12,4 +12,5 @@ public record YearlyResultResponse(
     BigDecimal overallAverage,
     int earnedCredits,
     int totalCredits,
+    /** Whether every course of this level is complete (all its exams graded and passed). */
     Boolean complete) {}
