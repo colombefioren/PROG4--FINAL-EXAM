@@ -34,9 +34,9 @@ public class GradeController {
   // Bulk on purpose: grading a whole class means entering one grade per student in a single
   // request, and the batch is validated as a unit before any row is inserted.
   @PutMapping("/exams/{examId}/grades")
-  public List<GradeResponse> upsert(
+  public List<GradeResponse> create(
       @PathVariable UUID examId, @Valid @RequestBody List<GradeRequest> requests) {
-    return gradeService.upsert(examId, requests);
+    return gradeService.create(examId, requests);
   }
 
   @GetMapping("/exams/{examId}/students/{studentId}/grade")

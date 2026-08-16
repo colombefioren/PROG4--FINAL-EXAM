@@ -62,15 +62,11 @@ public class GradeService {
   }
 
   @Transactional
-  public List<GradeResponse> upsert(UUID examId, List<GradeRequest> requests) {
-    requests.forEach(r -> validator.validateExamMatchesPath(examId, r.examId()));
+  public List<GradeResponse> create(UUID examId, List<GradeRequest> requests) {
     var exam = getExamOrThrow(examId);
     requireCanManageExam(courseAssignmentMapper.toModel(exam.getCourseAssignment()));
-    var changedBy =
-        userRepository
-            .findById(securityUtil.getCurrentUserIdOrThrow())
-            .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
-    return requests.stream().map(r -> upsertOne(r, exam, changedBy)).toList();
+    var changedBy = currentUser();
+    return requests.stream().map(r -> createOne(r, exam, changedBy)).toList();
   }
 
   @Transactional
