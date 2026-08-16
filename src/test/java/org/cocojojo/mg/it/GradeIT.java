@@ -1,6 +1,7 @@
 package org.cocojojo.mg.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -661,6 +662,47 @@ class GradeIT extends FacadeIT {
     assertEquals(0, new BigDecimal("12.0").compareTo((BigDecimal) deletion[0]));
     assertNull(deletion[1]);
     assertEquals("Too harsh, removing", deletion[2]);
+  }
+
+  @Test
+  void adminCanRecreateGradeAfterDeletion() {
+    var admin = saveAdmin();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var created =
+        upsertGrades(
+            token(admin),
+            exam.getId(),
+            List.of(
+                GradeRequest.builder()
+                    .studentId(student.getId())
+                    .value(new BigDecimal("12.0"))
+                    .build()));
+    var gradeId = created.get(0).id();
+
+    webTestClient
+        .method(HttpMethod.DELETE)
+        .uri("/grades/{gradeId}", gradeId)
+        .header("Authorization", "Bearer " + token(admin))
+        .bodyValue(GradeDeleteRequest.builder().reason("Too harsh, removing").build())
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    // The soft-deleted row is physically present, so only the partial unique index
+    // (excluding is_deleted rows) lets the same student+exam be graded again.
+    var recreated =
+        upsertGrades(
+            token(admin),
+            exam.getId(),
+            List.of(
+                GradeRequest.builder()
+                    .studentId(student.getId())
+                    .value(new BigDecimal("15.0"))
+                    .build()));
+    assertEquals(1, recreated.size());
+    assertNotEquals(gradeId, recreated.get(0).id());
+    assertEquals(0, new BigDecimal("15.0").compareTo(recreated.get(0).value()));
   }
 
   @Test
