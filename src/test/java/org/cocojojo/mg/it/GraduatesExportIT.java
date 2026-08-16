@@ -213,7 +213,7 @@ class GraduatesExportIT extends FacadeIT {
     var body =
         webTestClient
             .get()
-            .uri("/promotions/{promotion_id}/graduates/export", promotion.getId())
+            .uri("/admin/promotions/{promotion_id}/graduates", promotion.getId())
             .header("Authorization", "Bearer " + token(admin))
             .exchange()
             .expectStatus()
@@ -234,7 +234,7 @@ class GraduatesExportIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/promotions/{promotion_id}/graduates/export", promotion.getId())
+        .uri("/admin/promotions/{promotion_id}/graduates", promotion.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -245,7 +245,7 @@ class GraduatesExportIT extends FacadeIT {
   void unauthenticatedCannotExportGraduateList() {
     webTestClient
         .get()
-        .uri("/promotions/{promotion_id}/graduates/export", UUID.randomUUID())
+        .uri("/admin/promotions/{promotion_id}/graduates", UUID.randomUUID())
         .exchange()
         .expectStatus()
         .isUnauthorized();

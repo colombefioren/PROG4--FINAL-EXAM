@@ -208,36 +208,33 @@ class GraduatesIT extends FacadeIT {
     return body;
   }
 
-  /** Curriculum: one course per level assigned to the student's group. */
-  private void giveFullCurriculum(JGroup group, JStudent student, BigDecimal[] grades) {
+  /** Returns the three exams of the shared curriculum (one course per level) for the group. */
+  private List<JExam> createCurriculum(JGroup group) {
     var courses =
         List.of(
             saveCourse(StudentLevel.L1, null),
             saveCourse(StudentLevel.L2, group.getTrack()),
             saveCourse(StudentLevel.L3, group.getTrack()));
     var semesters = List.of(Semester.S1, Semester.S3, Semester.S5);
-    for (int i = 0; i < courses.size(); i++) {
-      var exam = saveExam(saveAssignment(courses.get(i), group, semesters.get(i)));
-      saveGrade(exam, student, grades[i]);
-    }
+    return java.util.stream.IntStream.range(0, courses.size())
+        .mapToObj(i -> saveExam(saveAssignment(courses.get(i), group, semesters.get(i))))
+        .toList();
   }
 
   @Test
   void adminCanListGraduatesRankedByDescendingAverage() {
     var admin = saveAdmin();
     var promotion = savePromotion();
-    var topGroup = saveGroup(promotion, Track.TN);
-    var lowerGroup = saveGroup(promotion, Track.TN);
-    var topStudent = saveStudent(promotion, topGroup);
-    var lowerStudent = saveStudent(promotion, lowerGroup);
-    giveFullCurriculum(
-        topGroup,
-        topStudent,
-        new BigDecimal[] {new BigDecimal("16"), new BigDecimal("15"), new BigDecimal("17")});
-    giveFullCurriculum(
-        lowerGroup,
-        lowerStudent,
-        new BigDecimal[] {new BigDecimal("11"), new BigDecimal("12"), new BigDecimal("13")});
+    var group = saveGroup(promotion, Track.TN);
+    var topStudent = saveStudent(promotion, group);
+    var lowerStudent = saveStudent(promotion, group);
+    var exams = createCurriculum(group);
+    saveGrade(exams.get(0), topStudent, new BigDecimal("16"));
+    saveGrade(exams.get(1), topStudent, new BigDecimal("15"));
+    saveGrade(exams.get(2), topStudent, new BigDecimal("17"));
+    saveGrade(exams.get(0), lowerStudent, new BigDecimal("11"));
+    saveGrade(exams.get(1), lowerStudent, new BigDecimal("12"));
+    saveGrade(exams.get(2), lowerStudent, new BigDecimal("13"));
 
     var graduates = getGraduates(token(admin), promotion.getId());
 
@@ -253,18 +250,16 @@ class GraduatesIT extends FacadeIT {
   void failingStudentIsNotAGraduate() {
     var admin = saveAdmin();
     var promotion = savePromotion();
-    var passingGroup = saveGroup(promotion, Track.TN);
-    var failingGroup = saveGroup(promotion, Track.TN);
-    var passingStudent = saveStudent(promotion, passingGroup);
-    var failingStudent = saveStudent(promotion, failingGroup);
-    giveFullCurriculum(
-        passingGroup,
-        passingStudent,
-        new BigDecimal[] {new BigDecimal("14"), new BigDecimal("15"), new BigDecimal("16")});
-    giveFullCurriculum(
-        failingGroup,
-        failingStudent,
-        new BigDecimal[] {new BigDecimal("12"), new BigDecimal("8"), new BigDecimal("13")});
+    var group = saveGroup(promotion, Track.TN);
+    var passingStudent = saveStudent(promotion, group);
+    var failingStudent = saveStudent(promotion, group);
+    var exams = createCurriculum(group);
+    saveGrade(exams.get(0), passingStudent, new BigDecimal("14"));
+    saveGrade(exams.get(1), passingStudent, new BigDecimal("15"));
+    saveGrade(exams.get(2), passingStudent, new BigDecimal("16"));
+    saveGrade(exams.get(0), failingStudent, new BigDecimal("12"));
+    saveGrade(exams.get(1), failingStudent, new BigDecimal("8"));
+    saveGrade(exams.get(2), failingStudent, new BigDecimal("13"));
 
     var graduates = getGraduates(token(admin), promotion.getId());
 
@@ -280,15 +275,11 @@ class GraduatesIT extends FacadeIT {
     var group = saveGroup(promotion, Track.TN);
     var otherGroup = saveGroup(otherPromotion, Track.TN);
     var student = saveStudent(promotion, group);
-    var otherStudent = saveStudent(otherPromotion, otherGroup);
-    giveFullCurriculum(
-        group,
-        student,
-        new BigDecimal[] {new BigDecimal("14"), new BigDecimal("15"), new BigDecimal("16")});
-    giveFullCurriculum(
-        otherGroup,
-        otherStudent,
-        new BigDecimal[] {new BigDecimal("14"), new BigDecimal("15"), new BigDecimal("16")});
+    saveStudent(otherPromotion, otherGroup);
+    var exams = createCurriculum(group);
+    saveGrade(exams.get(0), student, new BigDecimal("14"));
+    saveGrade(exams.get(1), student, new BigDecimal("15"));
+    saveGrade(exams.get(2), student, new BigDecimal("16"));
 
     var graduates = getGraduates(token(admin), promotion.getId());
 
@@ -300,12 +291,6 @@ class GraduatesIT extends FacadeIT {
   void teacherCannotAccessGraduates() {
     var teacher = saveTeacher();
     var promotion = savePromotion();
-    var group = saveGroup(promotion, Track.TN);
-    var student = saveStudent(promotion, group);
-    giveFullCurriculum(
-        group,
-        student,
-        new BigDecimal[] {new BigDecimal("14"), new BigDecimal("15"), new BigDecimal("16")});
 
     webTestClient
         .get()
@@ -353,51 +338,13 @@ class GraduatesIT extends FacadeIT {
   }
 
   @Test
-  void adminCanDownloadGraduateListAsXlsx() {
-    var admin = saveAdmin();
-    var promotion = savePromotion();
-    var group = saveGroup(promotion, Track.TN);
-    var student = saveStudent(promotion, group);
-    giveFullCurriculum(
-        group,
-        student,
-        new BigDecimal[] {new BigDecimal("14"), new BigDecimal("15"), new BigDecimal("16")});
-
-    var response =
-        webTestClient
-            .get()
-            .uri("/promotions/{promotion_id}/graduates/download", promotion.getId())
-            .header("Authorization", "Bearer " + token(admin))
-            .exchange()
-            .expectStatus()
-            .isOk()
-            .expectHeader()
-            .contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-            .expectBody(byte[].class)
-            .returnResult()
-            .getResponseBody();
-
-    assertNotNull(response);
-    // XLSX magic bytes: PK zip header
-    assertTrue(response.length > 0);
-    assertEquals('P', response[0]);
-    assertEquals('K', response[1]);
-  }
-
-  @Test
-  void teacherCannotDownloadGraduateList() {
+  void teacherCannotExportGraduateList() {
     var teacher = saveTeacher();
     var promotion = savePromotion();
-    var group = saveGroup(promotion, Track.TN);
-    var student = saveStudent(promotion, group);
-    giveFullCurriculum(
-        group,
-        student,
-        new BigDecimal[] {new BigDecimal("14"), new BigDecimal("15"), new BigDecimal("16")});
 
     webTestClient
         .get()
-        .uri("/promotions/{promotion_id}/graduates/download", promotion.getId())
+        .uri("/admin/promotions/{promotion_id}/graduates", promotion.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -424,7 +371,34 @@ class GraduatesIT extends FacadeIT {
     assertNotNull(body);
     assertTrue(body.contains(promotion.getRef()));
     assertTrue(body.contains("Download Graduate List"));
-    assertTrue(body.contains("/promotions/" + promotion.getId() + "/graduates/download"));
+    assertTrue(body.contains("/admin/promotions/" + promotion.getId() + "/graduates"));
+  }
+
+  @Test
+  void studentWhoChangedGroupKeepsLatestTrack() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var tnGroup = saveGroup(promotion, Track.TN);
+    var elGroup = saveGroup(promotion, Track.EL);
+    var student = saveStudent(promotion, tnGroup);
+    groupFlowRepository.save(
+        JGroupFlow.builder()
+            .student(student)
+            .group(elGroup)
+            .groupFlowType(GroupFlowType.JOIN)
+            .build());
+
+    // The student's curriculum follows their latest track (EL), not the first (TN).
+    var exams = createCurriculum(elGroup);
+    saveGrade(exams.get(0), student, new BigDecimal("14"));
+    saveGrade(exams.get(1), student, new BigDecimal("15"));
+    saveGrade(exams.get(2), student, new BigDecimal("16"));
+
+    var graduates = getGraduates(token(admin), promotion.getId());
+
+    assertEquals(1, graduates.size());
+    assertEquals(student.getStd(), graduates.get(0).std());
+    assertEquals(Track.EL, graduates.get(0).track());
   }
 
   @Test
