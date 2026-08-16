@@ -351,4 +351,56 @@ class GraduatesIT extends FacadeIT {
         .expectStatus()
         .isNotFound();
   }
+
+  @Test
+  void adminCanDownloadGraduateListAsXlsx() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    giveFullCurriculum(
+        group,
+        student,
+        new BigDecimal[] {new BigDecimal("14"), new BigDecimal("15"), new BigDecimal("16")});
+
+    var response =
+        webTestClient
+            .get()
+            .uri("/promotions/{promotion_id}/graduates/download", promotion.getId())
+            .header("Authorization", "Bearer " + token(admin))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectHeader()
+            .contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            .expectBody(byte[].class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(response);
+    // XLSX magic bytes: PK zip header
+    assertTrue(response.length > 0);
+    assertEquals('P', response[0]);
+    assertEquals('K', response[1]);
+  }
+
+  @Test
+  void teacherCannotDownloadGraduateList() {
+    var teacher = saveTeacher();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    giveFullCurriculum(
+        group,
+        student,
+        new BigDecimal[] {new BigDecimal("14"), new BigDecimal("15"), new BigDecimal("16")});
+
+    webTestClient
+        .get()
+        .uri("/promotions/{promotion_id}/graduates/download", promotion.getId())
+        .header("Authorization", "Bearer " + token(teacher))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
 }
