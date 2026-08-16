@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.cocojojo.mg.model.enums.Semester;
+import org.cocojojo.mg.repository.model.JCourse;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,6 +20,17 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
 
   @EntityGraph(attributePaths = {"course"})
   List<JCourseAssignment> findByGroupIdIn(List<UUID> groupIds);
+
+  /** The distinct courses actually assigned to the given groups within the given semesters. */
+  @Query(
+      """
+      select distinct a.course from JCourseAssignment a
+      where a.group.id in :groupIds
+        and a.semester in :semesters
+      """)
+  List<JCourse> findCurriculumCourses(
+      @Param("groupIds") Collection<UUID> groupIds,
+      @Param("semesters") Collection<Semester> semesters);
 
   @Query(
       """
