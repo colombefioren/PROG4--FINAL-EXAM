@@ -170,9 +170,8 @@ class ExamIT extends FacadeIT {
             .build());
   }
 
-  private ExamRequest examRequest(UUID courseAssignmentId, Fraction coefficient) {
+  private ExamRequest examRequest(Fraction coefficient) {
     return ExamRequest.builder()
-        .courseAssignmentId(courseAssignmentId)
         .title("Exam " + UUID.randomUUID())
         .examDatetime(Instant.parse("2024-06-01T09:00:00Z"))
         .coefficient(coefficient)
@@ -184,7 +183,7 @@ class ExamIT extends FacadeIT {
         .put()
         .uri("/course-assignments/" + courseAssignmentId + "/exams")
         .header("Authorization", "Bearer " + token)
-        .bodyValue(examRequest(courseAssignmentId, new Fraction(1, 2)))
+        .bodyValue(examRequest(new Fraction(1, 2)))
         .exchange()
         .expectStatus()
         .isOk()
@@ -227,7 +226,6 @@ class ExamIT extends FacadeIT {
             .bodyValue(
                 ExamRequest.builder()
                     .id(created.id())
-                    .courseAssignmentId(assignment.getId())
                     .title("Updated " + UUID.randomUUID())
                     .examDatetime(Instant.parse("2024-06-15T09:00:00Z"))
                     .coefficient(new Fraction(3, 4))
@@ -381,7 +379,7 @@ class ExamIT extends FacadeIT {
         .put()
         .uri("/course-assignments/" + assignment.getId() + "/exams")
         .header("Authorization", "Bearer " + loginToken(student.getEmail(), "secret123"))
-        .bodyValue(examRequest(assignment.getId(), new Fraction(1, 2)))
+        .bodyValue(examRequest(new Fraction(1, 2)))
         .exchange()
         .expectStatus()
         .isForbidden();
@@ -430,7 +428,7 @@ class ExamIT extends FacadeIT {
             .put()
             .uri("/course-assignments/" + assignment.getId() + "/exams")
             .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
-            .bodyValue(examRequest(assignment.getId(), new Fraction(1, 2)))
+            .bodyValue(examRequest(new Fraction(1, 2)))
             .exchange()
             .expectStatus()
             .isOk()
@@ -455,7 +453,7 @@ class ExamIT extends FacadeIT {
         .put()
         .uri("/course-assignments/" + assignment.getId() + "/exams")
         .header("Authorization", "Bearer " + loginToken(otherTeacher.getEmail(), "secret123"))
-        .bodyValue(examRequest(assignment.getId(), new Fraction(1, 2)))
+        .bodyValue(examRequest(new Fraction(1, 2)))
         .exchange()
         .expectStatus()
         .isForbidden();
@@ -478,7 +476,6 @@ class ExamIT extends FacadeIT {
             .bodyValue(
                 ExamRequest.builder()
                     .id(created.id())
-                    .courseAssignmentId(assignment.getId())
                     .title("Updated " + UUID.randomUUID())
                     .examDatetime(Instant.parse("2024-06-15T09:00:00Z"))
                     .coefficient(new Fraction(1, 2))
@@ -511,7 +508,6 @@ class ExamIT extends FacadeIT {
         .bodyValue(
             ExamRequest.builder()
                 .id(created.id())
-                .courseAssignmentId(assignment.getId())
                 .title("Hijack " + UUID.randomUUID())
                 .examDatetime(Instant.parse("2024-06-15T09:00:00Z"))
                 .coefficient(new Fraction(1, 2))
@@ -758,7 +754,7 @@ class ExamIT extends FacadeIT {
         .put()
         .uri("/course-assignments/" + assignment.getId() + "/exams")
         .header("Authorization", "Bearer " + token)
-        .bodyValue(examRequest(assignment.getId(), new Fraction(1, 2)))
+        .bodyValue(examRequest(new Fraction(1, 2)))
         .exchange()
         .expectStatus()
         .isBadRequest();
@@ -792,33 +788,13 @@ class ExamIT extends FacadeIT {
         .isNotFound();
   }
 
-  @Test
-  void courseAssignmentPathMismatchIsRejected() {
-    var promotion = createPromotion();
-    var group = createGroup(promotion);
-    var course = createCourse();
-    var courseB = createCourse();
-    var teacher = createTeacher();
-    var assignment = createAssignment(course, group, teacher);
-    var otherAssignment = createAssignment(courseB, group, teacher);
-
-    webTestClient
-        .put()
-        .uri("/course-assignments/" + assignment.getId() + "/exams")
-        .header("Authorization", "Bearer " + adminToken())
-        .bodyValue(examRequest(otherAssignment.getId(), new Fraction(1, 2)))
-        .exchange()
-        .expectStatus()
-        .isBadRequest();
-  }
-
   private void createExamWithCoefficient(
       String token, UUID courseAssignmentId, Fraction coefficient) {
     webTestClient
         .put()
         .uri("/course-assignments/" + courseAssignmentId + "/exams")
         .header("Authorization", "Bearer " + token)
-        .bodyValue(examRequest(courseAssignmentId, coefficient))
+        .bodyValue(examRequest(coefficient))
         .exchange()
         .expectStatus()
         .isOk()
@@ -834,8 +810,6 @@ class ExamIT extends FacadeIT {
         .header("Authorization", "Bearer " + token)
         .bodyValue(
             Map.of(
-                "courseAssignmentId",
-                courseAssignmentId.toString(),
                 "title",
                 "Raw coeff " + UUID.randomUUID(),
                 "examDatetime",
@@ -900,8 +874,6 @@ class ExamIT extends FacadeIT {
           .header("Authorization", "Bearer " + token)
           .bodyValue(
               Map.of(
-                  "courseAssignmentId",
-                  assignmentId.toString(),
                   "title",
                   "Invalid coeff",
                   "examDatetime",
@@ -926,8 +898,6 @@ class ExamIT extends FacadeIT {
           .header("Authorization", "Bearer " + token)
           .bodyValue(
               Map.of(
-                  "courseAssignmentId",
-                  assignmentId.toString(),
                   "title",
                   "Invalid coeff",
                   "examDatetime",
