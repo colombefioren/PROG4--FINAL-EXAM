@@ -13,5 +13,7 @@ public interface CourseRepository extends JpaRepository<JCourse, UUID> {
 
   List<JCourse> findByStudentLevel(StudentLevel studentLevel);
 
+  List<JCourse> findByStudentLevelOrderByCodeAsc(StudentLevel studentLevel);
+
   List<JCourse> findByStudentLevelInAndTrack(List<StudentLevel> studentLevels, Track track);
 }
