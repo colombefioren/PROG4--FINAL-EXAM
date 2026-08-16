@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Graduate Lists</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 2rem;
+      }
+      table {
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 0.5rem 1rem;
+        text-align: left;
+      }
+      a {
+        color: #1a73e8;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Promotions</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Name</th>
+          <th>Entry year</th>
+          <th>Graduate list</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="promotion : ${promotions}">
+          <td th:text="${promotion.ref()}">REF</td>
+          <td th:text="${promotion.name()}">Name</td>
+          <td th:text="${promotion.entryYear()}">2025</td>
+          <td>
+            <button
+              type="button"
+              class="graduate-download"
+              th:attr="data-promotion-id=${promotion.id()}"
+            >
+              Download Graduate List
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <script th:inline="none">
+      document.querySelectorAll('.graduate-download').forEach((button) => {
+        button.addEventListener('click', () =>
+          downloadGraduateList(button.dataset.promotionId),
+        );
+      });
+
+      async function downloadGraduateList(promotionId) {
+        try {
+          const response = await fetch(
+            `/promotions/${promotionId}/graduates/export`,
+          );
+          if (!response.ok) {
+            throw new Error(`Export failed with status ${response.status}`);
+          }
+          const body = await response.json();
+          window.location.href = body.url;
+        } catch (error) {
+          alert(error.message);
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -6,6 +6,7 @@ import java.util.NoSuchElementException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.InvalidCurriculumException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,6 +28,12 @@ public class GlobalExceptionHandler {
   @ExceptionHandler({InvalidCurriculumException.class, IllegalArgumentException.class})
   public ResponseEntity<Map<String, String>> handleBadRequest(RuntimeException ex) {
     return error(HttpStatus.BAD_REQUEST, ex.getMessage());
+  }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(
+      DataIntegrityViolationException ex) {
+    return error(HttpStatus.BAD_REQUEST, "Request violates a uniqueness or integrity constraint");
   }
 
   @ExceptionHandler(IllegalStateException.class)
