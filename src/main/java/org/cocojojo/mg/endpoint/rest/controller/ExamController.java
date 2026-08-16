@@ -21,36 +21,33 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/course-assignments/{course_assignment_id}/exams")
+@RequestMapping("/course-assignments/{courseAssignmentId}/exams")
 public class ExamController {
 
   private final ExamService service;
 
   @PutMapping
   public ExamResponse upsert(
-      @PathVariable("course_assignment_id") UUID courseAssignmentId,
-      @Valid @RequestBody ExamRequest request) {
+      @PathVariable UUID courseAssignmentId, @Valid @RequestBody ExamRequest request) {
     return service.upsert(courseAssignmentId, request);
   }
 
   @GetMapping
   public List<ExamResponse> getByCourseAssignmentId(
-      @PathVariable("course_assignment_id") UUID courseAssignmentId,
+      @PathVariable UUID courseAssignmentId,
       @RequestParam(value = "from", required = false) Instant from,
       @RequestParam(value = "to", required = false) Instant to) {
     return service.getByCourseAssignmentId(courseAssignmentId, from, to);
   }
 
   @GetMapping("/{id}")
-  public ExamResponse getById(
-      @PathVariable("course_assignment_id") UUID courseAssignmentId, @PathVariable UUID id) {
+  public ExamResponse getById(@PathVariable UUID courseAssignmentId, @PathVariable UUID id) {
     return service.getById(courseAssignmentId, id);
   }
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void delete(
-      @PathVariable("course_assignment_id") UUID courseAssignmentId, @PathVariable UUID id) {
+  public void delete(@PathVariable UUID courseAssignmentId, @PathVariable UUID id) {
     service.delete(courseAssignmentId, id);
   }
 }
