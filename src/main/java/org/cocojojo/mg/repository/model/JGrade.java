@@ -18,6 +18,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
@@ -32,6 +34,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Builder
 @Getter
 @Setter
+@SQLDelete(sql = "update \"grade\" set \"is_deleted\" = true where \"id\" = ?")
+@SQLRestriction("\"is_deleted\" = false")
 public class JGrade {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -51,6 +55,10 @@ public class JGrade {
 
   @Column(name = "\"comment\"")
   private String comment;
+
+  @Builder.Default
+  @Column(name = "\"is_deleted\"")
+  private boolean isDeleted = false;
 
   @CreationTimestamp
   @Column(name = "\"created_at\"", nullable = false, updatable = false)
