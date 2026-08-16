@@ -2,12 +2,14 @@ package org.cocojojo.mg.endpoint.rest.security;
 
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.PUT;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -40,7 +42,7 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/swagger-ui/**")
                     .permitAll()
-                    .requestMatchers("/view/**")
+                    .requestMatchers("/ui/**")
                     .hasRole("ADMIN")
                     .requestMatchers(
                         PUT,
@@ -54,29 +56,40 @@ public class SecurityConfig {
                     .requestMatchers(GET, "/admins/**")
                     .hasRole("ADMIN")
                     .requestMatchers(
-                        GET,
-                        "/students",
-                        "/teachers",
-                        "/groups",
-                        "/courses",
-                        "/courses/*",
-                        "/promotions/*/graduates/xlsx")
+                        GET, "/students", "/teachers", "/groups", "/courses", "/courses/*")
                     .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(
-                        PUT,
-                        "/course-assignments/**",
-                        "/course-assignments/*/exams",
-                        "/exams/*/grades")
+                        GET, "/promotions/*/graduates", "/promotions/*/graduates/export")
+                    .hasRole("ADMIN")
+                    .requestMatchers(GET, "/course-assignments/curriculum-status")
+                    .hasRole("ADMIN")
+                    .requestMatchers(
+                        GET, "/exams/*/grades", "/exams/*/students/*/grade", "/grades/*/history")
                     .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(DELETE, "/grades/*")
+                    .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(PATCH, "/exams/*/students/*/grade")
+                    .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(PUT, "/course-assignments/*/exams", "/exams/*/grades")
+                    .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(PUT, "/course-assignments/**")
+                    .hasRole("ADMIN")
                     .requestMatchers(DELETE, "/course-assignments/*/exams/**")
                     .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(DELETE, "/course-assignments/**")
+                    .hasRole("ADMIN")
                     .anyRequest()
                     .authenticated())
+        .httpBasic(Customizer.withDefaults())
         .exceptionHandling(
             ex ->
                 ex.authenticationEntryPoint(
-                    (request, response, authException) ->
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
+                    (request, response, authException) -> {
+                      // Keep the WWW-Authenticate header so browsers prompt for credentials
+                      // when opening the /ui pages without a bearer token.
+                      response.setHeader("WWW-Authenticate", "Basic realm=\"hei\"");
+                      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                    }))
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
         .build();
   }

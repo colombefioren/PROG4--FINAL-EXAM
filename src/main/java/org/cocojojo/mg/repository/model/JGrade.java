@@ -8,7 +8,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -18,20 +17,21 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(
-    name = "\"grade\"",
-    uniqueConstraints =
-        @UniqueConstraint(
-            name = "grade_student_exam_uk",
-            columnNames = {"\"student_id\"", "\"exam_id\""}))
+// (student_id, exam_id) uniqueness is enforced by a partial unique index that only
+// covers live rows (see V63), so re-grading a student+exam after a soft delete works.
+@Table(name = "\"grade\"")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Getter
 @Setter
+@SQLDelete(sql = "update \"grade\" set \"is_deleted\" = true where \"id\" = ?")
+@SQLRestriction("\"is_deleted\" = false")
 public class JGrade {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -51,6 +51,10 @@ public class JGrade {
 
   @Column(name = "\"comment\"")
   private String comment;
+
+  @Builder.Default
+  @Column(name = "\"is_deleted\"")
+  private boolean isDeleted = false;
 
   @CreationTimestamp
   @Column(name = "\"created_at\"", nullable = false, updatable = false)
