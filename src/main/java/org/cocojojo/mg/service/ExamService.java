@@ -50,11 +50,7 @@ public class ExamService {
   }
 
   public ExamResponse getById(UUID courseAssignmentId, UUID examId) {
-    var entity =
-        examRepository
-            .findById(examId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Exam with id:" + examId + " not found."));
+    var entity = getExamOrThrow(examId);
     if (!entity.getCourseAssignment().getId().equals(courseAssignmentId)) {
       throw new ResourceNotFoundException("Exam with id:" + examId + " not found.");
     }
@@ -85,11 +81,7 @@ public class ExamService {
 
   @Transactional
   public void delete(UUID courseAssignmentId, UUID examId) {
-    var entity =
-        examRepository
-            .findById(examId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Exam with id:" + examId + " not found."));
+    var entity = getExamOrThrow(examId);
     if (!entity.getCourseAssignment().getId().equals(courseAssignmentId)) {
       throw new ResourceNotFoundException("Exam with id:" + examId + " not found.");
     }
@@ -103,17 +95,18 @@ public class ExamService {
   }
 
   private JExam updateExam(ExamRequest request, JCourseAssignment assignment) {
-    var entity =
-        examRepository
-            .findById(request.id())
-            .orElseThrow(
-                () ->
-                    new ResourceNotFoundException("Exam with id:" + request.id() + " not found."));
+    var entity = getExamOrThrow(request.id());
     entity.setCourseAssignment(assignment);
     entity.setTitle(request.title());
     entity.setExamDatetime(request.examDatetime());
     entity.setCoefficientFraction(request.coefficient());
     return entity;
+  }
+
+  private JExam getExamOrThrow(UUID examId) {
+    return examRepository
+        .findById(examId)
+        .orElseThrow(() -> new ResourceNotFoundException("Exam with id:" + examId + " not found."));
   }
 
   private void requireCanView(CourseAssignment assignment) {
