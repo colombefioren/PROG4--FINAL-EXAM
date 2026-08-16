@@ -58,6 +58,13 @@ class CourseAssignmentIT extends FacadeIT {
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
     courseAssignmentRepository.deleteAll();
+    groupFlowRepository.deleteAll();
+    teacherRepository.deleteAll();
+    studentRepository.deleteAll();
+    adminRepository.deleteAll();
+    courseRepository.deleteAll();
+    groupRepository.deleteAll();
+    promotionRepository.deleteAll();
   }
 
   private String loginToken(String email, String rawPassword) {
