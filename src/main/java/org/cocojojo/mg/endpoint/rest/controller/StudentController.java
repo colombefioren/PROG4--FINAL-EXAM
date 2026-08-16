@@ -8,13 +8,18 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.GroupFlowResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.MoveStudentGroupRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentResponse;
+import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.service.GroupFlowService;
 import org.cocojojo.mg.service.StudentService;
+import org.cocojojo.mg.service.TranscriptService;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -23,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class StudentController {
   private final StudentService studentService;
   private final GroupFlowService groupFlowService;
+  private final TranscriptService transcriptService;
 
   @GetMapping
   public List<StudentResponse> getAll() {
@@ -49,5 +55,12 @@ public class StudentController {
   public GroupFlowResponse moveToGroup(
       @PathVariable UUID id, @RequestBody @Valid MoveStudentGroupRequest request) {
     return groupFlowService.move(studentService.getEntityOrThrow(id), request);
+  }
+
+  @PostMapping("/{id}/yearly_results/{level}/transcript")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public void requestTranscript(@PathVariable UUID id, @PathVariable StudentLevel level) {
+    studentService.assertAdminOrSelf(id);
+    transcriptService.requestTranscript(id, level);
   }
 }
