@@ -41,7 +41,7 @@
           <td th:text="${promotion.entryYear()}">2025</td>
           <td>
             <a
-              th:href="@{/promotions/{id}/graduates/download(id=${promotion.id()})}"
+              th:href="@{/admin/promotions/{id}/graduates(id=${promotion.id()})}"
               th:text="'Download Graduate List'"
             >
               Download Graduate List
