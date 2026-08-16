@@ -197,7 +197,7 @@ class GradeIT extends FacadeIT {
     var body =
         webTestClient
             .put()
-            .uri("/exams/{exam_id}/grades", examId)
+            .uri("/exams/{examId}/grades", examId)
             .header("Authorization", "Bearer " + token)
             .bodyValue(requests)
             .exchange()
@@ -234,7 +234,7 @@ class GradeIT extends FacadeIT {
     var listed =
         webTestClient
             .get()
-            .uri("/exams/{exam_id}/grades", exam.getId())
+            .uri("/exams/{examId}/grades", exam.getId())
             .header("Authorization", "Bearer " + token(admin))
             .exchange()
             .expectStatus()
@@ -285,7 +285,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/exams/{exam_id}/grades", exam.getId())
+        .uri("/exams/{examId}/grades", exam.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .bodyValue(request)
         .exchange()
@@ -294,7 +294,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/exams/{exam_id}/grades", exam.getId())
+        .uri("/exams/{examId}/grades", exam.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -315,7 +315,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/exams/{exam_id}/grades", exam.getId())
+        .uri("/exams/{examId}/grades", exam.getId())
         .header("Authorization", "Bearer " + token(student))
         .exchange()
         .expectStatus()
@@ -323,7 +323,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/exams/{exam_id}/grades", exam.getId())
+        .uri("/exams/{examId}/grades", exam.getId())
         .header("Authorization", "Bearer " + token(student))
         .bodyValue(request)
         .exchange()
@@ -337,7 +337,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/exams/{exam_id}/grades", exam.getId())
+        .uri("/exams/{examId}/grades", exam.getId())
         .exchange()
         .expectStatus()
         .isUnauthorized();
@@ -349,7 +349,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/exams/{exam_id}/grades", UUID.randomUUID())
+        .uri("/exams/{examId}/grades", UUID.randomUUID())
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
@@ -371,7 +371,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/exams/{exam_id}/grades", exam.getId())
+        .uri("/exams/{examId}/grades", exam.getId())
         .header("Authorization", "Bearer " + token(admin))
         .bodyValue(request)
         .exchange()
@@ -399,7 +399,7 @@ class GradeIT extends FacadeIT {
     var history =
         webTestClient
             .get()
-            .uri("/grades/{grade_id}/history", grade.getId())
+            .uri("/grades/{gradeId}/history", grade.getId())
             .header("Authorization", "Bearer " + token(admin))
             .exchange()
             .expectStatus()
@@ -433,7 +433,7 @@ class GradeIT extends FacadeIT {
     var corrected =
         webTestClient
             .put()
-            .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+            .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
             .header("Authorization", "Bearer " + token(admin))
             .bodyValue(
                 GradeCorrectionRequest.builder()
@@ -452,7 +452,7 @@ class GradeIT extends FacadeIT {
     var history =
         webTestClient
             .get()
-            .uri("/grades/{grade_id}/history", grade.getId())
+            .uri("/grades/{gradeId}/history", grade.getId())
             .header("Authorization", "Bearer " + token(admin))
             .exchange()
             .expectStatus()
@@ -476,7 +476,7 @@ class GradeIT extends FacadeIT {
     var grades =
         webTestClient
             .get()
-            .uri("/students/{student_id}/grades", student.getId())
+            .uri("/students/{studentId}/grades", student.getId())
             .header("Authorization", "Bearer " + token(student))
             .exchange()
             .expectStatus()
@@ -498,7 +498,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/students/{student_id}/grades", student.getId())
+        .uri("/students/{studentId}/grades", student.getId())
         .header("Authorization", "Bearer " + token(other))
         .exchange()
         .expectStatus()
@@ -518,7 +518,7 @@ class GradeIT extends FacadeIT {
     var grades =
         webTestClient
             .get()
-            .uri("/students/{student_id}/grades", student.getId())
+            .uri("/students/{studentId}/grades", student.getId())
             .header("Authorization", "Bearer " + token(teacher))
             .exchange()
             .expectStatus()
@@ -541,7 +541,7 @@ class GradeIT extends FacadeIT {
     var grades =
         webTestClient
             .get()
-            .uri("/students/{student_id}/grades", student.getId())
+            .uri("/students/{studentId}/grades", student.getId())
             .header("Authorization", "Bearer " + token(admin))
             .exchange()
             .expectStatus()
@@ -561,7 +561,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/grades/{grade_id}", grade.getId())
+        .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(student))
         .exchange()
         .expectStatus()
@@ -580,7 +580,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/grades/{grade_id}", grade.getId())
+        .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(other))
         .exchange()
         .expectStatus()
@@ -596,7 +596,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/grades/{grade_id}", grade.getId())
+        .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -613,7 +613,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/grades/{grade_id}", grade.getId())
+        .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -629,7 +629,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/grades/{grade_id}", grade.getId())
+        .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
@@ -655,7 +655,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .delete()
-        .uri("/grades/{grade_id}", gradeId)
+        .uri("/grades/{gradeId}", gradeId)
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
@@ -664,7 +664,7 @@ class GradeIT extends FacadeIT {
     // The grade is soft-deleted: gone from reads, but its history rows survive physically.
     webTestClient
         .get()
-        .uri("/grades/{grade_id}", gradeId)
+        .uri("/grades/{gradeId}", gradeId)
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
@@ -689,7 +689,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .delete()
-        .uri("/grades/{grade_id}", grade.getId())
+        .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -706,7 +706,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .delete()
-        .uri("/grades/{grade_id}", grade.getId())
+        .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -721,7 +721,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .delete()
-        .uri("/grades/{grade_id}", grade.getId())
+        .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(student))
         .exchange()
         .expectStatus()
@@ -737,7 +737,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/grades/{grade_id}/history", grade.getId())
+        .uri("/grades/{gradeId}/history", grade.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -754,7 +754,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/grades/{grade_id}/history", grade.getId())
+        .uri("/grades/{gradeId}/history", grade.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -769,7 +769,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/grades/{grade_id}/history", grade.getId())
+        .uri("/grades/{gradeId}/history", grade.getId())
         .header("Authorization", "Bearer " + token(student))
         .exchange()
         .expectStatus()
@@ -796,7 +796,7 @@ class GradeIT extends FacadeIT {
     // so the mandatory reason rule applies.
     webTestClient
         .put()
-        .uri("/exams/{exam_id}/grades", exam.getId())
+        .uri("/exams/{examId}/grades", exam.getId())
         .header("Authorization", "Bearer " + token(admin))
         .bodyValue(
             List.of(
@@ -830,7 +830,7 @@ class GradeIT extends FacadeIT {
                 .build()));
     webTestClient
         .put()
-        .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+        .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
         .header("Authorization", "Bearer " + token(admin))
         .bodyValue(
             GradeCorrectionRequest.builder()
@@ -846,7 +846,7 @@ class GradeIT extends FacadeIT {
     var history =
         webTestClient
             .get()
-            .uri("/grades/{grade_id}/history", grade.getId())
+            .uri("/grades/{gradeId}/history", grade.getId())
             .header("Authorization", "Bearer " + token(admin))
             .exchange()
             .expectStatus()
@@ -871,7 +871,7 @@ class GradeIT extends FacadeIT {
     var corrected =
         webTestClient
             .put()
-            .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+            .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
             .header("Authorization", "Bearer " + token(teacher))
             .bodyValue(
                 GradeCorrectionRequest.builder()
@@ -899,7 +899,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+        .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .bodyValue(
             GradeCorrectionRequest.builder()
@@ -919,7 +919,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+        .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
         .header("Authorization", "Bearer " + token(student))
         .bodyValue(
             GradeCorrectionRequest.builder()
@@ -939,7 +939,7 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+        .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
         .header("Authorization", "Bearer " + token(admin))
         .bodyValue(
             GradeCorrectionRequest.builder()
