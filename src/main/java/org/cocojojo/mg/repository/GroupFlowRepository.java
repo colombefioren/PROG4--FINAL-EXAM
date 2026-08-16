@@ -15,4 +15,8 @@ public interface GroupFlowRepository extends JpaRepository<JGroupFlow, UUID> {
   List<JGroupFlow> findByStudentIdOrderByCreatedAtDesc(UUID studentId);
 
   Optional<JGroupFlow> findFirstByStudentIdOrderByCreatedAtDesc(UUID studentId);
+
+  List<JGroupFlow> findByGroupId(UUID groupId);
+
+  List<JGroupFlow> findByGroupPromotionId(UUID promotionId);
 }
