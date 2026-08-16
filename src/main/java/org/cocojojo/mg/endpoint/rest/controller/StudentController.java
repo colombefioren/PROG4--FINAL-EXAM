@@ -57,10 +57,6 @@ public class StudentController {
     return groupFlowService.move(studentService.getEntityOrThrow(id), request);
   }
 
-  /**
-   * Enqueues the async generation of the student's yearly transcript PDF, then emails the S3-hosted
-   * link to them (see {@link org.cocojojo.mg.service.event.TranscriptRequestedService}).
-   */
   @PostMapping("/{id}/yearly_results/{level}/transcript")
   @ResponseStatus(HttpStatus.ACCEPTED)
   public void requestTranscript(@PathVariable UUID id, @PathVariable StudentLevel level) {

@@ -8,10 +8,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-/**
- * Fired when a student's yearly-result transcript should be emailed to them. {@link #level} is one
- * of {@code L1}/{@code L2}/{@code L3} — the level whose result is rendered in the PDF.
- */
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)

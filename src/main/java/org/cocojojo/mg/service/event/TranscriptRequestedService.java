@@ -64,10 +64,10 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
     var link = bucketComponent.presign(key, LINK_VALIDITY);
 
     var htmlBody =
-        "<p>Bonjour "
+        "<p>Hello "
             + student.getFirstname()
-            + ",</p><p>Votre relevé de notes est disponible via le lien suivant (valide 7 jours) : "
-            + "<a href=\""
+            + ",</p><p>Your grade transcript is available via the following link (valid for 7"
+            + " days): <a href=\""
             + link
             + "\">"
             + link
@@ -78,7 +78,7 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
             new InternetAddress(student.getEmail()),
             List.of(),
             List.of(),
-            "Votre relevé de notes HEI",
+            "Your HEI grade transcript",
             htmlBody,
             List.of()));
     log.info("Transcript sent to student {}", student.getStd());
@@ -93,7 +93,7 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
 
   private String render(JStudent student, YearlyResultResponse yearly) {
     var context = new Context();
-    context.setVariable("title", "Relevé de notes - " + yearly.level());
+    context.setVariable("title", "Grade transcript - " + yearly.level());
     context.setVariable("studentName", student.getFirstname() + " " + student.getLastname());
     context.setVariable("stdRef", student.getStd());
     context.setVariable(
@@ -102,7 +102,7 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
         "overallAverage",
         yearly.overallAverage() == null ? "-" : yearly.overallAverage().toString());
     context.setVariable(
-        "complete", Boolean.TRUE.equals(yearly.complete()) ? "Complet" : "Provisoire");
+        "complete", Boolean.TRUE.equals(yearly.complete()) ? "Complete" : "Provisional");
     context.setVariable("earnedCredits", yearly.earnedCredits());
     context.setVariable("totalCredits", yearly.totalCredits());
     context.setVariable("courses", yearly.courses().stream().map(this::toCourseView).toList());
@@ -115,7 +115,7 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
     map.put("name", course.courseName());
     map.put("credits", course.credits());
     map.put("average", course.average() == null ? "-" : course.average().toString());
-    map.put("validated", Boolean.TRUE.equals(course.passed()) ? "Validé" : "Non validé");
+    map.put("validated", Boolean.TRUE.equals(course.passed()) ? "Passed" : "Not passed");
     return map;
   }
 
