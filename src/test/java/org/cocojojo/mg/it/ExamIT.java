@@ -37,6 +37,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -816,5 +817,55 @@ class ExamIT extends FacadeIT {
         .expectBody(ExamResponse.class)
         .returnResult()
         .getResponseBody();
+  }
+
+  @Test
+  void adminCanCreateExamWithDecimalCoefficient() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var assignment = createAssignment(course, group, teacher);
+    var token = adminToken();
+
+    var quarter =
+        webTestClient
+            .put()
+            .uri("/course-assignments/" + assignment.getId() + "/exams")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(
+                "{\"courseAssignmentId\":\""
+                    + assignment.getId()
+                    + "\",\"title\":\"Quarter"
+                    + " coeff\",\"examDatetime\":\"2024-06-01T09:00:00Z\",\"coefficient\":0.25}")
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(ExamResponse.class)
+            .returnResult()
+            .getResponseBody();
+    assertNotNull(quarter);
+    assertEquals(new Fraction(1, 4), quarter.coefficient());
+
+    var half =
+        webTestClient
+            .put()
+            .uri("/course-assignments/" + assignment.getId() + "/exams")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(
+                "{\"courseAssignmentId\":\""
+                    + assignment.getId()
+                    + "\",\"title\":\"Half"
+                    + " coeff\",\"examDatetime\":\"2024-06-01T09:00:00Z\",\"coefficient\":0.5}")
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(ExamResponse.class)
+            .returnResult()
+            .getResponseBody();
+    assertNotNull(half);
+    assertEquals(new Fraction(1, 2), half.coefficient());
   }
 }
