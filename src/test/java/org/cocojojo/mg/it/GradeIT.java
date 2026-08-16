@@ -641,23 +641,43 @@ class GradeIT extends FacadeIT {
     var admin = saveAdmin();
     var student = saveStudent();
     var exam = saveExam(saveAssignment(saveTeacher()));
-    var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+    var created =
+        upsertGrades(
+            token(admin),
+            exam.getId(),
+            List.of(
+                GradeRequest.builder()
+                    .studentId(student.getId())
+                    .examId(exam.getId())
+                    .value(new BigDecimal("12.0"))
+                    .build()));
+    var gradeId = created.get(0).id();
 
     webTestClient
         .delete()
-        .uri("/grades/{grade_id}", grade.getId())
+        .uri("/grades/{grade_id}", gradeId)
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
         .isNoContent();
 
+    // The grade is soft-deleted: gone from reads, but its history rows survive physically.
     webTestClient
         .get()
-        .uri("/grades/{grade_id}", grade.getId())
+        .uri("/grades/{grade_id}", gradeId)
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
         .isNotFound();
+
+    // The soft-deleted grade is hidden from JPA (SQLRestriction), so count the
+    // retained history rows physically.
+    var historyCount =
+        jdbcTemplate.queryForObject(
+            "select count(*) from \"grade_history\" where \"grade_id\" = ?",
+            Integer.class,
+            gradeId);
+    assertEquals(1, historyCount);
   }
 
   @Test
