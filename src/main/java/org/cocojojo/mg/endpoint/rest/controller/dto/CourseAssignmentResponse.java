@@ -14,6 +14,6 @@ public record CourseAssignmentResponse(
     UUID groupId,
     String groupRef,
     List<TeacherResponse> teachers,
-    int academicYear,
+    Integer academicYear,
     Semester semester,
-    int credits) {}
+    Integer credits) {}
