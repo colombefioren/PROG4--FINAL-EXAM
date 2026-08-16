@@ -23,7 +23,9 @@ public class GroupService {
 
   public List<GroupResponse> getAll(UUID promotionId) {
     var groups =
-        promotionId == null ? groupRepository.findAll() : groupRepository.findByPromotionId(promotionId);
+        promotionId == null
+            ? groupRepository.findAll()
+            : groupRepository.findByPromotionId(promotionId);
     return groups.stream().map(groupMapper::toModel).map(groupMapper::toResponse).toList();
   }
 

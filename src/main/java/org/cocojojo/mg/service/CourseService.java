@@ -22,7 +22,10 @@ public class CourseService {
   private final CourseMapper courseMapper;
 
   public List<CourseResponse> getAll() {
-    return courseRepository.findAll().stream().map(courseMapper::toModel).map(courseMapper::toResponse).toList();
+    return courseRepository.findAll().stream()
+        .map(courseMapper::toModel)
+        .map(courseMapper::toResponse)
+        .toList();
   }
 
   public CourseResponse getById(UUID id) {
