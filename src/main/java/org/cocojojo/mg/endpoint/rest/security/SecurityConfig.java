@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -72,11 +73,16 @@ public class SecurityConfig {
                     .hasAnyRole("ADMIN", "TEACHER")
                     .anyRequest()
                     .authenticated())
+        .httpBasic(Customizer.withDefaults())
         .exceptionHandling(
             ex ->
                 ex.authenticationEntryPoint(
-                    (request, response, authException) ->
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
+                    (request, response, authException) -> {
+                      // Keep the WWW-Authenticate header so browsers prompt for credentials
+                      // when opening the /ui pages without a bearer token.
+                      response.setHeader("WWW-Authenticate", "Basic realm=\"hei\"");
+                      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                    }))
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
         .build();
   }
