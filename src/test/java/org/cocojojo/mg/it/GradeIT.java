@@ -777,7 +777,7 @@ class GradeIT extends FacadeIT {
   }
 
   @Test
-  void upsertUpdateRecordsHistoryWithPreviousValue() {
+  void upsertIsCreationOnlyAndRejectsExistingGrade() {
     var admin = saveAdmin();
     var exam = saveExam(saveAssignment(saveTeacher()));
     var student = saveStudent();
@@ -791,6 +791,34 @@ class GradeIT extends FacadeIT {
                 .examId(exam.getId())
                 .value(new BigDecimal("14.0"))
                 .build()));
+
+    // Bulk upsert is creation-only: updating an existing grade must go through correct()
+    // so the mandatory reason rule applies.
+    webTestClient
+        .put()
+        .uri("/exams/{exam_id}/grades", exam.getId())
+        .header("Authorization", "Bearer " + token(admin))
+        .bodyValue(
+            List.of(
+                GradeRequest.builder()
+                    .studentId(student.getId())
+                    .examId(exam.getId())
+                    .value(new BigDecimal("17.0"))
+                    .build()))
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+
+    var grade = gradeRepository.findAll().get(0);
+    assertEquals(0, new BigDecimal("14.0").compareTo(grade.getValue()));
+  }
+
+  @Test
+  void correctRecordsHistoryWithPreviousValue() {
+    var admin = saveAdmin();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var student = saveStudent();
+
     upsertGrades(
         token(admin),
         exam.getId(),
@@ -798,8 +826,20 @@ class GradeIT extends FacadeIT {
             GradeRequest.builder()
                 .studentId(student.getId())
                 .examId(exam.getId())
-                .value(new BigDecimal("17.0"))
+                .value(new BigDecimal("14.0"))
                 .build()));
+    webTestClient
+        .put()
+        .uri("/exams/{exam_id}/students/{student_id}/grade", exam.getId(), student.getId())
+        .header("Authorization", "Bearer " + token(admin))
+        .bodyValue(
+            GradeCorrectionRequest.builder()
+                .value(new BigDecimal("17.0"))
+                .reason("Recheck")
+                .build())
+        .exchange()
+        .expectStatus()
+        .isOk();
 
     var grade = gradeRepository.findAll().get(0);
     assertEquals(0, new BigDecimal("17.0").compareTo(grade.getValue()));
@@ -818,6 +858,7 @@ class GradeIT extends FacadeIT {
     assertEquals(2, history.size());
     assertEquals(0, new BigDecimal("14.0").compareTo(history.get(0).previousValue()));
     assertEquals(0, new BigDecimal("17.0").compareTo(history.get(0).newValue()));
+    assertEquals("Recheck", history.get(0).reason());
   }
 
   @Test
