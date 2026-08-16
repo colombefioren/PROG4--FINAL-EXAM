@@ -289,6 +289,37 @@ class GraduatesIT extends FacadeIT {
     assertTrue(graduates.isEmpty());
   }
 
+  @Test
+  void singleFullCoefficientExamStillCompletesTheCourse() {
+    // Regression: the standard one 1/1-exam-per-course curriculum (used by the other fixtures)
+    // must still complete once graded under the new coefficient rule.
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    var course = saveCourse(StudentLevel.L1, null);
+    var assignment = saveAssignment(course, group, Semester.S1);
+    var exam =
+        examRepository.save(
+            JExam.builder()
+                .courseAssignment(assignment)
+                .title("Full " + SEQUENCE.incrementAndGet())
+                .examDatetime(Instant.parse("2025-06-01T08:00:00Z"))
+                .coefficientNumerator(1)
+                .coefficientDenominator(1)
+                .build());
+    saveGrade(exam, student, new BigDecimal("14"));
+
+    var summary = resultService.computeResultsSummary(student.getId());
+    var l1 =
+        summary.levels().stream()
+            .filter(l -> l.level() == StudentLevel.L1)
+            .findFirst()
+            .orElseThrow();
+    assertTrue(l1.complete().booleanValue());
+    assertTrue(l1.courses().get(0).complete().booleanValue());
+    assertTrue(l1.courses().get(0).passed().booleanValue());
+  }
+
   private JExam saveExam(JCourseAssignment assignment) {
     return examRepository.save(
         JExam.builder()
