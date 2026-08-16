@@ -10,7 +10,6 @@ import org.cocojojo.mg.model.Fraction;
 @Builder
 public record ExamRequest(
     UUID id,
-    @NotNull UUID courseAssignmentId,
     @NotBlank String title,
     @NotNull Instant examDatetime,
     @NotNull Fraction coefficient) {}

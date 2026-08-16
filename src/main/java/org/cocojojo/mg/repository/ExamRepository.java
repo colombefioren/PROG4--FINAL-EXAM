@@ -1,5 +1,6 @@
 package org.cocojojo.mg.repository;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -33,4 +34,17 @@ public interface ExamRepository extends JpaRepository<JExam, UUID> {
       @Param("courseId") UUID courseId,
       @Param("semesters") Collection<Semester> semesters,
       @Param("groupIds") Collection<UUID> groupIds);
+
+  @EntityGraph(attributePaths = {"courseAssignment", "courseAssignment.teachers"})
+  @Query(
+      """
+      select e from JExam e
+      where e.courseAssignment.id = :courseAssignmentId
+        and e.examDatetime >= coalesce(:from, e.examDatetime)
+        and e.examDatetime <= coalesce(:to, e.examDatetime)
+      """)
+  List<JExam> findByCourseAssignmentIdAndDateRange(
+      @Param("courseAssignmentId") UUID courseAssignmentId,
+      @Param("from") Instant from,
+      @Param("to") Instant to);
 }
