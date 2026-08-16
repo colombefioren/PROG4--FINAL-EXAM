@@ -17,6 +17,15 @@ public class PromotionMapper {
         .build();
   }
 
+  public JPromotion toEntity(Promotion model) {
+    return JPromotion.builder()
+        .id(model.id())
+        .ref(model.ref())
+        .name(model.name())
+        .entryYear(model.entryYear())
+        .build();
+  }
+
   public PromotionResponse toResponse(Promotion model) {
     return PromotionResponse.builder()
         .id(model.id())

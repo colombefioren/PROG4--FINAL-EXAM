@@ -70,4 +70,8 @@ public class TeacherService {
 
     return mapper.toResponse(mapper.toModel(repository.save(teacher)));
   }
+
+  public JTeacher getByIdOrThrow(UUID id) {
+    return getEntityOrThrow(id);
+  }
 }

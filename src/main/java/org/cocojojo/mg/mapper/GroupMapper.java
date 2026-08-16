@@ -21,6 +21,15 @@ public class GroupMapper {
         .build();
   }
 
+  public JGroup toEntity(Group model) {
+    return JGroup.builder()
+        .id(model.id())
+        .ref(model.ref())
+        .track(model.track())
+        .promotion(promotionMapper.toEntity(model.promotion()))
+        .build();
+  }
+
   public GroupResponse toResponse(Group model) {
     return GroupResponse.builder()
         .id(model.id())

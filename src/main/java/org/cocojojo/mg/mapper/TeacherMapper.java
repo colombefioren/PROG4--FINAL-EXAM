@@ -18,6 +18,16 @@ public class TeacherMapper {
         .build();
   }
 
+  public JTeacher toEntity(Teacher model) {
+    return JTeacher.builder()
+        .id(model.id())
+        .firstname(model.firstname())
+        .lastname(model.lastname())
+        .email(model.email())
+        .password(model.password())
+        .build();
+  }
+
   public TeacherResponse toResponse(Teacher model) {
     return TeacherResponse.builder()
         .id(model.id())

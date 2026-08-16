@@ -7,6 +7,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.GroupRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GroupResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.GroupMapper;
+import org.cocojojo.mg.model.Group;
 import org.cocojojo.mg.repository.GroupRepository;
 import org.cocojojo.mg.repository.model.JGroup;
 import org.springframework.stereotype.Service;
@@ -15,20 +16,37 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class GroupService {
-  private final GroupRepository repository;
-  private final GroupMapper mapper;
+
+  private final GroupRepository groupRepository;
+  private final GroupMapper groupMapper;
   private final PromotionService promotionService;
 
   public List<GroupResponse> getAll(UUID promotionId) {
     var groups =
-        promotionId == null ? repository.findAll() : repository.findByPromotionId(promotionId);
-    return groups.stream().map(mapper::toModel).map(mapper::toResponse).toList();
+        promotionId == null
+            ? groupRepository.findAll()
+            : groupRepository.findByPromotionId(promotionId);
+    return groups.stream().map(groupMapper::toModel).map(groupMapper::toResponse).toList();
   }
 
   public JGroup getEntityOrThrow(UUID id) {
-    return repository
+    return groupRepository
         .findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Group with id: " + id + " not found."));
+  }
+
+  public JGroup getByIdOrThrow(UUID id) {
+    return groupRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Group with id: " + id + " not found."));
+  }
+
+  public Group getById(UUID id) {
+    return groupMapper.toModel(
+        groupRepository
+            .findById(id)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Group with id:" + id + " not found.")));
   }
 
   @Transactional
@@ -38,12 +56,8 @@ public class GroupService {
     group.setPromotion(promotionService.getEntityOrThrow(request.promotionId()));
     group.setTrack(request.track());
 
-    var saved = repository.save(group);
+    var saved = groupRepository.save(group);
 
-    return mapper.toResponse(mapper.toModel(saved));
-  }
-
-  public JGroup getByIdOrThrow(UUID id) {
-    return getEntityOrThrow(id);
+    return groupMapper.toResponse(groupMapper.toModel(saved));
   }
 }

@@ -20,6 +20,22 @@ public class CourseMapper {
         .build();
   }
 
+  public JCourse toEntity(Course model) {
+    return JCourse.builder()
+        .id(model.id())
+        .code(model.code())
+        .name(model.name())
+        .credits(model.credits())
+        .totalHours(model.totalHours())
+        .studentLevel(model.studentLevel())
+        .track(model.track())
+        .build();
+  }
+
+  public CourseResponse toResponse(JCourse entity) {
+    return toResponse(toModel(entity));
+  }
+
   public CourseResponse toResponse(Course model) {
     return CourseResponse.builder()
         .id(model.id())

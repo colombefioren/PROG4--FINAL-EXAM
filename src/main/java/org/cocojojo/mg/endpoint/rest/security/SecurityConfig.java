@@ -56,24 +56,13 @@ public class SecurityConfig {
                     .requestMatchers(GET, "/admins/**")
                     .hasRole("ADMIN")
                     .requestMatchers(
-                        GET,
-                        "/students",
-                        "/teachers",
-                        "/groups",
-                        "/courses",
-                        "/courses/*",
-                        "/promotions/*/graduates/xlsx")
+                        GET, "/students", "/teachers", "/groups", "/courses", "/courses/*")
                     .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(
                         GET, "/promotions/*/graduates", "/promotions/*/graduates/export")
                     .hasRole("ADMIN")
-                    .requestMatchers(
-                        PUT,
-                        "/course-assignments/**",
-                        "/course-assignments/*/exams",
-                        "/exams/*/grades",
-                        "/exams/*/students/*/grade")
-                    .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(GET, "/course-assignments/curriculum-status")
+                    .hasRole("ADMIN")
                     .requestMatchers(
                         GET, "/exams/*/grades", "/exams/*/students/*/grade", "/grades/*/history")
                     .hasAnyRole("ADMIN", "TEACHER")

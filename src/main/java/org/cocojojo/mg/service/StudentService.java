@@ -8,6 +8,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.StudentResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.GroupMapper;
 import org.cocojojo.mg.mapper.StudentMapper;
+import org.cocojojo.mg.model.Group;
 import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.model.JStudent;
 import org.cocojojo.mg.util.SecurityUtil;
@@ -45,6 +46,20 @@ public class StudentService {
     return repository
         .findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Student with id: " + id + " not found."));
+  }
+
+  public JStudent getByIdOrThrow(UUID id) {
+    return repository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Student with id:" + id + " not found."));
+  }
+
+  public Group getCurrentGroup(UUID studentId) {
+    return groupFlowService
+        .getCurrentGroup(studentId)
+        .map(groupMapper::toModel)
+        .orElseThrow(
+            () -> new ResourceNotFoundException("Student with id:" + studentId + " has no group"));
   }
 
   @Transactional
