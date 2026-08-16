@@ -62,7 +62,6 @@ class CourseAssignmentIT extends FacadeIT {
     teacherRepository.deleteAll();
     studentRepository.deleteAll();
     adminRepository.deleteAll();
-    courseRepository.deleteAll();
     groupRepository.deleteAll();
     promotionRepository.deleteAll();
   }
