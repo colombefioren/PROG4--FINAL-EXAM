@@ -43,6 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -61,6 +62,7 @@ class GradeIT extends FacadeIT {
   @Autowired private GradeRepository gradeRepository;
   @Autowired private GroupFlowRepository groupFlowRepository;
   @Autowired private GradeHistoryRepository gradeHistoryRepository;
+  @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private JwtService jwtService;
 
@@ -70,8 +72,10 @@ class GradeIT extends FacadeIT {
   @BeforeEach
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
-    gradeHistoryRepository.deleteAll();
-    gradeRepository.deleteAll();
+    // Grades are soft-deleted (is_deleted), so a physical purge is needed to free the
+    // grade.student_id FK before students can be removed.
+    jdbcTemplate.execute("delete from \"grade_history\"");
+    jdbcTemplate.execute("delete from \"grade\"");
     examRepository.deleteAll();
     courseAssignmentRepository.deleteAll();
     groupFlowRepository.deleteAll();
