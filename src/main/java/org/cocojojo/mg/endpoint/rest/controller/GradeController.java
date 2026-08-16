@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeCorrectionRequest;
+import org.cocojojo.mg.endpoint.rest.controller.dto.GradeDeleteRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeHistoryResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeResponse;
@@ -12,6 +13,7 @@ import org.cocojojo.mg.service.GradeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,7 +45,7 @@ public class GradeController {
     return gradeService.getByExamIdAndStudentId(examId, studentId);
   }
 
-  @PutMapping("/exams/{examId}/students/{studentId}/grade")
+  @PatchMapping("/exams/{examId}/students/{studentId}/grade")
   public GradeResponse correct(
       @PathVariable UUID examId,
       @PathVariable UUID studentId,
