@@ -24,49 +24,51 @@ public class GradeController {
 
   private final GradeService gradeService;
 
-  @GetMapping("/exams/{exam_id}/grades")
-  public List<GradeResponse> getByExamId(@PathVariable("exam_id") UUID examId) {
+  @GetMapping("/exams/{examId}/grades")
+  public List<GradeResponse> getByExamId(@PathVariable UUID examId) {
     return gradeService.getByExamId(examId);
   }
 
-  @PutMapping("/exams/{exam_id}/grades")
+  // Bulk on purpose: grading a whole class means entering one grade per student in a single
+  // request, and the batch is validated as a unit before any row is inserted.
+  @PutMapping("/exams/{examId}/grades")
   public List<GradeResponse> upsert(
-      @PathVariable("exam_id") UUID examId, @Valid @RequestBody List<GradeRequest> requests) {
+      @PathVariable UUID examId, @Valid @RequestBody List<GradeRequest> requests) {
     return gradeService.upsert(examId, requests);
   }
 
-  @GetMapping("/exams/{exam_id}/students/{student_id}/grade")
+  @GetMapping("/exams/{examId}/students/{studentId}/grade")
   public GradeResponse getByExamIdAndStudentId(
-      @PathVariable("exam_id") UUID examId, @PathVariable("student_id") UUID studentId) {
+      @PathVariable UUID examId, @PathVariable UUID studentId) {
     return gradeService.getByExamIdAndStudentId(examId, studentId);
   }
 
-  @PutMapping("/exams/{exam_id}/students/{student_id}/grade")
+  @PutMapping("/exams/{examId}/students/{studentId}/grade")
   public GradeResponse correct(
-      @PathVariable("exam_id") UUID examId,
-      @PathVariable("student_id") UUID studentId,
+      @PathVariable UUID examId,
+      @PathVariable UUID studentId,
       @Valid @RequestBody GradeCorrectionRequest request) {
     return gradeService.correct(examId, studentId, request);
   }
 
-  @GetMapping("/students/{student_id}/grades")
-  public List<GradeResponse> getByStudentId(@PathVariable("student_id") UUID studentId) {
+  @GetMapping("/students/{studentId}/grades")
+  public List<GradeResponse> getByStudentId(@PathVariable UUID studentId) {
     return gradeService.getByStudentId(studentId);
   }
 
-  @GetMapping("/grades/{grade_id}")
-  public GradeResponse getById(@PathVariable("grade_id") UUID gradeId) {
+  @GetMapping("/grades/{gradeId}")
+  public GradeResponse getById(@PathVariable UUID gradeId) {
     return gradeService.getById(gradeId);
   }
 
-  @DeleteMapping("/grades/{grade_id}")
+  @DeleteMapping("/grades/{gradeId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void delete(@PathVariable("grade_id") UUID gradeId) {
+  public void delete(@PathVariable UUID gradeId) {
     gradeService.delete(gradeId);
   }
 
-  @GetMapping("/grades/{grade_id}/history")
-  public List<GradeHistoryResponse> getHistory(@PathVariable("grade_id") UUID gradeId) {
+  @GetMapping("/grades/{gradeId}/history")
+  public List<GradeHistoryResponse> getHistory(@PathVariable UUID gradeId) {
     return gradeService.getHistory(gradeId);
   }
 }
