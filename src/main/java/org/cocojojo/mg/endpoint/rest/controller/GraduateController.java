@@ -29,7 +29,7 @@ public class GraduateController {
   }
 
   /** Generates the XLSX, uploads it to S3 and returns the pre-signed download URL. */
-  @GetMapping("/admin/promotions/{promotion_id}/graduates")
+  @GetMapping("/promotions/{promotion_id}/graduates/export")
   @ResponseBody
   public GraduateExportResponse export(@PathVariable("promotion_id") UUID promotionId) {
     return GraduateExportResponse.builder().url(graduateListService.export(promotionId)).build();
