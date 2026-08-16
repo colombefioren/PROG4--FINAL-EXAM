@@ -1,5 +1,6 @@
 package org.cocojojo.mg.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.cocojojo.mg.repository.model.JStudent;
@@ -10,4 +11,6 @@ import org.springframework.stereotype.Repository;
 public interface StudentRepository extends JpaRepository<JStudent, UUID> {
 
   Optional<JStudent> findFirstByStdStartingWithOrderByStdDesc(String prefix);
+
+  List<JStudent> findByPromotionIdOrderByLastnameAscFirstnameAsc(UUID promotionId);
 }

@@ -42,4 +42,8 @@ public class GroupService {
 
     return mapper.toResponse(mapper.toModel(saved));
   }
+
+  public JGroup getByIdOrThrow(UUID id) {
+    return getEntityOrThrow(id);
+  }
 }
