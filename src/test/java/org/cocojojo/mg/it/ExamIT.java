@@ -888,6 +888,32 @@ class ExamIT extends FacadeIT {
     assertEquals(new Fraction(1, 3), third.coefficient());
   }
 
+  @Test
+  void invalidNumericCoefficientsAreRejectedWithBadRequest() {
+    var token = adminToken();
+    var assignmentId = createAssignmentFor(createTeacher()).getId();
+
+    for (Object invalid : List.of(0.0, -0.5, 1.5)) {
+      webTestClient
+          .put()
+          .uri("/course-assignments/" + assignmentId + "/exams")
+          .header("Authorization", "Bearer " + token)
+          .bodyValue(
+              Map.of(
+                  "courseAssignmentId",
+                  assignmentId.toString(),
+                  "title",
+                  "Invalid coeff",
+                  "examDatetime",
+                  Instant.parse("2024-06-01T09:00:00Z"),
+                  "coefficient",
+                  invalid))
+          .exchange()
+          .expectStatus()
+          .isBadRequest();
+    }
+  }
+
   private JCourseAssignment createAssignmentFor(JTeacher teacher) {
     var promotion = createPromotion();
     var group = createGroup(promotion);
