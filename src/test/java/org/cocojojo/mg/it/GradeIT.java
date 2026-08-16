@@ -25,6 +25,7 @@ import org.cocojojo.mg.repository.CourseRepository;
 import org.cocojojo.mg.repository.ExamRepository;
 import org.cocojojo.mg.repository.GradeHistoryRepository;
 import org.cocojojo.mg.repository.GradeRepository;
+import org.cocojojo.mg.repository.GroupFlowRepository;
 import org.cocojojo.mg.repository.GroupRepository;
 import org.cocojojo.mg.repository.PromotionRepository;
 import org.cocojojo.mg.repository.StudentRepository;
@@ -58,6 +59,7 @@ class GradeIT extends FacadeIT {
   @Autowired private CourseAssignmentRepository courseAssignmentRepository;
   @Autowired private ExamRepository examRepository;
   @Autowired private GradeRepository gradeRepository;
+  @Autowired private GroupFlowRepository groupFlowRepository;
   @Autowired private GradeHistoryRepository gradeHistoryRepository;
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private JwtService jwtService;
@@ -72,6 +74,7 @@ class GradeIT extends FacadeIT {
     gradeRepository.deleteAll();
     examRepository.deleteAll();
     courseAssignmentRepository.deleteAll();
+    groupFlowRepository.deleteAll();
     teacherRepository.deleteAll();
     studentRepository.deleteAll();
     adminRepository.deleteAll();
