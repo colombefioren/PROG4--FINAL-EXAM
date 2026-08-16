@@ -168,7 +168,10 @@ public class ResultService {
         .toList();
   }
 
-  /** A student's track is the track of the group they most recently joined. */
+  /**
+   * The track of the group the student most recently joined. Used for reporting only: the
+   * curriculum itself spans every group the student ever joined (see studentGroupIds).
+   */
   public Track currentTrack(UUID studentId) {
     return groupFlowRepository
         .findFirstByStudentIdOrderByCreatedAtDesc(studentId)
