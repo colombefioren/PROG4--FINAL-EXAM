@@ -3,7 +3,6 @@ package org.cocojojo.mg.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
@@ -13,14 +12,13 @@ import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundExcept
 import org.cocojojo.mg.mapper.CourseAssignmentMapper;
 import org.cocojojo.mg.mapper.CourseMapper;
 import org.cocojojo.mg.mapper.GroupMapper;
-import org.cocojojo.mg.mapper.TeacherMapper;
-import org.cocojojo.mg.model.Course;
-import org.cocojojo.mg.model.Group;
-import org.cocojojo.mg.model.Teacher;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
+import org.cocojojo.mg.repository.model.JCourse;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
+import org.cocojojo.mg.repository.model.JGroup;
+import org.cocojojo.mg.repository.model.JTeacher;
 import org.cocojojo.mg.util.SecurityUtil;
 import org.cocojojo.mg.validator.CourseAssignmentValidator;
 import org.springframework.stereotype.Service;
@@ -38,7 +36,6 @@ public class CourseAssignmentService {
   private final CourseAssignmentMapper mapper;
   private final CourseMapper courseMapper;
   private final GroupMapper groupMapper;
-  private final TeacherMapper teacherMapper;
   private final CourseAssignmentValidator validator;
   private final SecurityUtil securityUtil;
 
@@ -86,11 +83,14 @@ public class CourseAssignmentService {
 
   private CourseAssignmentResponse upsertOne(CourseAssignmentRequest request) {
     validator.validateAllAreTeachers(request.teacherIds());
-    var course = courseService.getById(request.courseId());
-    var group = groupService.getById(request.groupId());
-    validator.validateCurriculum(course, group, request.semester());
+    // Wire the relations with the entities directly; only build the models where the
+    // curriculum validation actually needs domain fields.
+    var course = courseService.getByIdOrThrow(request.courseId());
+    var group = groupService.getByIdOrThrow(request.groupId());
+    validator.validateCurriculum(
+        courseMapper.toModel(course), groupMapper.toModel(group), request.semester());
 
-    var teachers = request.teacherIds().stream().map(teacherService::getById).toList();
+    var teachers = request.teacherIds().stream().map(teacherService::getByIdOrThrow).toList();
     var entity =
         request.id() == null
             ? newAssignment(request, course, group, teachers)
@@ -99,23 +99,21 @@ public class CourseAssignmentService {
   }
 
   private JCourseAssignment newAssignment(
-      CourseAssignmentRequest request, Course course, Group group, List<Teacher> teachers) {
+      CourseAssignmentRequest request, JCourse course, JGroup group, List<JTeacher> teachers) {
     validator.validateNotDuplicate(
-        null, course.id(), group.id(), request.academicYear(), request.semester());
+        null, course.getId(), group.getId(), request.academicYear(), request.semester());
     return mapper.toEntity(
         null,
-        courseMapper.toEntity(course),
-        groupMapper.toEntity(group),
-        teachers.stream()
-            .map(teacherMapper::toEntity)
-            .collect(Collectors.toCollection(ArrayList::new)),
+        course,
+        group,
+        new ArrayList<>(teachers),
         request.academicYear(),
         request.semester(),
         request.credits());
   }
 
   private JCourseAssignment updateAssignment(
-      CourseAssignmentRequest request, Course course, Group group, List<Teacher> teachers) {
+      CourseAssignmentRequest request, JCourse course, JGroup group, List<JTeacher> teachers) {
     var entity =
         repository
             .findById(request.id())
@@ -123,12 +121,9 @@ public class CourseAssignmentService {
                 () ->
                     new ResourceNotFoundException(
                         "CourseAssignment with id:" + request.id() + " not found."));
-    entity.setCourse(courseMapper.toEntity(course));
-    entity.setGroup(groupMapper.toEntity(group));
-    entity.setTeachers(
-        teachers.stream()
-            .map(teacherMapper::toEntity)
-            .collect(Collectors.toCollection(ArrayList::new)));
+    entity.setCourse(course);
+    entity.setGroup(group);
+    entity.setTeachers(new ArrayList<>(teachers));
     entity.setAcademicYear(request.academicYear());
     entity.setSemester(request.semester());
     entity.setCredits(request.credits());
