@@ -160,14 +160,17 @@ public class GradeService {
                 () ->
                     new ResourceNotFoundException(
                         "Student with id:" + request.studentId() + " not found."));
-    var existing = gradeRepository.findByExamIdAndStudentId(exam.getId(), request.studentId());
-    if (existing.isPresent()) {
-      var entity = existing.get();
-      recordHistory(entity, entity.getValue(), request.value(), "Grade updated", changedBy);
-      entity.setValue(request.value());
-      entity.setComment(request.comment());
-      return mapper.toResponse(entity);
-    }
+    gradeRepository
+        .findByExamIdAndStudentId(exam.getId(), request.studentId())
+        .ifPresent(
+            existing -> {
+              throw new IllegalArgumentException(
+                  "Grade already exists for exam "
+                      + exam.getId()
+                      + " and student "
+                      + request.studentId()
+                      + ", use the correction endpoint to modify it");
+            });
     var entity =
         gradeRepository.save(
             mapper.toEntity(null, student, exam, request.value(), request.comment()));
