@@ -13,7 +13,6 @@ import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
-import org.cocojojo.mg.repository.CourseRepository;
 import org.cocojojo.mg.repository.ExamRepository;
 import org.cocojojo.mg.repository.GradeRepository;
 import org.cocojojo.mg.repository.GroupFlowRepository;
@@ -30,7 +29,6 @@ public class ResultService {
 
   private final StudentRepository studentRepository;
   private final GroupFlowRepository groupFlowRepository;
-  private final CourseRepository courseRepository;
   private final CourseAssignmentRepository courseAssignmentRepository;
   private final ExamRepository examRepository;
   private final GradeRepository gradeRepository;
@@ -38,11 +36,10 @@ public class ResultService {
   public ResultsSummaryResponse computeResultsSummary(UUID studentId) {
     var student = findStudent(studentId);
     var groupIds = studentGroupIds(studentId);
-    var track = currentTrack(studentId);
 
     var levels =
         List.of(StudentLevel.L1, StudentLevel.L2, StudentLevel.L3).stream()
-            .map(level -> computeYearlyResult(student, level, groupIds, track))
+            .map(level -> computeYearlyResult(student, level, groupIds))
             .toList();
 
     var overallAverage =
@@ -62,11 +59,12 @@ public class ResultService {
   }
 
   private YearlyResultResponse computeYearlyResult(
-      JStudent student, StudentLevel level, List<UUID> groupIds, Track track) {
+      JStudent student, StudentLevel level, List<UUID> groupIds) {
+    // The curriculum is the courses actually assigned to the student's groups, not the whole
+    // catalog: a promotion that substitutes one course for another (e.g. SYS3 for PROG4) must
+    // not penalise its students for a catalog course that was never assigned to them.
     var requiredCourses =
-        courseRepository.findByStudentLevelOrderByCodeAsc(level).stream()
-            .filter(c -> c.getTrack() == null || c.getTrack() == track)
-            .toList();
+        courseAssignmentRepository.findCurriculumCourses(groupIds, level.semesters());
 
     var courseResults =
         requiredCourses.stream()
