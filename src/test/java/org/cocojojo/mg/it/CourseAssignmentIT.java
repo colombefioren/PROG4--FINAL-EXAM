@@ -332,7 +332,7 @@ class CourseAssignmentIT extends FacadeIT {
     var results =
         webTestClient
             .get()
-            .uri("/course-assignments?teacher_id=" + otherTeacher.getId())
+            .uri("/course-assignments?teacherId=" + otherTeacher.getId())
             .header("Authorization", "Bearer " + token)
             .exchange()
             .expectStatus()
@@ -487,7 +487,7 @@ class CourseAssignmentIT extends FacadeIT {
     var results =
         webTestClient
             .get()
-            .uri("/course-assignments?course_id=" + course.getId())
+            .uri("/course-assignments?courseId=" + course.getId())
             .header("Authorization", "Bearer " + token)
             .exchange()
             .expectStatus()
@@ -523,9 +523,9 @@ class CourseAssignmentIT extends FacadeIT {
         .isOk();
 
     var uri =
-        "/course-assignments/curriculum-status?group_id="
+        "/course-assignments/curriculum-status?groupId="
             + group.getId()
-            + "&academic_year=2024&semester=S1";
+            + "&academicYear=2024&semester=S1";
 
     var status =
         webTestClient
