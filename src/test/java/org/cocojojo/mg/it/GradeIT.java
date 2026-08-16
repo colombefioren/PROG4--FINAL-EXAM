@@ -7,10 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeCorrectionRequest;
+import org.cocojojo.mg.endpoint.rest.controller.dto.GradeDeleteRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeHistoryResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeResponse;
@@ -43,6 +45,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -223,7 +226,6 @@ class GradeIT extends FacadeIT {
             List.of(
                 GradeRequest.builder()
                     .studentId(student.getId())
-                    .examId(exam.getId())
                     .value(new BigDecimal("15.5"))
                     .comment("good")
                     .build()));
@@ -261,7 +263,6 @@ class GradeIT extends FacadeIT {
             List.of(
                 GradeRequest.builder()
                     .studentId(student.getId())
-                    .examId(exam.getId())
                     .value(new BigDecimal("12.0"))
                     .build()));
 
@@ -279,7 +280,6 @@ class GradeIT extends FacadeIT {
         List.of(
             GradeRequest.builder()
                 .studentId(student.getId())
-                .examId(exam.getId())
                 .value(new BigDecimal("10.0"))
                 .build());
 
@@ -309,7 +309,6 @@ class GradeIT extends FacadeIT {
         List.of(
             GradeRequest.builder()
                 .studentId(student.getId())
-                .examId(exam.getId())
                 .value(new BigDecimal("10.0"))
                 .build());
 
@@ -357,29 +356,6 @@ class GradeIT extends FacadeIT {
   }
 
   @Test
-  void examIdMismatchIsRejected() {
-    var admin = saveAdmin();
-    var exam = saveExam(saveAssignment(saveTeacher()));
-    var student = saveStudent();
-    var request =
-        List.of(
-            GradeRequest.builder()
-                .studentId(student.getId())
-                .examId(UUID.randomUUID())
-                .value(new BigDecimal("10.0"))
-                .build());
-
-    webTestClient
-        .put()
-        .uri("/exams/{examId}/grades", exam.getId())
-        .header("Authorization", "Bearer " + token(admin))
-        .bodyValue(request)
-        .exchange()
-        .expectStatus()
-        .isBadRequest();
-  }
-
-  @Test
   void historyRecordsNullPreviousOnFirstGrade() {
     var admin = saveAdmin();
     var exam = saveExam(saveAssignment(saveTeacher()));
@@ -391,7 +367,6 @@ class GradeIT extends FacadeIT {
         List.of(
             GradeRequest.builder()
                 .studentId(student.getId())
-                .examId(exam.getId())
                 .value(new BigDecimal("14.0"))
                 .build()));
 
@@ -425,14 +400,13 @@ class GradeIT extends FacadeIT {
         List.of(
             GradeRequest.builder()
                 .studentId(student.getId())
-                .examId(exam.getId())
                 .value(new BigDecimal("14.0"))
                 .build()));
     var grade = gradeRepository.findAll().get(0);
 
     var corrected =
         webTestClient
-            .put()
+            .patch()
             .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
             .header("Authorization", "Bearer " + token(admin))
             .bodyValue(
@@ -648,15 +622,15 @@ class GradeIT extends FacadeIT {
             List.of(
                 GradeRequest.builder()
                     .studentId(student.getId())
-                    .examId(exam.getId())
                     .value(new BigDecimal("12.0"))
                     .build()));
     var gradeId = created.get(0).id();
 
     webTestClient
-        .delete()
+        .method(HttpMethod.DELETE)
         .uri("/grades/{gradeId}", gradeId)
         .header("Authorization", "Bearer " + token(admin))
+        .bodyValue(GradeDeleteRequest.builder().reason("Too harsh, removing").build())
         .exchange()
         .expectStatus()
         .isNoContent();
@@ -670,14 +644,58 @@ class GradeIT extends FacadeIT {
         .expectStatus()
         .isNotFound();
 
-    // The soft-deleted grade is hidden from JPA (SQLRestriction), so count the
-    // retained history rows physically.
-    var historyCount =
-        jdbcTemplate.queryForObject(
-            "select count(*) from \"grade_history\" where \"grade_id\" = ?",
-            Integer.class,
+    // The soft-deleted grade is hidden from JPA (SQLRestriction), so inspect the retained
+    // history rows physically: the delete must leave an audit trail with the reason.
+    var historyRows =
+        jdbcTemplate.query(
+            "select previous_value, new_value, reason from \"grade_history\" where \"grade_id\" = ?"
+                + " order by changed_at",
+            (rs, rowNum) ->
+                new Object[] {
+                  rs.getObject("previous_value"), rs.getObject("new_value"), rs.getString("reason")
+                },
             gradeId);
-    assertEquals(1, historyCount);
+    // One row from creation ("Grade recorded") and one from the delete, carrying the reason.
+    assertEquals(2, historyRows.size());
+    var deletion = historyRows.get(historyRows.size() - 1);
+    assertEquals(0, new BigDecimal("12.0").compareTo((BigDecimal) deletion[0]));
+    assertNull(deletion[1]);
+    assertEquals("Too harsh, removing", deletion[2]);
+  }
+
+  @Test
+  void deleteWithoutReasonIsRejected() {
+    var admin = saveAdmin();
+    var student = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var created =
+        upsertGrades(
+            token(admin),
+            exam.getId(),
+            List.of(
+                GradeRequest.builder()
+                    .studentId(student.getId())
+                    .value(new BigDecimal("12.0"))
+                    .build()));
+    var gradeId = created.get(0).id();
+
+    webTestClient
+        .method(HttpMethod.DELETE)
+        .uri("/grades/{gradeId}", gradeId)
+        .header("Authorization", "Bearer " + token(admin))
+        .bodyValue(Map.of())
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+
+    // Nothing was deleted: the grade is still readable.
+    webTestClient
+        .get()
+        .uri("/grades/{gradeId}", gradeId)
+        .header("Authorization", "Bearer " + token(admin))
+        .exchange()
+        .expectStatus()
+        .isOk();
   }
 
   @Test
@@ -688,9 +706,10 @@ class GradeIT extends FacadeIT {
     var grade = saveGrade(exam, student, new BigDecimal("12.0"));
 
     webTestClient
-        .delete()
+        .method(HttpMethod.DELETE)
         .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(teacher))
+        .bodyValue(GradeDeleteRequest.builder().reason("Teacher override").build())
         .exchange()
         .expectStatus()
         .isNoContent();
@@ -705,9 +724,10 @@ class GradeIT extends FacadeIT {
     var grade = saveGrade(exam, student, new BigDecimal("12.0"));
 
     webTestClient
-        .delete()
+        .method(HttpMethod.DELETE)
         .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(teacher))
+        .bodyValue(GradeDeleteRequest.builder().reason("Nope").build())
         .exchange()
         .expectStatus()
         .isForbidden();
@@ -720,9 +740,10 @@ class GradeIT extends FacadeIT {
     var grade = saveGrade(exam, student, new BigDecimal("12.0"));
 
     webTestClient
-        .delete()
+        .method(HttpMethod.DELETE)
         .uri("/grades/{gradeId}", grade.getId())
         .header("Authorization", "Bearer " + token(student))
+        .bodyValue(GradeDeleteRequest.builder().reason("Nope").build())
         .exchange()
         .expectStatus()
         .isForbidden();
@@ -788,7 +809,6 @@ class GradeIT extends FacadeIT {
         List.of(
             GradeRequest.builder()
                 .studentId(student.getId())
-                .examId(exam.getId())
                 .value(new BigDecimal("14.0"))
                 .build()));
 
@@ -802,7 +822,6 @@ class GradeIT extends FacadeIT {
             List.of(
                 GradeRequest.builder()
                     .studentId(student.getId())
-                    .examId(exam.getId())
                     .value(new BigDecimal("17.0"))
                     .build()))
         .exchange()
@@ -825,11 +844,10 @@ class GradeIT extends FacadeIT {
         List.of(
             GradeRequest.builder()
                 .studentId(student.getId())
-                .examId(exam.getId())
                 .value(new BigDecimal("14.0"))
                 .build()));
     webTestClient
-        .put()
+        .patch()
         .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
         .header("Authorization", "Bearer " + token(admin))
         .bodyValue(
@@ -870,7 +888,7 @@ class GradeIT extends FacadeIT {
 
     var corrected =
         webTestClient
-            .put()
+            .patch()
             .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
             .header("Authorization", "Bearer " + token(teacher))
             .bodyValue(
@@ -898,7 +916,7 @@ class GradeIT extends FacadeIT {
     saveGrade(exam, student, new BigDecimal("12.0"));
 
     webTestClient
-        .put()
+        .patch()
         .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .bodyValue(
@@ -918,7 +936,7 @@ class GradeIT extends FacadeIT {
     saveGrade(exam, student, new BigDecimal("12.0"));
 
     webTestClient
-        .put()
+        .patch()
         .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
         .header("Authorization", "Bearer " + token(student))
         .bodyValue(
@@ -938,7 +956,7 @@ class GradeIT extends FacadeIT {
     var exam = saveExam(saveAssignment(saveTeacher()));
 
     webTestClient
-        .put()
+        .patch()
         .uri("/exams/{examId}/students/{studentId}/grade", exam.getId(), student.getId())
         .header("Authorization", "Bearer " + token(admin))
         .bodyValue(
