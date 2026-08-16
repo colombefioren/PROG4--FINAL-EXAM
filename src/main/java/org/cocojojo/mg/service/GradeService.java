@@ -66,7 +66,10 @@ public class GradeService {
     requests.forEach(r -> validator.validateExamMatchesPath(examId, r.examId()));
     var exam = getExam(examId);
     requireCanManageExam(courseAssignmentMapper.toModel(exam.getCourseAssignment()));
-    var changedBy = getCurrentUser();
+    var changedBy =
+        userRepository
+            .findById(securityUtil.getCurrentUserIdOrThrow())
+            .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
     return requests.stream().map(r -> upsertOne(r, exam, changedBy)).toList();
   }
 
@@ -81,7 +84,14 @@ public class GradeService {
                 () ->
                     new ResourceNotFoundException(
                         "Grade not found for exam " + examId + " and student " + studentId));
-    recordHistory(entity, entity.getValue(), request.value(), request.reason(), getCurrentUser());
+    recordHistory(
+        entity,
+        entity.getValue(),
+        request.value(),
+        request.reason(),
+        userRepository
+            .findById(securityUtil.getCurrentUserIdOrThrow())
+            .orElseThrow(() -> new IllegalStateException("Authenticated user not found")));
     entity.setValue(request.value());
     return mapper.toResponse(entity);
   }
@@ -187,12 +197,6 @@ public class GradeService {
     return gradeRepository
         .findWithDetailsById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Grade with id:" + id + " not found."));
-  }
-
-  private JUser getCurrentUser() {
-    return userRepository
-        .findById(securityUtil.getCurrentUserIdOrThrow())
-        .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
   }
 
   private void requireCanManageExam(CourseAssignment assignment) {
