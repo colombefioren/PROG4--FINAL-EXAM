@@ -226,6 +226,69 @@ class GraduatesIT extends FacadeIT {
     assertTrue(graduates.isEmpty());
   }
 
+  @Test
+  void courseIsCompleteOnceGradedCoefficientsSumToOne() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    var course = saveCourse(StudentLevel.L1, null);
+    var assignment = saveAssignment(course, group, Semester.S1);
+    var quarter =
+        examRepository.save(
+            JExam.builder()
+                .courseAssignment(assignment)
+                .title("Q " + SEQUENCE.incrementAndGet())
+                .examDatetime(Instant.parse("2025-06-01T08:00:00Z"))
+                .coefficientNumerator(1)
+                .coefficientDenominator(4)
+                .build());
+    var half =
+        examRepository.save(
+            JExam.builder()
+                .courseAssignment(assignment)
+                .title("H " + SEQUENCE.incrementAndGet())
+                .examDatetime(Instant.parse("2025-06-01T09:00:00Z"))
+                .coefficientNumerator(1)
+                .coefficientDenominator(2)
+                .build());
+    var lastQuarter =
+        examRepository.save(
+            JExam.builder()
+                .courseAssignment(assignment)
+                .title("L " + SEQUENCE.incrementAndGet())
+                .examDatetime(Instant.parse("2025-06-01T10:00:00Z"))
+                .coefficientNumerator(1)
+                .coefficientDenominator(4)
+                .build());
+    saveGrade(quarter, student, new BigDecimal("16"));
+    saveGrade(half, student, new BigDecimal("14"));
+
+    // Half of the weight graded: still incomplete even though two of three exams are graded.
+    var partial = resultService.computeResultsSummary(student.getId());
+    var l1Partial =
+        partial.levels().stream()
+            .filter(l -> l.level() == StudentLevel.L1)
+            .findFirst()
+            .orElseThrow();
+    assertFalse(l1Partial.complete().booleanValue());
+
+    saveGrade(lastQuarter, student, new BigDecimal("12"));
+    var complete = resultService.computeResultsSummary(student.getId());
+    var l1Complete =
+        complete.levels().stream()
+            .filter(l -> l.level() == StudentLevel.L1)
+            .findFirst()
+            .orElseThrow();
+    assertTrue(l1Complete.complete().booleanValue());
+    assertTrue(l1Complete.courses().get(0).passed().booleanValue());
+
+    // Only L1 exists in this curriculum, so the student cannot be a graduate yet — the point
+    // is that the course itself is complete.
+    var graduates = getGraduates(token(admin), promotion.getId());
+    assertTrue(graduates.isEmpty());
+  }
+
   private JExam saveExam(JCourseAssignment assignment) {
     return examRepository.save(
         JExam.builder()
