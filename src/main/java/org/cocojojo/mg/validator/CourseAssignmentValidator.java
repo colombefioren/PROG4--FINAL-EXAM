@@ -91,7 +91,10 @@ public class CourseAssignmentValidator {
   }
 
   private void validateTrackCompatibility(Course course, Group group) {
-    if (course.track() != null && group.track() != null && course.track() != group.track()) {
+    // A track-specific course (e.g. TN1) must never be assigned to a group that is not on that
+    // track — including an L1-shaped group whose track is null. Java's != already handles a null
+    // group track correctly, so no extra guard is needed.
+    if (course.track() != null && course.track() != group.track()) {
       throw new IllegalArgumentException(
           "Course "
               + course.code()
