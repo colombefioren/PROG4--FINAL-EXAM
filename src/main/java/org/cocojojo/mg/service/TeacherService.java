@@ -6,6 +6,7 @@ import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundExcept
 import org.cocojojo.mg.mapper.TeacherMapper;
 import org.cocojojo.mg.model.Teacher;
 import org.cocojojo.mg.repository.TeacherRepository;
+import org.cocojojo.mg.repository.model.JTeacher;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,11 +16,13 @@ public class TeacherService {
   private final TeacherRepository teacherRepository;
   private final TeacherMapper teacherMapper;
 
+  public JTeacher getByIdOrThrow(UUID id) {
+    return teacherRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Teacher with id:" + id + " not found."));
+  }
+
   public Teacher getById(UUID id) {
-    return teacherMapper.toModel(
-        teacherRepository
-            .findById(id)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Teacher with id:" + id + " not found.")));
+    return teacherMapper.toModel(getByIdOrThrow(id));
   }
 }

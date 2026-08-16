@@ -11,6 +11,7 @@ import org.cocojojo.mg.model.Student;
 import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.repository.GroupFlowRepository;
 import org.cocojojo.mg.repository.StudentRepository;
+import org.cocojojo.mg.repository.model.JStudent;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,13 +23,14 @@ public class StudentService {
   private final GroupMapper groupMapper;
   private final StudentMapper studentMapper;
 
+  public JStudent getByIdOrThrow(UUID id) {
+    return studentRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Student with id:" + id + " not found."));
+  }
+
   public Student getById(UUID id) {
-    var entity =
-        studentRepository
-            .findById(id)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Student with id:" + id + " not found."));
-    return studentMapper.toModel(entity, currentGroupOf(id).orElse(null));
+    return studentMapper.toModel(getByIdOrThrow(id), currentGroupOf(id).orElse(null));
   }
 
   public Group getCurrentGroup(UUID studentId) {
