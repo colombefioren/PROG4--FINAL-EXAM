@@ -423,7 +423,7 @@ class GraduatesIT extends FacadeIT {
     assertNotNull(body);
     assertTrue(body.contains(promotion.getRef()));
     assertTrue(body.contains("Download Graduate List"));
-    assertTrue(body.contains("/admin/promotions/" + promotion.getId() + "/graduates"));
+    assertTrue(body.contains("data-promotion-id=\"" + promotion.getId() + "\""));
   }
 
   @Test
