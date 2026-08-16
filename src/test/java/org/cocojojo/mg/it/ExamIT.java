@@ -61,6 +61,14 @@ class ExamIT extends FacadeIT {
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
     examRepository.deleteAll();
+    courseAssignmentRepository.deleteAll();
+    groupFlowRepository.deleteAll();
+    teacherRepository.deleteAll();
+    studentRepository.deleteAll();
+    adminRepository.deleteAll();
+    courseRepository.deleteAll();
+    groupRepository.deleteAll();
+    promotionRepository.deleteAll();
   }
 
   private String loginToken(String email, String rawPassword) {
