@@ -258,6 +258,76 @@ class StudentIT extends FacadeIT {
   }
 
   @Test
+  void movingStudentToAGroupOfAnotherPromotionUpdatesTheirPromotion() {
+    var promotion2024 = createPromotion(2024);
+    var group2024 = createGroup(promotion2024.id());
+    var promotion2025 = createPromotion(2025);
+    var group2025 = createGroup(promotion2025.id());
+    var email = uniqueEmail();
+    var student = createStudent(group2024.id(), email, "password123");
+
+    assertEquals(promotion2024.id(), student.promotionId());
+    var stdBefore = student.std();
+
+    webTestClient
+        .put()
+        .uri("/students/" + student.id() + "/group_flows")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(new MoveStudentGroupRequest(group2025.id()))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    var refreshed =
+        webTestClient
+            .get()
+            .uri("/students/" + student.id())
+            .header("Authorization", "Bearer " + adminToken())
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(StudentResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertEquals(group2025.id(), refreshed.currentGroupId());
+    assertEquals(promotion2025.id(), refreshed.promotionId());
+    assertEquals(stdBefore, refreshed.std());
+  }
+
+  @Test
+  void movingStudentWithinTheSamePromotionKeepsTheirPromotion() {
+    var promotion = createPromotion(2024);
+    var groupA = createGroup(promotion.id());
+    var groupB = createGroup(promotion.id());
+    var email = uniqueEmail();
+    var student = createStudent(groupA.id(), email, "password123");
+
+    webTestClient
+        .put()
+        .uri("/students/" + student.id() + "/group_flows")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(new MoveStudentGroupRequest(groupB.id()))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    var refreshed =
+        webTestClient
+            .get()
+            .uri("/students/" + student.id())
+            .header("Authorization", "Bearer " + adminToken())
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(StudentResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertEquals(promotion.id(), refreshed.promotionId());
+  }
+
+  @Test
   void creatingStudentWithoutInitialGroupIsRejected() {
     webTestClient
         .put()

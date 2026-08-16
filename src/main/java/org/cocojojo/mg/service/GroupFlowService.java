@@ -9,6 +9,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.MoveStudentGroupRequest;
 import org.cocojojo.mg.mapper.GroupFlowMapper;
 import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.repository.GroupFlowRepository;
+import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.model.JGroup;
 import org.cocojojo.mg.repository.model.JGroupFlow;
 import org.cocojojo.mg.repository.model.JStudent;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class GroupFlowService {
   private final GroupFlowRepository repository;
+  private final StudentRepository studentRepository;
   private final GroupFlowMapper mapper;
   private final GroupFlowValidator validator;
   private final GroupService groupService;
@@ -69,6 +71,9 @@ public class GroupFlowService {
                 .group(group)
                 .groupFlowType(GroupFlowType.JOIN)
                 .build());
+
+    student.setPromotion(group.getPromotion());
+    studentRepository.save(student);
 
     return mapper.toResponse(mapper.toModel(saved));
   }
