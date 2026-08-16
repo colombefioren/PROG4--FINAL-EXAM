@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -76,7 +77,13 @@ class GraduatesIT extends FacadeIT {
   @BeforeEach
   @SneakyThrows
   void setUp() {
-    webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    // A longer response timeout keeps the export test (xlsx generation + S3 upload) from
+    // flaking with a blocking-read timeout when test forks share CPU under CI load.
+    webTestClient =
+        WebTestClient.bindToServer()
+            .baseUrl("http://localhost:" + port)
+            .responseTimeout(Duration.ofSeconds(30))
+            .build();
     when(bucketComponent.presign(any(), any()))
         .thenReturn(
             URI.create("https://dummy-bucket.s3.eu-west-3.amazonaws.com/graduates/list.xlsx")
