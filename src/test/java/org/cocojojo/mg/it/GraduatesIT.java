@@ -93,7 +93,10 @@ class GraduatesIT extends FacadeIT {
         .thenReturn(
             URI.create("https://dummy-bucket.s3.eu-west-3.amazonaws.com/graduates/list.xlsx")
                 .toURL());
-    gradeRepository.deleteAll();
+    // Grades are soft-deleted (is_deleted), so a physical purge is needed to free the
+    // grade.student_id FK before students can be removed.
+    jdbcTemplate.execute("delete from \"grade_history\"");
+    jdbcTemplate.execute("delete from \"grade\"");
     examRepository.deleteAll();
     courseAssignmentRepository.deleteAll();
     groupFlowRepository.deleteAll();
