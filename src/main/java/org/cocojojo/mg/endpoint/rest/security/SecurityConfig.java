@@ -55,7 +55,7 @@ public class SecurityConfig {
                     .requestMatchers(GET, "/students", "/teachers")
                     .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(
-                        GET, "/promotions/*/graduates", "/admin/promotions/*/graduates")
+                        GET, "/promotions/*/graduates", "/promotions/*/graduates/export")
                     .hasRole("ADMIN")
                     .requestMatchers(
                         PUT,
