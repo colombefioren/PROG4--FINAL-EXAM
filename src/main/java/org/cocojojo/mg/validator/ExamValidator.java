@@ -22,13 +22,11 @@ public class ExamValidator {
 
   public void validateCoefficient(
       UUID courseAssignmentId, UUID examIdBeingSaved, Fraction coefficient) {
-    Fraction othersSum =
+    Fraction total =
         examRepository.findByCourseAssignmentId(courseAssignmentId).stream()
             .filter(exam -> !exam.getId().equals(examIdBeingSaved))
             .map(JExam::getCoefficientFraction)
-            .reduce(new Fraction(0, 1), Fraction::plus);
-
-    Fraction total = othersSum.plus(coefficient);
+            .reduce(coefficient, Fraction::plus);
     if (total.isGreaterThanOne()) {
       throw new InvalidCurriculumException(
           "Sum of exam coefficients for this course assignment would exceed 1 (100%)");
