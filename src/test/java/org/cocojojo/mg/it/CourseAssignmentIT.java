@@ -953,6 +953,74 @@ class CourseAssignmentIT extends FacadeIT {
   }
 
   @Test
+  void trackSpecificCourseOnNullTrackGroupIsRejected() {
+    // A track-specific course must not be assignable to an L1-shaped group whose track is null;
+    // the old check silently no-oped because of a group.track() != null guard.
+    var promotion = createPromotion();
+    var teacher = createTeacher();
+    var group =
+        groupRepository.save(
+            JGroup.builder().ref("GRP-" + UUID.randomUUID()).promotion(promotion).build());
+    var course =
+        courseRepository.save(
+            JCourse.builder()
+                .code("UE-" + UUID.randomUUID())
+                .name("Course " + UUID.randomUUID())
+                .credits(5)
+                .totalHours(20)
+                .studentLevel(StudentLevel.L1)
+                .track(Track.EL)
+                .build());
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(
+            List.of(
+                assignmentRequest(
+                    course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits())))
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+  }
+
+  @Test
+  void commonCourseOnTrackGroupIsStillAllowed() {
+    // Regression: courses without a track remain assignable to any group, including track ones.
+    var promotion = createPromotion();
+    var teacher = createTeacher();
+    var group =
+        groupRepository.save(
+            JGroup.builder()
+                .ref("GRP-" + UUID.randomUUID())
+                .promotion(promotion)
+                .track(Track.TN)
+                .build());
+    var course =
+        courseRepository.save(
+            JCourse.builder()
+                .code("UE-" + UUID.randomUUID())
+                .name("Course " + UUID.randomUUID())
+                .credits(5)
+                .totalHours(20)
+                .studentLevel(StudentLevel.L1)
+                .build());
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(
+            List.of(
+                assignmentRequest(
+                    course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits())))
+        .exchange()
+        .expectStatus()
+        .isOk();
+  }
+
+  @Test
   void unknownTeacherIdIsRejected() {
     var promotion = createPromotion();
     var group = createGroup(promotion);
