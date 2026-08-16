@@ -59,7 +59,7 @@ public class GraduateListService {
               .std(candidate.student().getStd())
               .firstname(candidate.student().getFirstname())
               .lastname(candidate.student().getLastname())
-              .track(resultService.trackOf(candidate.student()))
+              .track(resultService.currentTrack(candidate.student().getId()))
               .generalAverage(candidate.summary().overallAverage())
               .build());
     }
