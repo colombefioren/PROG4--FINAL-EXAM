@@ -7,7 +7,6 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -44,6 +43,10 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
   private static final String EMAIL_TEMPLATE = "transcript-email";
   private static final Duration LINK_VALIDITY = Duration.ofDays(7);
 
+  static String transcriptFileName(String std, StudentLevel level) {
+    return "transcript-" + std + "-" + level + ".pdf";
+  }
+
   private final StudentRepository studentRepository;
   private final ResultService resultService;
   private final ITemplateEngine templateEngine;
@@ -60,7 +63,8 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
     String html = render(student, yearly);
     byte[] pdf = renderPdf(html);
 
-    String key = "transcripts/" + student.getStd() + "/" + Instant.now().toEpochMilli() + ".pdf";
+    String fileName = transcriptFileName(student.getStd(), level);
+    String key = "transcripts/" + student.getStd() + "/" + fileName;
     var tempFile = File.createTempFile("transcript-" + student.getStd() + "-", ".pdf");
     Files.write(tempFile.toPath(), pdf);
     bucketComponent.upload(tempFile, key);
