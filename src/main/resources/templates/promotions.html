@@ -2,47 +2,87 @@
 <html xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8" />
-    <title>Graduate Lists</title>
-    <link rel="stylesheet" th:href="@{/css/promotions.css}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Promotions · HEI</title>
+    <link rel="stylesheet" href="/css/hei.css" th:href="@{/css/hei.css}" />
+    <link rel="stylesheet" href="/css/promotions.css" th:href="@{/css/promotions.css}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <form method="post" action="/ui/logout">
-      <button type="submit" class="logout">Logout</button>
-    </form>
-    <h1>Promotions</h1>
-    <table>
-      <thead>
-        <tr>
-          <th>Reference</th>
-          <th>Name</th>
-          <th>Entry year</th>
-          <th>Graduate list</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:each="promotion : ${promotions}">
-          <td th:text="${promotion.ref()}">REF</td>
-          <td th:text="${promotion.name()}">Name</td>
-          <td th:text="${promotion.entryYear()}">2025</td>
-          <td>
-            <button
-              type="button"
-              class="graduate-download"
-              th:attr="data-promotion-id=${promotion.id()}"
-            >
-              Download Graduate List
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-logo" th:src="@{/images/logo.png}" src="/images/logo.png" alt="HEI" />
+        <div>
+          <span class="brand-word">HEI</span>
+          <span class="brand-tag">Haute École d'Informatique</span>
+        </div>
+      </div>
+      <form method="post" action="/ui/logout">
+        <button type="submit" class="logout btn btn-ghost-invert">Logout ✕</button>
+      </form>
+    </header>
+
+    <section class="dash-hero">
+      <span class="doodle doodle-1" aria-hidden="true">{ }</span>
+      <span class="doodle doodle-2" aria-hidden="true">01</span>
+      <span class="eyebrow-tag">DOSSIER ACADÉMIQUE</span>
+      <h1 class="dash-title">Promotions<span style="color: var(--gold)">.</span></h1>
+      <p class="dash-sub">Every cohort that has come through HEI, with its reference, entry year and graduate list ready to download.</p>
+    </section>
+
+    <section class="roster-shell">
+      <div class="roster-panel bracketed">
+        <span class="bracket bracket-tl" aria-hidden="true"></span>
+        <span class="bracket bracket-tr" aria-hidden="true"></span>
+        <span class="bracket bracket-bl" aria-hidden="true"></span>
+        <span class="bracket bracket-br" aria-hidden="true"></span>
+
+        <div class="table-scroll">
+          <table class="roster">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Name</th>
+                <th>Entry year</th>
+                <th>Graduate list</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="promotion : ${promotions}">
+                <td th:text="${promotion.ref()}">REF</td>
+                <td th:text="${promotion.name()}">Name</td>
+                <td><span class="year-chip" th:text="${promotion.entryYear()}">2025</span></td>
+                <td>
+                  <button
+                    type="button"
+                    class="graduate-download btn-download"
+                    th:attr="data-promotion-id=${promotion.id()}"
+                  >
+                    ↓ Download Graduate List
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer class="dash-foot">
+      <p>© 2026 Haute École d'Informatique · Habilitation MESupRES</p>
+    </footer>
+
     <script th:inline="none">
       document.querySelectorAll('.graduate-download').forEach((button) => {
         button.addEventListener('click', () =>
           downloadGraduateList(button.dataset.promotionId),
         );
       });
-
       async function downloadGraduateList(promotionId) {
         try {
           const response = await fetch(
