@@ -8,8 +8,10 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.GroupFlowResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.MoveStudentGroupRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentResponse;
+import org.cocojojo.mg.endpoint.rest.controller.dto.YearlyResultResponse;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.service.GroupFlowService;
+import org.cocojojo.mg.service.ResultService;
 import org.cocojojo.mg.service.StudentService;
 import org.cocojojo.mg.service.TranscriptService;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,7 @@ public class StudentController {
   private final StudentService studentService;
   private final GroupFlowService groupFlowService;
   private final TranscriptService transcriptService;
+  private final ResultService resultService;
 
   @GetMapping
   public List<StudentResponse> getAll() {
@@ -62,5 +65,12 @@ public class StudentController {
   public void requestTranscript(@PathVariable UUID id, @PathVariable StudentLevel level) {
     studentService.assertAdminOrSelf(id);
     transcriptService.requestTranscript(id, level);
+  }
+
+  @GetMapping("/{id}/yearly_results/{level}")
+  public YearlyResultResponse getYearlyResult(
+      @PathVariable UUID id, @PathVariable StudentLevel level) {
+    studentService.assertAdminOrSelf(id);
+    return resultService.computeYearlyResult(id, level);
   }
 }
