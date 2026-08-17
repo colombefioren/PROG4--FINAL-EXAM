@@ -237,7 +237,7 @@ class StudentIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/students/" + student.id() + "/group_flows")
+        .uri("/students/" + student.id() + "/group-flows")
         .header("Authorization", "Bearer " + adminToken())
         .bodyValue(new MoveStudentGroupRequest(groupB.id()))
         .exchange()
@@ -273,7 +273,7 @@ class StudentIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/students/" + student.id() + "/group_flows")
+        .uri("/students/" + student.id() + "/group-flows")
         .header("Authorization", "Bearer " + adminToken())
         .bodyValue(new MoveStudentGroupRequest(group2025.id()))
         .exchange()
@@ -307,7 +307,7 @@ class StudentIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/students/" + student.id() + "/group_flows")
+        .uri("/students/" + student.id() + "/group-flows")
         .header("Authorization", "Bearer " + adminToken())
         .bodyValue(new MoveStudentGroupRequest(groupB.id()))
         .exchange()
@@ -361,6 +361,29 @@ class StudentIT extends FacadeIT {
                 .firstname("Student")
                 .lastname("NoPass")
                 .email(uniqueEmail())
+                .groupId(group.id())
+                .build())
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+  }
+
+  @Test
+  void updatingStudentWithGroupIdIsRejected() {
+    var promotion = createPromotion(2024);
+    var group = createGroup(promotion.id());
+    var student = createStudent(group.id(), uniqueEmail(), "password123");
+
+    webTestClient
+        .put()
+        .uri("/students")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(
+            StudentRequest.builder()
+                .id(student.id())
+                .firstname("Student")
+                .lastname("Moved")
+                .email(student.email())
                 .groupId(group.id())
                 .build())
         .exchange()
