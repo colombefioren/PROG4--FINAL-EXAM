@@ -369,6 +369,29 @@ class StudentIT extends FacadeIT {
   }
 
   @Test
+  void updatingStudentWithGroupIdIsRejected() {
+    var promotion = createPromotion(2024);
+    var group = createGroup(promotion.id());
+    var student = createStudent(group.id(), uniqueEmail(), "password123");
+
+    webTestClient
+        .put()
+        .uri("/students")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(
+            StudentRequest.builder()
+                .id(student.id())
+                .firstname("Student")
+                .lastname("Moved")
+                .email(student.email())
+                .groupId(group.id())
+                .build())
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+  }
+
+  @Test
   void unauthenticatedPutIsRejected() {
     webTestClient
         .put()

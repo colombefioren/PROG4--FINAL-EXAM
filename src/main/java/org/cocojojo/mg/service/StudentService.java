@@ -99,6 +99,10 @@ public class StudentService {
   }
 
   private StudentResponse update(StudentRequest request) {
+    if (request.groupId() != null) {
+      throw new IllegalArgumentException(
+          "groupId cannot be changed on update; moves must go through /students/{id}/group-flows");
+    }
     var student = getEntityOrThrow(request.id());
     student.setFirstname(request.firstname());
     student.setLastname(request.lastname());
