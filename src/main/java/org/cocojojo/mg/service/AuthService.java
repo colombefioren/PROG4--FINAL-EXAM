@@ -21,14 +21,14 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
 
   public AuthResponse login(LoginRequest request) {
+    if (userRepository.findDeletedFlagByEmailIgnoreCase(request.email()).orElse(false)) {
+      throw new IllegalStateException("This account has been disabled");
+    }
+
     var user =
         userRepository
             .findByEmailIgnoreCase(request.email())
             .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
-
-    if (user.isDeleted()) {
-      throw new IllegalStateException("This account has been disabled");
-    }
 
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
       throw new IllegalArgumentException("Invalid credentials");
