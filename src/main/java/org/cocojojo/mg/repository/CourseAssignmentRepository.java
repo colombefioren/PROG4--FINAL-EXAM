@@ -60,6 +60,15 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
       @Param("groupIds") Collection<UUID> groupIds,
       @Param("semesters") Collection<Semester> semesters);
 
+  /** The distinct courses of a promotion's curriculum, i.e. assigned to any of its groups. */
+  @Query(
+      """
+      select distinct a.course from JCourseAssignment a
+      where a.group.promotion.id = :promotionId
+        and a.course.isDeleted = false
+      """)
+  List<JCourse> findCurriculumCoursesByPromotion(@Param("promotionId") UUID promotionId);
+
   @Query(
       """
       select a from JCourseAssignment a
