@@ -79,9 +79,11 @@
           }
           const blob = await response.blob();
           const url = URL.createObjectURL(blob);
+          const disposition = response.headers.get('Content-Disposition');
+          const match = disposition && disposition.match(/filename="([^"]+)"/);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `graduates-${promotionId}.xlsx`;
+          link.download = match ? match[1] : `${promotionId} - GRADUATE LIST.xlsx`;
           document.body.appendChild(link);
           link.click();
           link.remove();

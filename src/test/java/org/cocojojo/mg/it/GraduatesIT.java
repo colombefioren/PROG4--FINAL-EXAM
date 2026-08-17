@@ -575,7 +575,12 @@ class GraduatesIT extends FacadeIT {
             .expectHeader()
             .value(
                 "Content-Disposition",
-                value -> assertTrue(value.startsWith("attachment; filename=\"graduates-")))
+                value -> {
+                  assertTrue(value.startsWith("attachment; filename=\""));
+                  assertTrue(value.contains(promotion.getRef()));
+                  assertTrue(value.contains(" - GRADUATE LIST - "));
+                  assertTrue(value.endsWith(".xlsx\""));
+                })
             .expectBody(byte[].class)
             .returnResult()
             .getResponseBody();
