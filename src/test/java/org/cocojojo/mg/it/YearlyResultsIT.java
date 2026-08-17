@@ -15,6 +15,7 @@ import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.YearlyResultResponse;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
 import org.cocojojo.mg.model.enums.GroupFlowType;
+import org.cocojojo.mg.model.enums.ResultStatus;
 import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
@@ -239,7 +240,7 @@ class YearlyResultsIT extends FacadeIT {
     assertNull(result.overallAverage());
     assertEquals(0, result.earnedCredits());
     assertEquals(0, result.totalCredits());
-    assertFalse(result.complete());
+    assertEquals(ResultStatus.PROVISIONAL, result.status());
   }
 
   @Test
@@ -350,7 +351,7 @@ class YearlyResultsIT extends FacadeIT {
     assertEquals(new BigDecimal("14.00"), result.overallAverage());
     assertEquals(4, result.earnedCredits());
     assertEquals(4, result.totalCredits());
-    assertTrue(result.complete());
+    assertEquals(ResultStatus.COMPLETED, result.status());
   }
 
   @Test
@@ -369,7 +370,7 @@ class YearlyResultsIT extends FacadeIT {
     assertFalse(result.courses().get(0).passed());
     assertEquals(0, result.earnedCredits());
     assertEquals(4, result.totalCredits());
-    assertFalse(result.complete());
+    assertEquals(ResultStatus.PROVISIONAL, result.status());
   }
 
   @Test
@@ -393,7 +394,7 @@ class YearlyResultsIT extends FacadeIT {
     assertEquals(new BigDecimal("12.67"), result.overallAverage());
     assertEquals(6, result.earnedCredits());
     assertEquals(6, result.totalCredits());
-    assertTrue(result.complete());
+    assertEquals(ResultStatus.COMPLETED, result.status());
   }
 
   @Test
@@ -411,7 +412,7 @@ class YearlyResultsIT extends FacadeIT {
     assertEquals(StudentLevel.L2, result.level());
     assertTrue(result.courses().isEmpty());
     assertNull(result.overallAverage());
-    assertFalse(result.complete());
+    assertEquals(ResultStatus.PROVISIONAL, result.status());
   }
 
   @Test
@@ -468,7 +469,7 @@ class YearlyResultsIT extends FacadeIT {
     assertFalse(courseResult.complete());
     assertFalse(courseResult.passed());
     assertEquals(0, result.earnedCredits());
-    assertFalse(result.complete());
+    assertEquals(ResultStatus.PROVISIONAL, result.status());
   }
 
   @Test
@@ -490,7 +491,7 @@ class YearlyResultsIT extends FacadeIT {
     assertNull(result.overallAverage());
     assertEquals(0, result.earnedCredits());
     assertEquals(4, result.totalCredits());
-    assertFalse(result.complete());
+    assertEquals(ResultStatus.PROVISIONAL, result.status());
   }
 
   @Test
@@ -515,7 +516,7 @@ class YearlyResultsIT extends FacadeIT {
 
     assertEquals(1, result.courses().size());
     assertEquals(new BigDecimal("14.00"), result.overallAverage());
-    assertTrue(result.complete());
+    assertEquals(ResultStatus.COMPLETED, result.status());
   }
 
   @Test

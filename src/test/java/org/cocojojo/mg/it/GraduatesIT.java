@@ -23,6 +23,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.GraduateResponse;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
 import org.cocojojo.mg.file.bucket.BucketComponent;
 import org.cocojojo.mg.model.enums.GroupFlowType;
+import org.cocojojo.mg.model.enums.ResultStatus;
 import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
@@ -222,7 +223,7 @@ class GraduatesIT extends FacadeIT {
             .findFirst()
             .orElseThrow();
     // Only a quarter of the course weight has been scheduled and graded: not complete.
-    assertFalse(l1.complete().booleanValue());
+    assertEquals(ResultStatus.PROVISIONAL, l1.status());
     assertFalse(l1.courses().get(0).complete().booleanValue());
     assertFalse(l1.courses().get(0).passed().booleanValue());
 
@@ -276,7 +277,7 @@ class GraduatesIT extends FacadeIT {
             .filter(l -> l.level() == StudentLevel.L1)
             .findFirst()
             .orElseThrow();
-    assertFalse(l1Partial.complete().booleanValue());
+    assertEquals(ResultStatus.PROVISIONAL, l1Partial.status());
 
     saveGrade(lastQuarter, student, new BigDecimal("12"));
     var complete = resultService.computeResultsSummary(student.getId());
@@ -285,7 +286,7 @@ class GraduatesIT extends FacadeIT {
             .filter(l -> l.level() == StudentLevel.L1)
             .findFirst()
             .orElseThrow();
-    assertTrue(l1Complete.complete().booleanValue());
+    assertEquals(ResultStatus.COMPLETED, l1Complete.status());
     assertTrue(l1Complete.courses().get(0).passed().booleanValue());
 
     // Only L1 exists in this curriculum, so the student cannot be a graduate yet — the point
@@ -320,7 +321,7 @@ class GraduatesIT extends FacadeIT {
             .filter(l -> l.level() == StudentLevel.L1)
             .findFirst()
             .orElseThrow();
-    assertTrue(l1.complete().booleanValue());
+    assertEquals(ResultStatus.COMPLETED, l1.status());
     assertTrue(l1.courses().get(0).complete().booleanValue());
     assertTrue(l1.courses().get(0).passed().booleanValue());
   }

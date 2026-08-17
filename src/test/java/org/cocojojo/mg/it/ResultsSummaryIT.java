@@ -15,6 +15,7 @@ import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.ResultsSummaryResponse;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
 import org.cocojojo.mg.model.enums.GroupFlowType;
+import org.cocojojo.mg.model.enums.ResultStatus;
 import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
@@ -347,7 +348,7 @@ class ResultsSummaryIT extends FacadeIT {
 
     var summary = getSummary(token(admin), student.getId());
 
-    assertTrue(summary.levels().stream().allMatch(l -> l.complete()));
+    assertTrue(summary.levels().stream().allMatch(l -> l.status() == ResultStatus.COMPLETED));
     assertEquals(new BigDecimal("13.00"), summary.overallAverage());
     assertEquals(12, summary.levels().stream().mapToInt(l -> l.earnedCredits()).sum());
     assertTrue(summary.graduate());
@@ -365,9 +366,9 @@ class ResultsSummaryIT extends FacadeIT {
 
     var summary = getSummary(token(admin), student.getId());
 
-    assertTrue(summary.levels().get(0).complete());
-    assertFalse(summary.levels().get(1).complete());
-    assertFalse(summary.levels().get(2).complete());
+    assertEquals(ResultStatus.COMPLETED, summary.levels().get(0).status());
+    assertEquals(ResultStatus.PROVISIONAL, summary.levels().get(1).status());
+    assertEquals(ResultStatus.PROVISIONAL, summary.levels().get(2).status());
     assertEquals(new BigDecimal("11.00"), summary.overallAverage());
     assertFalse(summary.graduate());
   }
