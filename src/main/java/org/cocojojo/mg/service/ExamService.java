@@ -118,7 +118,9 @@ public class ExamService {
     }
     if (securityUtil.isStudent()) {
       validator.validateStudentInCurriculum(securityUtil.getCurrentUserIdOrThrow(), assignment);
+      return;
     }
+    throw new ForbiddenAccessException("Only students, teachers and admins can view exams");
   }
 
   private void requireCanManage(CourseAssignment assignment) {
