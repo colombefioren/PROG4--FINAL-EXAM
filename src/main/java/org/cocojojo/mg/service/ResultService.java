@@ -9,6 +9,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -100,12 +101,13 @@ public class ResultService {
 
     int earnedCredits =
         courseResults.stream()
-            .filter(CourseResultResponse::passed)
+            .filter(c -> Boolean.TRUE.equals(c.passed()))
             .mapToInt(CourseResultResponse::credits)
             .sum();
     int totalCredits = courseResults.stream().mapToInt(CourseResultResponse::credits).sum();
     boolean complete =
-        !courseResults.isEmpty() && courseResults.stream().allMatch(CourseResultResponse::passed);
+        !courseResults.isEmpty()
+            && courseResults.stream().allMatch(c -> Boolean.TRUE.equals(c.passed()));
 
     return YearlyResultResponse.builder()
         .level(level)
@@ -340,18 +342,20 @@ public class ResultService {
       Map<UUID, List<JExam>> examsByCourse) {
     var courseResults =
         requiredCourses.stream()
+            .filter(Objects::nonNull)
             .map(
                 course -> {
                   var courseGrades =
                       studentGrades.stream()
                           .filter(
                               grade ->
-                                  grade
-                                      .getExam()
-                                      .getCourseAssignment()
-                                      .getCourse()
-                                      .getId()
-                                      .equals(course.getId()))
+                                  grade.getExam().getCourseAssignment().getCourse() != null
+                                      && grade
+                                          .getExam()
+                                          .getCourseAssignment()
+                                          .getCourse()
+                                          .getId()
+                                          .equals(course.getId()))
                           .filter(
                               grade ->
                                   level
@@ -387,12 +391,13 @@ public class ResultService {
 
     int earnedCredits =
         courseResults.stream()
-            .filter(CourseResultResponse::passed)
+            .filter(c -> Boolean.TRUE.equals(c.passed()))
             .mapToInt(CourseResultResponse::credits)
             .sum();
     int totalCredits = courseResults.stream().mapToInt(CourseResultResponse::credits).sum();
     boolean complete =
-        !courseResults.isEmpty() && courseResults.stream().allMatch(CourseResultResponse::passed);
+        !courseResults.isEmpty()
+            && courseResults.stream().allMatch(c -> Boolean.TRUE.equals(c.passed()));
 
     return YearlyResultResponse.builder()
         .level(level)

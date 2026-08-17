@@ -33,9 +33,17 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
   List<JCourseAssignment> findByGroupIdAndAcademicYearAndSemester(
       UUID groupId, int academicYear, Semester semester);
 
+  @Query(
+      """
+      select a from JCourseAssignment a
+      where a.group.id in :groupIds
+        and a.semester in :semesters
+        and a.course.isDeleted = false
+      """)
   @EntityGraph(attributePaths = {"course"})
   List<JCourseAssignment> findByGroupIdInAndSemesterIn(
-      Collection<UUID> groupIds, Collection<Semester> semesters);
+      @Param("groupIds") Collection<UUID> groupIds,
+      @Param("semesters") Collection<Semester> semesters);
 
   boolean existsByCourseIdAndGroupIdAndAcademicYearAndSemester(
       UUID courseId, UUID groupId, int academicYear, Semester semester);
@@ -46,6 +54,7 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
       select distinct a.course from JCourseAssignment a
       where a.group.id in :groupIds
         and a.semester in :semesters
+        and a.course.isDeleted = false
       """)
   List<JCourse> findCurriculumCourses(
       @Param("groupIds") Collection<UUID> groupIds,
