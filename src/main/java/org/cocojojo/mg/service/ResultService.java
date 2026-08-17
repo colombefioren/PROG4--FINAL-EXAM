@@ -87,12 +87,13 @@ public class ResultService {
 
     int earnedCredits =
         courseResults.stream()
-            .filter(CourseResultResponse::passed)
+            .filter(c -> Boolean.TRUE.equals(c.passed()))
             .mapToInt(CourseResultResponse::credits)
             .sum();
     int totalCredits = courseResults.stream().mapToInt(CourseResultResponse::credits).sum();
     boolean complete =
-        !courseResults.isEmpty() && courseResults.stream().allMatch(CourseResultResponse::passed);
+        !courseResults.isEmpty()
+            && courseResults.stream().allMatch(c -> Boolean.TRUE.equals(c.passed()));
 
     return YearlyResultResponse.builder()
         .level(level)
@@ -129,7 +130,7 @@ public class ResultService {
           .average(null)
           .graded(false)
           .complete(false)
-          .passed(false)
+          .passed(null)
           .build();
     }
 

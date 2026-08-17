@@ -481,7 +481,7 @@ class YearlyResultsIT extends FacadeIT {
     assertNull(courseResult.average());
     assertFalse(courseResult.graded());
     assertFalse(courseResult.complete());
-    assertFalse(courseResult.passed());
+    assertNull(courseResult.passed());
     assertNull(result.overallAverage());
     assertEquals(0, result.earnedCredits());
     assertEquals(4, result.totalCredits());

@@ -1,6 +1,7 @@
 package org.cocojojo.mg.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -16,6 +17,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.SneakyThrows;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.event.EventProducer;
 import org.cocojojo.mg.endpoint.event.model.TranscriptRequested;
@@ -200,9 +203,26 @@ class TranscriptIT extends FacadeIT {
             .build());
   }
 
-  private void saveGrade(JExam exam, JStudent student) {
-    gradeRepository.save(
-        JGrade.builder().exam(exam).student(student).value(new BigDecimal("14")).build());
+  private JExam saveExam(JCourseAssignment assignment, int numerator, int denominator) {
+    return examRepository.save(
+        JExam.builder()
+            .courseAssignment(assignment)
+            .title("Final " + SEQUENCE.incrementAndGet())
+            .examDatetime(Instant.parse("2025-06-01T08:00:00Z"))
+            .coefficientNumerator(numerator)
+            .coefficientDenominator(denominator)
+            .build());
+  }
+
+  private void saveGrade(JExam exam, JStudent student, BigDecimal value) {
+    gradeRepository.save(JGrade.builder().exam(exam).student(student).value(value).build());
+  }
+
+  @SneakyThrows
+  private String pdfText(File pdf) {
+    try (var document = PDDocument.load(pdf)) {
+      return new PDFTextStripper().getText(document);
+    }
   }
 
   private String token(JAdmin admin) {
@@ -321,16 +341,8 @@ class TranscriptIT extends FacadeIT {
     var student = saveStudent(promotion, group);
     var course = saveCourse();
     var assignment = saveAssignment(course, group);
-    var exam =
-        examRepository.save(
-            JExam.builder()
-                .courseAssignment(assignment)
-                .title("Final " + SEQUENCE.incrementAndGet())
-                .examDatetime(Instant.parse("2025-06-01T08:00:00Z"))
-                .coefficientNumerator(1)
-                .coefficientDenominator(1)
-                .build());
-    saveGrade(exam, student);
+    var exam = saveExam(assignment, 1, 1);
+    saveGrade(exam, student, new BigDecimal("14"));
 
     transcriptRequestedService.accept(
         TranscriptRequested.builder().studentId(student.getId().toString()).level("L1").build());
@@ -347,6 +359,64 @@ class TranscriptIT extends FacadeIT {
     verify(mailer).accept(emailCaptor.capture());
     assertEquals(student.getEmail(), emailCaptor.getValue().to().getAddress());
     assertTrue(emailCaptor.getValue().htmlBody().contains("dummy-bucket"));
+  }
+
+  @Test
+  @SneakyThrows
+  void transcriptLabelsUngradedCourseAsNotGradedYet() {
+    var promotion = savePromotion();
+    var group = saveGroup(promotion);
+    var student = saveStudent(promotion, group);
+    var course = saveCourse();
+    saveAssignment(course, group); // no exam, no grade
+
+    transcriptRequestedService.accept(
+        TranscriptRequested.builder().studentId(student.getId().toString()).level("L1").build());
+
+    var uploadCaptor = ArgumentCaptor.forClass(File.class);
+    verify(bucketComponent).upload(uploadCaptor.capture(), any());
+    var text = pdfText(uploadCaptor.getValue());
+    assertTrue(text.contains("Not graded yet"));
+    assertFalse(text.contains("Passed"));
+  }
+
+  @Test
+  @SneakyThrows
+  void transcriptLabelsPassedCourseAsPassed() {
+    var promotion = savePromotion();
+    var group = saveGroup(promotion);
+    var student = saveStudent(promotion, group);
+    var course = saveCourse();
+    var assignment = saveAssignment(course, group);
+    saveGrade(saveExam(assignment, 1, 1), student, new BigDecimal("14"));
+
+    transcriptRequestedService.accept(
+        TranscriptRequested.builder().studentId(student.getId().toString()).level("L1").build());
+
+    var uploadCaptor = ArgumentCaptor.forClass(File.class);
+    verify(bucketComponent).upload(uploadCaptor.capture(), any());
+    var text = pdfText(uploadCaptor.getValue());
+    assertTrue(text.contains("Passed"));
+    assertFalse(text.contains("Not passed"));
+  }
+
+  @Test
+  @SneakyThrows
+  void transcriptLabelsFailedCourseAsNotPassed() {
+    var promotion = savePromotion();
+    var group = saveGroup(promotion);
+    var student = saveStudent(promotion, group);
+    var course = saveCourse();
+    var assignment = saveAssignment(course, group);
+    saveGrade(saveExam(assignment, 1, 1), student, new BigDecimal("8"));
+
+    transcriptRequestedService.accept(
+        TranscriptRequested.builder().studentId(student.getId().toString()).level("L1").build());
+
+    var uploadCaptor = ArgumentCaptor.forClass(File.class);
+    verify(bucketComponent).upload(uploadCaptor.capture(), any());
+    var text = pdfText(uploadCaptor.getValue());
+    assertTrue(text.contains("Not passed"));
   }
 
   @Test
