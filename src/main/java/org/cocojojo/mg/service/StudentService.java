@@ -54,6 +54,14 @@ public class StudentService {
         .orElseThrow(() -> new ResourceNotFoundException("Student with id:" + id + " not found."));
   }
 
+  public List<StudentResponse> getByGroup(UUID groupId) {
+    groupService.getEntityOrThrow(groupId);
+    return groupFlowService.getCurrentStudentIdsInGroup(groupId).stream()
+        .map(this::getEntityOrThrow)
+        .map(this::toResponse)
+        .toList();
+  }
+
   public Group getCurrentGroup(UUID studentId) {
     return groupFlowService
         .getCurrentGroup(studentId)
