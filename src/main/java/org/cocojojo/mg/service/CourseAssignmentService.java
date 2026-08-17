@@ -33,6 +33,7 @@ public class CourseAssignmentService {
   private final TeacherService teacherService;
   private final StudentService studentService;
   private final GroupService groupService;
+  private final GroupFlowService groupFlowService;
   private final CourseAssignmentMapper mapper;
   private final CourseMapper courseMapper;
   private final GroupMapper groupMapper;
@@ -45,7 +46,12 @@ public class CourseAssignmentService {
       teacherId = securityUtil.getCurrentUserIdOrThrow();
     }
     if (securityUtil.isStudent()) {
-      groupId = studentService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow()).id();
+      var currentGroup =
+          groupFlowService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow());
+      if (currentGroup.isEmpty()) {
+        return List.of();
+      }
+      groupId = currentGroup.get().getId();
     }
     return repository.findFilter(groupId, teacherId, courseId, academicYear).stream()
         .map(mapper::toResponse)
