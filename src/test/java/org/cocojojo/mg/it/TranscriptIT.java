@@ -357,8 +357,21 @@ class TranscriptIT extends FacadeIT {
 
     var emailCaptor = ArgumentCaptor.forClass(Email.class);
     verify(mailer).accept(emailCaptor.capture());
-    assertEquals(student.getEmail(), emailCaptor.getValue().to().getAddress());
-    assertTrue(emailCaptor.getValue().htmlBody().contains("dummy-bucket"));
+    var email = emailCaptor.getValue();
+    assertEquals(student.getEmail(), email.to().getAddress());
+    assertEmailContains(email, "dummy-bucket");
+    assertEmailContains(email, student.getFirstname());
+    assertEmailContains(email, student.getLastname());
+    assertEmailContains(email, student.getStd());
+    assertEmailContains(email, "Haute École d'Informatique");
+    assertEmailContains(email, "Download transcript (PDF)");
+    assertEmailContains(email, "L1");
+    assertEmailContains(email, "14.00");
+    assertEmailContains(email, "Complete");
+  }
+
+  private void assertEmailContains(Email email, String expected) {
+    assertTrue(email.htmlBody().contains(expected), "Email body should contain '" + expected + "'");
   }
 
   @Test
@@ -431,6 +444,10 @@ class TranscriptIT extends FacadeIT {
 
     var emailCaptor = ArgumentCaptor.forClass(Email.class);
     verify(mailer).accept(emailCaptor.capture());
-    assertEquals(student.getEmail(), emailCaptor.getValue().to().getAddress());
+    var email = emailCaptor.getValue();
+    assertEquals(student.getEmail(), email.to().getAddress());
+    assertEmailContains(email, "Provisional");
+    assertEmailContains(email, "L3");
+    assertEmailContains(email, "Download transcript (PDF)");
   }
 }
