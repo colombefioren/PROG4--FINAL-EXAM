@@ -4,6 +4,7 @@ import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import jakarta.mail.internet.InternetAddress;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
@@ -39,6 +40,7 @@ import org.thymeleaf.context.Context;
 public class TranscriptRequestedService implements Consumer<TranscriptRequested> {
 
   private static final String TEMPLATE = "transcript";
+  private static final String EMAIL_TEMPLATE = "transcript-email";
   private static final Duration LINK_VALIDITY = Duration.ofDays(7);
 
   private final StudentRepository studentRepository;
@@ -63,15 +65,7 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
     bucketComponent.upload(tempFile, key);
     var link = bucketComponent.presign(key, LINK_VALIDITY);
 
-    var htmlBody =
-        "<p>Hello "
-            + student.getFirstname()
-            + ",</p><p>Your grade transcript is available via the following link (valid for 7"
-            + " days): <a href=\""
-            + link
-            + "\">"
-            + link
-            + "</a></p><p>HEI</p>";
+    var htmlBody = renderEmailBody(student, yearly, link);
 
     mailer.accept(
         new Email(
@@ -89,6 +83,27 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
         .findById(UUID.fromString(studentId))
         .orElseThrow(
             () -> new ResourceNotFoundException("Student with id: " + studentId + " not found."));
+  }
+
+  private String renderEmailBody(JStudent student, YearlyResultResponse yearly, URL link) {
+    var context = new Context();
+    context.setVariable("title", "Your HEI grade transcript");
+    context.setVariable("studentFirstname", student.getFirstname());
+    context.setVariable("studentName", student.getFirstname() + " " + student.getLastname());
+    context.setVariable("stdRef", student.getStd());
+    context.setVariable("level", yearly.level());
+    context.setVariable(
+        "overallAverage",
+        yearly.overallAverage() == null ? "-" : yearly.overallAverage().toString());
+    context.setVariable(
+        "complete", Boolean.TRUE.equals(yearly.complete()) ? "Complete" : "Provisional");
+    context.setVariable("earnedCredits", yearly.earnedCredits());
+    context.setVariable("totalCredits", yearly.totalCredits());
+    context.setVariable("validityDays", LINK_VALIDITY.toDays());
+    context.setVariable("link", link);
+    context.setVariable(
+        "generatedAt", DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(LocalDate.now()));
+    return templateEngine.process(EMAIL_TEMPLATE, context);
   }
 
   private String render(JStudent student, YearlyResultResponse yearly) {
