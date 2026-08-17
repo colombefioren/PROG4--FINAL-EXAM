@@ -155,9 +155,12 @@ public class ResultService {
     boolean allScheduledGraded =
         !scheduledExams.isEmpty() && grades.size() == scheduledExams.size();
     // gradedCoefficientSum can span several course-assignments for the same course (a student who
-    // changed groups or retook it). Nothing validates that cross-assignment sum stays <= 1, so if it
-    // ever exceeds 1 Fraction::plus throws IllegalArgumentException here, mid-GET of the student's own
-    // results. Low likelihood (needs two overlapping assignments), but it would surface as a confusing
+    // changed groups or retook it). Nothing validates that cross-assignment sum stays <= 1, so if
+    // it
+    // ever exceeds 1 Fraction::plus throws IllegalArgumentException here, mid-GET of the student's
+    // own
+    // results. Low likelihood (needs two overlapping assignments), but it would surface as a
+    // confusing
     // 400 on a read path.
     var gradedCoefficientSum =
         grades.stream()
