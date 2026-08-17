@@ -757,7 +757,10 @@ class ExamIT extends FacadeIT {
         .bodyValue(examRequest(new Fraction(1, 2)))
         .exchange()
         .expectStatus()
-        .isBadRequest();
+        .isBadRequest()
+        .expectBody()
+        .jsonPath("$.error")
+        .isEqualTo("Sum of exam coefficients for this course assignment would exceed 1 (100%)");
   }
 
   @Test
