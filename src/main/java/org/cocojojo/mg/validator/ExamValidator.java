@@ -22,15 +22,34 @@ public class ExamValidator {
 
   public void validateCoefficient(
       UUID courseAssignmentId, UUID examIdBeingSaved, Fraction coefficient) {
-    Fraction total =
-        examRepository.findByCourseAssignmentId(courseAssignmentId).stream()
-            .filter(exam -> !exam.getId().equals(examIdBeingSaved))
-            .map(JExam::getCoefficientFraction)
-            .reduce(coefficient, Fraction::plus);
-    if (total.isGreaterThanOne()) {
+    long num = coefficient.numerator();
+    long den = coefficient.denominator();
+    for (JExam exam : examRepository.findByCourseAssignmentId(courseAssignmentId)) {
+      if (exam.getId().equals(examIdBeingSaved)) {
+        continue;
+      }
+      Fraction other = exam.getCoefficientFraction();
+      long n = num * other.denominator() + other.numerator() * den;
+      long d = den * other.denominator();
+      long g = gcd(n, d);
+      num = n / g;
+      den = d / g;
+    }
+    if (num > den) {
       throw new InvalidCurriculumException(
           "Sum of exam coefficients for this course assignment would exceed 1 (100%)");
     }
+  }
+
+  private static long gcd(long a, long b) {
+    a = Math.abs(a);
+    b = Math.abs(b);
+    while (b != 0) {
+      long t = b;
+      b = a % b;
+      a = t;
+    }
+    return a;
   }
 
   public void validateTeacherTeaches(UUID teacherId, CourseAssignment assignment) {
