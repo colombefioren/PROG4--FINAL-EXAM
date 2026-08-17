@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.cocojojo.mg.conf.FacadeIT;
-import org.cocojojo.mg.endpoint.rest.controller.dto.YearlyResultResponse;
+import org.cocojojo.mg.endpoint.rest.controller.dto.ResultsSummaryResponse;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
 import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.model.enums.Role;
@@ -48,7 +48,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-class YearlyResultsIT extends FacadeIT {
+class ResultsSummaryIT extends FacadeIT {
 
   private static final AtomicInteger SEQUENCE = new AtomicInteger();
 
@@ -94,7 +94,7 @@ class YearlyResultsIT extends FacadeIT {
   }
 
   private String unique(String prefix) {
-    return "yr-" + prefix + SEQUENCE.incrementAndGet() + "@hei.school";
+    return "rs-" + prefix + SEQUENCE.incrementAndGet() + "@hei.school";
   }
 
   private JAdmin saveAdmin() {
@@ -120,8 +120,8 @@ class YearlyResultsIT extends FacadeIT {
   private JPromotion savePromotion() {
     return promotionRepository.save(
         JPromotion.builder()
-            .ref("YR-PROMO" + SEQUENCE.incrementAndGet())
-            .name("YR Promotion " + SEQUENCE.incrementAndGet())
+            .ref("RS-PROMO" + SEQUENCE.incrementAndGet())
+            .name("RS Promotion " + SEQUENCE.incrementAndGet())
             .entryYear(2023)
             .build());
   }
@@ -130,7 +130,7 @@ class YearlyResultsIT extends FacadeIT {
     return groupRepository.save(
         JGroup.builder()
             .promotion(promotion)
-            .ref("YR-GRP" + SEQUENCE.incrementAndGet())
+            .ref("RS-GRP" + SEQUENCE.incrementAndGet())
             .track(Track.TN)
             .build());
   }
@@ -143,7 +143,7 @@ class YearlyResultsIT extends FacadeIT {
                 .lastname("Turing")
                 .email(unique("student"))
                 .password(passwordEncoder.encode("secret123"))
-                .std("YR-STD" + SEQUENCE.incrementAndGet())
+                .std("RS-STD" + SEQUENCE.incrementAndGet())
                 .promotion(promotion)
                 .build());
     groupFlowRepository.save(
@@ -155,44 +155,57 @@ class YearlyResultsIT extends FacadeIT {
     return student;
   }
 
-  private JCourse saveCourse(int credits) {
+  private JCourse saveCourse(int credits, StudentLevel level) {
     return courseRepository.save(
         JCourse.builder()
-            .code("YR-CODE" + SEQUENCE.incrementAndGet())
+            .code("RS-CODE" + SEQUENCE.incrementAndGet())
             .name("Course " + SEQUENCE.incrementAndGet())
             .credits(credits)
             .totalHours(30)
-            .studentLevel(StudentLevel.L1)
+            .studentLevel(level)
             .track(Track.TN)
             .build());
   }
 
-  private JCourseAssignment saveAssignment(JCourse course, JGroup group, int credits) {
+  private JCourseAssignment saveAssignment(
+      JCourse course, JGroup group, int credits, Semester semester) {
     return courseAssignmentRepository.save(
         JCourseAssignment.builder()
             .course(course)
             .group(group)
             .teachers(List.of(saveTeacher()))
             .academicYear(2023)
-            .semester(Semester.S1)
+            .semester(semester)
             .credits(credits)
             .build());
   }
 
-  private JExam saveExam(JCourseAssignment assignment, int numerator, int denominator) {
+  private JExam saveExam(JCourseAssignment assignment) {
     return examRepository.save(
         JExam.builder()
             .courseAssignment(assignment)
             .title("Exam " + SEQUENCE.incrementAndGet())
             .examDatetime(Instant.parse("2024-06-01T08:00:00Z"))
-            .coefficientNumerator(numerator)
-            .coefficientDenominator(denominator)
+            .coefficientNumerator(1)
+            .coefficientDenominator(1)
             .build());
   }
 
   private JGrade saveGrade(JExam exam, JStudent student, BigDecimal value) {
     return gradeRepository.save(
         JGrade.builder().exam(exam).student(student).value(value).comment("ok").build());
+  }
+
+  private void gradeCompleteCourse(
+      JStudent student,
+      JGroup group,
+      int credits,
+      StudentLevel level,
+      Semester semester,
+      BigDecimal value) {
+    var course = saveCourse(credits, level);
+    var exam = saveExam(saveAssignment(course, group, credits, semester));
+    saveGrade(exam, student, value);
   }
 
   private String token(JAdmin admin) {
@@ -207,49 +220,45 @@ class YearlyResultsIT extends FacadeIT {
     return jwtService.generateToken(teacher.getId(), teacher.getEmail(), Role.TEACHER);
   }
 
-  private YearlyResultResponse getResult(String token, UUID studentId, String level) {
+  private ResultsSummaryResponse getSummary(String token, UUID studentId) {
     return webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", studentId, level)
+        .uri("/students/{id}/results-summary", studentId)
         .header("Authorization", "Bearer " + token)
         .exchange()
         .expectStatus()
         .isOk()
-        .expectBody(YearlyResultResponse.class)
+        .expectBody(ResultsSummaryResponse.class)
         .returnResult()
         .getResponseBody();
   }
 
   @Test
-  void adminCanReadAnyStudentYearlyResult() {
+  void adminCanReadResultsSummary() {
     var admin = saveAdmin();
     var promotion = savePromotion();
     var group = saveGroup(promotion);
     var student = saveStudent(promotion, group);
 
-    var result = getResult(token(admin), student.getId(), "L1");
+    var summary = getSummary(token(admin), student.getId());
 
-    assertEquals(StudentLevel.L1, result.level());
-    assertTrue(result.courses().isEmpty());
-    assertNull(result.overallAverage());
-    assertEquals(0, result.earnedCredits());
-    assertEquals(0, result.totalCredits());
-    assertFalse(result.complete());
+    assertEquals(student.getId(), summary.studentId());
+    assertEquals(student.getStd(), summary.studentStd());
   }
 
   @Test
-  void studentCanReadOwnYearlyResult() {
+  void studentCanReadOwnResultsSummary() {
     var promotion = savePromotion();
     var group = saveGroup(promotion);
     var student = saveStudent(promotion, group);
 
-    var result = getResult(token(student), student.getId(), "L2");
+    var summary = getSummary(token(student), student.getId());
 
-    assertEquals(StudentLevel.L2, result.level());
+    assertEquals(student.getId(), summary.studentId());
   }
 
   @Test
-  void studentCannotReadAnotherStudentYearlyResult() {
+  void studentCannotReadAnotherStudentsSummary() {
     var promotion = savePromotion();
     var group = saveGroup(promotion);
     var other = saveStudent(promotion, group);
@@ -257,7 +266,7 @@ class YearlyResultsIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", other.getId(), "L1")
+        .uri("/students/{id}/results-summary", other.getId())
         .header("Authorization", "Bearer " + token(requester))
         .exchange()
         .expectStatus()
@@ -265,7 +274,7 @@ class YearlyResultsIT extends FacadeIT {
   }
 
   @Test
-  void teacherCannotReadStudentYearlyResult() {
+  void teacherCannotReadResultsSummary() {
     var teacher = saveTeacher();
     var promotion = savePromotion();
     var group = saveGroup(promotion);
@@ -273,7 +282,7 @@ class YearlyResultsIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", student.getId(), "L1")
+        .uri("/students/{id}/results-summary", student.getId())
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -281,14 +290,14 @@ class YearlyResultsIT extends FacadeIT {
   }
 
   @Test
-  void anonymousCannotReadYearlyResult() {
+  void anonymousCannotReadResultsSummary() {
     var promotion = savePromotion();
     var group = saveGroup(promotion);
     var student = saveStudent(promotion, group);
 
     webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", student.getId(), "L1")
+        .uri("/students/{id}/results-summary", student.getId())
         .exchange()
         .expectStatus()
         .isUnauthorized();
@@ -300,7 +309,7 @@ class YearlyResultsIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", UUID.randomUUID(), "L1")
+        .uri("/students/{id}/results-summary", UUID.randomUUID())
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
@@ -308,208 +317,74 @@ class YearlyResultsIT extends FacadeIT {
   }
 
   @Test
-  void invalidLevelReturnsBadRequest() {
+  void emptyStudentReturnsEmptySummary() {
     var admin = saveAdmin();
     var promotion = savePromotion();
     var group = saveGroup(promotion);
     var student = saveStudent(promotion, group);
 
-    webTestClient
-        .get()
-        .uri("/students/{id}/yearly_results/{level}", student.getId(), "L4")
-        .header("Authorization", "Bearer " + token(admin))
-        .exchange()
-        .expectStatus()
-        .isBadRequest();
+    var summary = getSummary(token(admin), student.getId());
+
+    assertEquals(3, summary.levels().size());
+    assertEquals(
+        List.of(StudentLevel.L1, StudentLevel.L2, StudentLevel.L3),
+        summary.levels().stream().map(l -> l.level()).toList());
+    assertTrue(summary.levels().stream().allMatch(l -> l.courses().isEmpty()));
+    assertNull(summary.overallAverage());
+    assertFalse(summary.graduate());
   }
 
   @Test
-  void gradedCourseProducesAverageCreditsAndCompleteStatus() {
-    var admin = saveAdmin();
-    var promotion = savePromotion();
-    var group = saveGroup(promotion);
-    var student = saveStudent(promotion, group);
-    var course = saveCourse(4);
-    var exam = saveExam(saveAssignment(course, group, 4), 1, 1);
-    saveGrade(exam, student, new BigDecimal("14"));
-
-    var result = getResult(token(admin), student.getId(), "L1");
-
-    assertEquals(1, result.courses().size());
-    var courseResult = result.courses().get(0);
-    assertEquals(course.getId(), courseResult.courseId());
-    assertEquals(new BigDecimal("14.00"), courseResult.average());
-    assertTrue(courseResult.graded());
-    assertTrue(courseResult.complete());
-    assertTrue(courseResult.passed());
-    assertEquals(new BigDecimal("14.00"), result.overallAverage());
-    assertEquals(4, result.earnedCredits());
-    assertEquals(4, result.totalCredits());
-    assertTrue(result.complete());
-  }
-
-  @Test
-  void failingCourseMarksLevelNotComplete() {
-    var admin = saveAdmin();
-    var promotion = savePromotion();
-    var group = saveGroup(promotion);
-    var student = saveStudent(promotion, group);
-    var course = saveCourse(4);
-    var exam = saveExam(saveAssignment(course, group, 4), 1, 1);
-    saveGrade(exam, student, new BigDecimal("8"));
-
-    var result = getResult(token(admin), student.getId(), "L1");
-
-    assertEquals(new BigDecimal("8.00"), result.courses().get(0).average());
-    assertFalse(result.courses().get(0).passed());
-    assertEquals(0, result.earnedCredits());
-    assertEquals(4, result.totalCredits());
-    assertFalse(result.complete());
-  }
-
-  @Test
-  void overallAverageIsCreditWeightedAcrossCourses() {
+  void graduateWhenAllLevelsComplete() {
     var admin = saveAdmin();
     var promotion = savePromotion();
     var group = saveGroup(promotion);
     var student = saveStudent(promotion, group);
 
-    var heavy = saveCourse(4);
-    var heavyExam = saveExam(saveAssignment(heavy, group, 4), 1, 1);
-    saveGrade(heavyExam, student, new BigDecimal("14"));
+    gradeCompleteCourse(student, group, 4, StudentLevel.L1, Semester.S1, new BigDecimal("14"));
+    gradeCompleteCourse(student, group, 4, StudentLevel.L2, Semester.S3, new BigDecimal("12"));
+    gradeCompleteCourse(student, group, 4, StudentLevel.L3, Semester.S5, new BigDecimal("13"));
 
-    var light = saveCourse(2);
-    var lightExam = saveExam(saveAssignment(light, group, 2), 1, 1);
-    saveGrade(lightExam, student, new BigDecimal("10"));
+    var summary = getSummary(token(admin), student.getId());
 
-    var result = getResult(token(admin), student.getId(), "L1");
-
-    assertEquals(2, result.courses().size());
-    assertEquals(new BigDecimal("12.67"), result.overallAverage());
-    assertEquals(6, result.earnedCredits());
-    assertEquals(6, result.totalCredits());
-    assertTrue(result.complete());
+    assertTrue(summary.levels().stream().allMatch(l -> l.complete()));
+    assertEquals(new BigDecimal("13.00"), summary.overallAverage());
+    assertEquals(12, summary.levels().stream().mapToInt(l -> l.earnedCredits()).sum());
+    assertTrue(summary.graduate());
   }
 
   @Test
-  void levelFiltersOutOtherLevelCourses() {
+  void nonGraduateWhenOneLevelFailing() {
     var admin = saveAdmin();
     var promotion = savePromotion();
     var group = saveGroup(promotion);
     var student = saveStudent(promotion, group);
-    var course = saveCourse(4);
-    var exam = saveExam(saveAssignment(course, group, 4), 1, 1);
-    saveGrade(exam, student, new BigDecimal("14"));
 
-    var result = getResult(token(admin), student.getId(), "L2");
+    gradeCompleteCourse(student, group, 4, StudentLevel.L1, Semester.S1, new BigDecimal("14"));
+    gradeCompleteCourse(student, group, 4, StudentLevel.L2, Semester.S3, new BigDecimal("8"));
 
-    assertEquals(StudentLevel.L2, result.level());
-    assertTrue(result.courses().isEmpty());
-    assertNull(result.overallAverage());
-    assertFalse(result.complete());
+    var summary = getSummary(token(admin), student.getId());
+
+    assertTrue(summary.levels().get(0).complete());
+    assertFalse(summary.levels().get(1).complete());
+    assertFalse(summary.levels().get(2).complete());
+    assertEquals(new BigDecimal("11.00"), summary.overallAverage());
+    assertFalse(summary.graduate());
   }
 
   @Test
-  void coursesOfOtherGroupsAreExcluded() {
-    var admin = saveAdmin();
-    var promotion = savePromotion();
-    var group = saveGroup(promotion);
-    var otherGroup = saveGroup(promotion);
-    var student = saveStudent(promotion, group);
-    var course = saveCourse(4);
-    var exam = saveExam(saveAssignment(course, otherGroup, 4), 1, 1);
-    saveGrade(exam, student, new BigDecimal("14"));
-
-    var result = getResult(token(admin), student.getId(), "L1");
-
-    assertTrue(result.courses().isEmpty());
-    assertEquals(0, result.totalCredits());
-  }
-
-  @Test
-  void assignmentCreditsOverrideCatalogCredits() {
+  void overallAverageIsCreditWeightedAcrossLevels() {
     var admin = saveAdmin();
     var promotion = savePromotion();
     var group = saveGroup(promotion);
     var student = saveStudent(promotion, group);
-    var course = saveCourse(4);
-    var exam = saveExam(saveAssignment(course, group, 3), 1, 1);
-    saveGrade(exam, student, new BigDecimal("14"));
 
-    var result = getResult(token(admin), student.getId(), "L1");
+    gradeCompleteCourse(student, group, 4, StudentLevel.L1, Semester.S1, new BigDecimal("14"));
+    gradeCompleteCourse(student, group, 2, StudentLevel.L2, Semester.S3, new BigDecimal("10"));
 
-    assertEquals(3, result.courses().get(0).credits());
-    assertEquals(3, result.earnedCredits());
-    assertEquals(3, result.totalCredits());
-  }
+    var summary = getSummary(token(admin), student.getId());
 
-  @Test
-  void partiallyGradedCourseIsNotComplete() {
-    var admin = saveAdmin();
-    var promotion = savePromotion();
-    var group = saveGroup(promotion);
-    var student = saveStudent(promotion, group);
-    var course = saveCourse(4);
-    var assignment = saveAssignment(course, group, 4);
-    var graded = saveExam(assignment, 1, 2);
-    saveGrade(graded, student, new BigDecimal("14"));
-    saveExam(assignment, 1, 2);
-
-    var result = getResult(token(admin), student.getId(), "L1");
-
-    var courseResult = result.courses().get(0);
-    assertEquals(new BigDecimal("14.00"), courseResult.average());
-    assertTrue(courseResult.graded());
-    assertFalse(courseResult.complete());
-    assertFalse(courseResult.passed());
-    assertEquals(0, result.earnedCredits());
-    assertFalse(result.complete());
-  }
-
-  @Test
-  void ungradedCourseHasNullAverage() {
-    var admin = saveAdmin();
-    var promotion = savePromotion();
-    var group = saveGroup(promotion);
-    var student = saveStudent(promotion, group);
-    var course = saveCourse(4);
-    saveAssignment(course, group, 4);
-
-    var result = getResult(token(admin), student.getId(), "L1");
-
-    var courseResult = result.courses().get(0);
-    assertNull(courseResult.average());
-    assertFalse(courseResult.graded());
-    assertFalse(courseResult.complete());
-    assertNull(courseResult.passed());
-    assertNull(result.overallAverage());
-    assertEquals(0, result.earnedCredits());
-    assertEquals(4, result.totalCredits());
-    assertFalse(result.complete());
-  }
-
-  @Test
-  void gradesFromPreviousGroupStillCount() {
-    var admin = saveAdmin();
-    var promotion = savePromotion();
-    var oldGroup = saveGroup(promotion);
-    var newGroup = saveGroup(promotion);
-    var student = saveStudent(promotion, oldGroup);
-    var course = saveCourse(4);
-    var exam = saveExam(saveAssignment(course, oldGroup, 4), 1, 1);
-    saveGrade(exam, student, new BigDecimal("14"));
-
-    groupFlowRepository.save(
-        JGroupFlow.builder()
-            .student(student)
-            .group(newGroup)
-            .groupFlowType(GroupFlowType.JOIN)
-            .build());
-
-    var result = getResult(token(admin), student.getId(), "L1");
-
-    assertEquals(1, result.courses().size());
-    assertEquals(new BigDecimal("14.00"), result.overallAverage());
-    assertTrue(result.complete());
+    assertEquals(new BigDecimal("12.67"), summary.overallAverage());
+    assertEquals(6, summary.levels().stream().mapToInt(l -> l.totalCredits()).sum());
   }
 }

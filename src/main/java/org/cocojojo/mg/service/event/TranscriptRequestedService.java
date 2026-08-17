@@ -115,7 +115,11 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
     map.put("name", course.courseName());
     map.put("credits", course.credits());
     map.put("average", course.average() == null ? "-" : course.average().toString());
-    map.put("validated", Boolean.TRUE.equals(course.passed()) ? "Passed" : "Not passed");
+    map.put(
+        "validated",
+        !Boolean.TRUE.equals(course.graded())
+            ? "Not graded yet"
+            : Boolean.TRUE.equals(course.passed()) ? "Passed" : "Not passed");
     return map;
   }
 

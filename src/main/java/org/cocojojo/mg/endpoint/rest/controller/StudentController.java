@@ -6,6 +6,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GroupFlowResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.MoveStudentGroupRequest;
+import org.cocojojo.mg.endpoint.rest.controller.dto.ResultsSummaryResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.YearlyResultResponse;
@@ -72,5 +73,11 @@ public class StudentController {
       @PathVariable UUID id, @PathVariable StudentLevel level) {
     studentService.assertAdminOrSelf(id);
     return resultService.computeYearlyResult(id, level);
+  }
+
+  @GetMapping("/{id}/results-summary")
+  public ResultsSummaryResponse getResultsSummary(@PathVariable UUID id) {
+    studentService.assertAdminOrSelf(id);
+    return resultService.computeResultsSummary(id);
   }
 }
