@@ -33,6 +33,16 @@ public interface GradeRepository extends JpaRepository<JGrade, UUID> {
       })
   List<JGrade> findByStudentId(UUID studentId);
 
+  @EntityGraph(
+      attributePaths = {
+        "exam",
+        "exam.courseAssignment",
+        "exam.courseAssignment.course",
+        "exam.courseAssignment.teachers",
+        "student"
+      })
+  List<JGrade> findByStudentIdIn(Collection<UUID> studentIds);
+
   @Query(
       """
       select g from JGrade g

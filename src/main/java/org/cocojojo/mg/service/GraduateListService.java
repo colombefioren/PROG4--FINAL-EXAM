@@ -15,6 +15,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.GraduateResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.ResultsSummaryResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.file.bucket.BucketComponent;
+import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.PromotionRepository;
 import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.model.JStudent;
@@ -40,9 +41,12 @@ public class GraduateListService {
     assertPromotionExists(promotionId);
     var students = studentRepository.findByPromotionIdOrderByLastnameAscFirstnameAsc(promotionId);
 
+    var summaries = resultService.computeResultsSummaries(students);
+    var tracks = resultService.currentTracks(students);
+
     var graduates =
         students.stream()
-            .map(s -> new GraduateCandidate(s, resultService.computeResultsSummary(s.getId())))
+            .map(s -> new GraduateCandidate(s, summaries.get(s.getId()), tracks.get(s.getId())))
             .filter(c -> Boolean.TRUE.equals(c.summary().graduate()))
             .sorted(
                 Comparator.comparing(
@@ -59,7 +63,7 @@ public class GraduateListService {
               .std(candidate.student().getStd())
               .firstname(candidate.student().getFirstname())
               .lastname(candidate.student().getLastname())
-              .track(resultService.currentTrack(candidate.student().getId()))
+              .track(candidate.track())
               .generalAverage(candidate.summary().overallAverage())
               .build());
     }
@@ -125,5 +129,5 @@ public class GraduateListService {
     return tempFile;
   }
 
-  private record GraduateCandidate(JStudent student, ResultsSummaryResponse summary) {}
+  private record GraduateCandidate(JStudent student, ResultsSummaryResponse summary, Track track) {}
 }
