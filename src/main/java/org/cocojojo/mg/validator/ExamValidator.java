@@ -1,5 +1,6 @@
 package org.cocojojo.mg.validator;
 
+import java.math.BigInteger;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
@@ -22,34 +23,25 @@ public class ExamValidator {
 
   public void validateCoefficient(
       UUID courseAssignmentId, UUID examIdBeingSaved, Fraction coefficient) {
-    long num = coefficient.numerator();
-    long den = coefficient.denominator();
+    BigInteger num = BigInteger.valueOf(coefficient.numerator());
+    BigInteger den = BigInteger.valueOf(coefficient.denominator());
     for (JExam exam : examRepository.findByCourseAssignmentId(courseAssignmentId)) {
       if (exam.getId().equals(examIdBeingSaved)) {
         continue;
       }
       Fraction other = exam.getCoefficientFraction();
-      long n = num * other.denominator() + other.numerator() * den;
-      long d = den * other.denominator();
-      long g = gcd(n, d);
-      num = n / g;
-      den = d / g;
+      BigInteger od = BigInteger.valueOf(other.denominator());
+      BigInteger on = BigInteger.valueOf(other.numerator());
+      num = num.multiply(od).add(on.multiply(den));
+      den = den.multiply(od);
+      BigInteger g = num.gcd(den);
+      num = num.divide(g);
+      den = den.divide(g);
     }
-    if (num > den) {
+    if (num.compareTo(den) > 0) {
       throw new InvalidCurriculumException(
           "Sum of exam coefficients for this course assignment would exceed 1 (100%)");
     }
-  }
-
-  private static long gcd(long a, long b) {
-    a = Math.abs(a);
-    b = Math.abs(b);
-    while (b != 0) {
-      long t = b;
-      b = a % b;
-      a = t;
-    }
-    return a;
   }
 
   public void validateTeacherTeaches(UUID teacherId, CourseAssignment assignment) {
