@@ -33,6 +33,10 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
   List<JCourseAssignment> findByGroupIdAndAcademicYearAndSemester(
       UUID groupId, int academicYear, Semester semester);
 
+  @EntityGraph(attributePaths = {"course"})
+  List<JCourseAssignment> findByGroupIdInAndSemesterIn(
+      Collection<UUID> groupIds, Collection<Semester> semesters);
+
   boolean existsByCourseIdAndGroupIdAndAcademicYearAndSemester(
       UUID courseId, UUID groupId, int academicYear, Semester semester);
 

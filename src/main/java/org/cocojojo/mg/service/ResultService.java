@@ -2,8 +2,16 @@ package org.cocojojo.mg.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseResultResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.ResultsSummaryResponse;
@@ -11,6 +19,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.YearlyResultResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.model.Fraction;
 import org.cocojojo.mg.model.enums.GroupFlowType;
+import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
@@ -19,6 +28,10 @@ import org.cocojojo.mg.repository.GradeRepository;
 import org.cocojojo.mg.repository.GroupFlowRepository;
 import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.model.JCourse;
+import org.cocojojo.mg.repository.model.JCourseAssignment;
+import org.cocojojo.mg.repository.model.JExam;
+import org.cocojojo.mg.repository.model.JGrade;
+import org.cocojojo.mg.repository.model.JGroupFlow;
 import org.cocojojo.mg.repository.model.JStudent;
 import org.springframework.stereotype.Service;
 
@@ -118,7 +131,14 @@ public class ResultService {
             .findFirst()
             .map(a -> a.getCredits())
             .orElse(course.getCredits());
+    var scheduledExams =
+        examRepository.findByCourseAndSemestersAndGroups(course.getId(), semesters, groupIds);
+    return buildCourseResult(course, credits, grades, scheduledExams);
+  }
 
+  /** Pure computation of one course result, shared by the per-student and the batch paths. */
+  private CourseResultResponse buildCourseResult(
+      JCourse course, int credits, List<JGrade> grades, List<JExam> scheduledExams) {
     if (grades.isEmpty()) {
       return CourseResultResponse.builder()
           .courseId(course.getId())
@@ -146,8 +166,6 @@ public class ResultService {
             ? null
             : weightedSum.divide(totalCoefficient, 2, RoundingMode.HALF_UP);
 
-    var scheduledExams =
-        examRepository.findByCourseAndSemestersAndGroups(course.getId(), semesters, groupIds);
     // A course is complete only when every currently scheduled exam is graded AND the graded
     // exams cover the full 1.0 coefficient weight. The exam-count check alone would call a
     // course "complete" after a single 1/4 exam is graded, even though 3/4 of its weight has
@@ -203,6 +221,187 @@ public class ResultService {
         .filter(gf -> gf.getGroupFlowType() == GroupFlowType.JOIN)
         .map(gf -> gf.getGroup().getTrack())
         .orElse(null);
+  }
+
+  /**
+   * Batch equivalent of {@link #computeResultsSummary(UUID)}: computes every summary with a
+   * constant number of queries, whatever the student count. The curriculum, credits and exams are
+   * fetched once per distinct set of groups, and only the grades are per-student.
+   */
+  public Map<UUID, ResultsSummaryResponse> computeResultsSummaries(Collection<JStudent> students) {
+    var studentIds = students.stream().map(JStudent::getId).toList();
+
+    var flowsByStudent =
+        groupFlowRepository.findByStudentIdIn(studentIds).stream()
+            .filter(flow -> flow.getGroupFlowType() == GroupFlowType.JOIN)
+            .collect(
+                Collectors.groupingBy(
+                    flow -> flow.getStudent().getId(),
+                    Collectors.mapping(flow -> flow.getGroup().getId(), Collectors.toSet())));
+    var gradesByStudent =
+        gradeRepository.findByStudentIdIn(studentIds).stream()
+            .collect(Collectors.groupingBy(grade -> grade.getStudent().getId()));
+
+    var studentsByGroupSet =
+        students.stream()
+            .collect(
+                Collectors.groupingBy(
+                    student -> flowsByStudent.getOrDefault(student.getId(), Set.of())));
+
+    var summaries = new HashMap<UUID, ResultsSummaryResponse>();
+    for (var entry : studentsByGroupSet.entrySet()) {
+      var groupIds = entry.getKey();
+      var groupStudents = entry.getValue();
+      var allSemesters = EnumSet.allOf(Semester.class);
+
+      var coursesByLevel = new EnumMap<StudentLevel, List<JCourse>>(StudentLevel.class);
+      for (var level : List.of(StudentLevel.L1, StudentLevel.L2, StudentLevel.L3)) {
+        coursesByLevel.put(
+            level, courseAssignmentRepository.findCurriculumCourses(groupIds, level.semesters()));
+      }
+
+      var assignmentsByCourse =
+          courseAssignmentRepository.findByGroupIdInAndSemesterIn(groupIds, allSemesters).stream()
+              .collect(Collectors.groupingBy(assignment -> assignment.getCourse().getId()));
+
+      var examsByCourse =
+          examRepository
+              .findByCourseIdsAndSemestersAndGroups(
+                  coursesByLevel.values().stream()
+                      .flatMap(List::stream)
+                      .map(JCourse::getId)
+                      .toList(),
+                  allSemesters,
+                  groupIds)
+              .stream()
+              .collect(
+                  Collectors.groupingBy(exam -> exam.getCourseAssignment().getCourse().getId()));
+
+      for (var student : groupStudents) {
+        var grades = gradesByStudent.getOrDefault(student.getId(), List.of());
+        var levels =
+            List.of(StudentLevel.L1, StudentLevel.L2, StudentLevel.L3).stream()
+                .map(
+                    level ->
+                        computeYearlyResultBatch(
+                            student,
+                            level,
+                            coursesByLevel.get(level),
+                            grades,
+                            assignmentsByCourse,
+                            examsByCourse))
+                .toList();
+
+        var overallAverage =
+            creditWeightedAverage(
+                levels.stream()
+                    .filter(l -> l.overallAverage() != null)
+                    .map(l -> new WeightedValue(l.overallAverage(), l.totalCredits()))
+                    .toList());
+        var graduate = levels.stream().allMatch(YearlyResultResponse::complete);
+
+        summaries.put(
+            student.getId(),
+            ResultsSummaryResponse.builder()
+                .studentId(student.getId())
+                .studentStd(student.getStd())
+                .levels(levels)
+                .overallAverage(overallAverage)
+                .graduate(graduate)
+                .build());
+      }
+    }
+    return summaries;
+  }
+
+  /** Batch equivalent of {@link #currentTrack(UUID)}, one query for all students. */
+  public Map<UUID, Track> currentTracks(Collection<JStudent> students) {
+    return groupFlowRepository
+        .findByStudentIdIn(students.stream().map(JStudent::getId).toList())
+        .stream()
+        .collect(
+            Collectors.groupingBy(
+                flow -> flow.getStudent().getId(),
+                Collectors.collectingAndThen(
+                    Collectors.maxBy(Comparator.comparing(JGroupFlow::getCreatedAt)),
+                    latest ->
+                        latest
+                            .filter(flow -> flow.getGroupFlowType() == GroupFlowType.JOIN)
+                            .map(flow -> flow.getGroup().getTrack())
+                            .orElse(null))));
+  }
+
+  private YearlyResultResponse computeYearlyResultBatch(
+      JStudent student,
+      StudentLevel level,
+      List<JCourse> requiredCourses,
+      List<JGrade> studentGrades,
+      Map<UUID, List<JCourseAssignment>> assignmentsByCourse,
+      Map<UUID, List<JExam>> examsByCourse) {
+    var courseResults =
+        requiredCourses.stream()
+            .map(
+                course -> {
+                  var courseGrades =
+                      studentGrades.stream()
+                          .filter(
+                              grade ->
+                                  grade
+                                      .getExam()
+                                      .getCourseAssignment()
+                                      .getCourse()
+                                      .getId()
+                                      .equals(course.getId()))
+                          .filter(
+                              grade ->
+                                  level
+                                      .semesters()
+                                      .contains(
+                                          grade.getExam().getCourseAssignment().getSemester()))
+                          .toList();
+                  var scheduledExams =
+                      examsByCourse.getOrDefault(course.getId(), List.of()).stream()
+                          .filter(
+                              exam ->
+                                  level
+                                      .semesters()
+                                      .contains(exam.getCourseAssignment().getSemester()))
+                          .toList();
+                  var credits =
+                      assignmentsByCourse.getOrDefault(course.getId(), List.of()).stream()
+                          .filter(
+                              assignment -> level.semesters().contains(assignment.getSemester()))
+                          .findFirst()
+                          .map(JCourseAssignment::getCredits)
+                          .orElse(course.getCredits());
+                  return buildCourseResult(course, credits, courseGrades, scheduledExams);
+                })
+            .toList();
+
+    var overallAverage =
+        creditWeightedAverage(
+            courseResults.stream()
+                .filter(c -> c.average() != null)
+                .map(c -> new WeightedValue(c.average(), c.credits()))
+                .toList());
+
+    int earnedCredits =
+        courseResults.stream()
+            .filter(CourseResultResponse::passed)
+            .mapToInt(CourseResultResponse::credits)
+            .sum();
+    int totalCredits = courseResults.stream().mapToInt(CourseResultResponse::credits).sum();
+    boolean complete =
+        !courseResults.isEmpty() && courseResults.stream().allMatch(CourseResultResponse::passed);
+
+    return YearlyResultResponse.builder()
+        .level(level)
+        .courses(courseResults)
+        .overallAverage(overallAverage)
+        .earnedCredits(earnedCredits)
+        .totalCredits(totalCredits)
+        .complete(complete)
+        .build();
   }
 
   private JStudent findStudent(UUID studentId) {
