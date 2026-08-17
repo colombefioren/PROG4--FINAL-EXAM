@@ -50,10 +50,8 @@ public class StudentService {
 
   public List<StudentResponse> getByGroup(UUID groupId) {
     groupService.getEntityOrThrow(groupId);
-    return groupFlowService.getCurrentStudentIdsInGroup(groupId).stream()
-        .map(this::getEntityOrThrow)
-        .map(this::toResponse)
-        .toList();
+    var ids = groupFlowService.getCurrentStudentIdsInGroup(groupId);
+    return repository.findAllById(ids).stream().map(this::toResponse).toList();
   }
 
   public Group getCurrentGroup(UUID studentId) {
