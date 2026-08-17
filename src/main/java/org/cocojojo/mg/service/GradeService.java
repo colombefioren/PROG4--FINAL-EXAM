@@ -110,11 +110,13 @@ public class GradeService {
       validator.validateTeacherTeaches(
           securityUtil.getCurrentUserIdOrThrow(),
           courseAssignmentMapper.toModel(entity.getExam().getCourseAssignment()));
+      return mapper.toResponse(entity);
     }
     if (securityUtil.isStudent()) {
       securityUtil.requireSelfOrAdmin(entity.getStudent().getId());
+      return mapper.toResponse(entity);
     }
-    return mapper.toResponse(entity);
+    throw new ForbiddenAccessException("Only students, teachers and admins can view grades");
   }
 
   @Transactional
