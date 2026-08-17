@@ -352,7 +352,7 @@ class TranscriptIT extends FacadeIT {
     verify(bucketComponent).upload(uploadCaptor.capture(), keyCaptor.capture());
     assertTrue(uploadCaptor.getValue().getName().startsWith("transcript-" + student.getStd()));
     assertTrue(keyCaptor.getValue().startsWith("transcripts/" + student.getStd() + "/"));
-    assertTrue(keyCaptor.getValue().endsWith(".pdf"));
+    assertEquals("transcript-" + student.getStd() + "-L1.pdf", fileNameOf(keyCaptor.getValue()));
     assertTrue(uploadCaptor.getValue().length() > 100); // a real PDF was produced
 
     var emailCaptor = ArgumentCaptor.forClass(Email.class);
@@ -368,10 +368,21 @@ class TranscriptIT extends FacadeIT {
     assertEmailContains(email, "L1");
     assertEmailContains(email, "14.00");
     assertEmailContains(email, "Complete");
+    assertEmailDoesNotContain(email, "copy this link into your browser");
+  }
+
+  private String fileNameOf(String key) {
+    return key.substring(key.lastIndexOf('/') + 1);
   }
 
   private void assertEmailContains(Email email, String expected) {
     assertTrue(email.htmlBody().contains(expected), "Email body should contain '" + expected + "'");
+  }
+
+  private void assertEmailDoesNotContain(Email email, String unexpected) {
+    assertFalse(
+        email.htmlBody().contains(unexpected),
+        "Email body should not contain '" + unexpected + "'");
   }
 
   @Test

@@ -83,12 +83,8 @@
               </tr>
               <tr>
                 <td align="center" style="padding-top: 12px; font-size: 12px; color: #5f6368;">
-                  If the button does not work, copy this link into your browser:
-                </td>
-              </tr>
-              <tr>
-                <td align="center" style="padding: 8px 0 0 0; font-size: 12px; word-break: break-all;">
-                  <a th:href="${link}" th:text="${link}" style="color: #1a73e8;">https://link</a>
+                  The download link is valid for
+                  <span th:text="${validityDays}">7</span> days.
                 </td>
               </tr>
             </table>
