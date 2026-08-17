@@ -237,7 +237,7 @@ class StudentIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/students/" + student.id() + "/group_flows")
+        .uri("/students/" + student.id() + "/group-flows")
         .header("Authorization", "Bearer " + adminToken())
         .bodyValue(new MoveStudentGroupRequest(groupB.id()))
         .exchange()
@@ -273,7 +273,7 @@ class StudentIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/students/" + student.id() + "/group_flows")
+        .uri("/students/" + student.id() + "/group-flows")
         .header("Authorization", "Bearer " + adminToken())
         .bodyValue(new MoveStudentGroupRequest(group2025.id()))
         .exchange()
@@ -307,7 +307,7 @@ class StudentIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/students/" + student.id() + "/group_flows")
+        .uri("/students/" + student.id() + "/group-flows")
         .header("Authorization", "Bearer " + adminToken())
         .bodyValue(new MoveStudentGroupRequest(groupB.id()))
         .exchange()

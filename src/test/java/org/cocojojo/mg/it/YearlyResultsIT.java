@@ -215,7 +215,7 @@ class YearlyResultsIT extends FacadeIT {
   private YearlyResultResponse getResult(String token, UUID studentId, String level) {
     return webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", studentId, level)
+        .uri("/students/{id}/yearly-results/{level}", studentId, level)
         .header("Authorization", "Bearer " + token)
         .exchange()
         .expectStatus()
@@ -262,7 +262,7 @@ class YearlyResultsIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", other.getId(), "L1")
+        .uri("/students/{id}/yearly-results/{level}", other.getId(), "L1")
         .header("Authorization", "Bearer " + token(requester))
         .exchange()
         .expectStatus()
@@ -278,7 +278,7 @@ class YearlyResultsIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", student.getId(), "L1")
+        .uri("/students/{id}/yearly-results/{level}", student.getId(), "L1")
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -293,7 +293,7 @@ class YearlyResultsIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", student.getId(), "L1")
+        .uri("/students/{id}/yearly-results/{level}", student.getId(), "L1")
         .exchange()
         .expectStatus()
         .isUnauthorized();
@@ -305,7 +305,7 @@ class YearlyResultsIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", UUID.randomUUID(), "L1")
+        .uri("/students/{id}/yearly-results/{level}", UUID.randomUUID(), "L1")
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
@@ -321,7 +321,7 @@ class YearlyResultsIT extends FacadeIT {
 
     webTestClient
         .get()
-        .uri("/students/{id}/yearly_results/{level}", student.getId(), "L4")
+        .uri("/students/{id}/yearly-results/{level}", student.getId(), "L4")
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
