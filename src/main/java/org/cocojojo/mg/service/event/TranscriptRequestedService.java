@@ -97,7 +97,7 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
         "overallAverage",
         yearly.overallAverage() == null ? "-" : yearly.overallAverage().toString());
     context.setVariable(
-        "complete", Boolean.TRUE.equals(yearly.complete()) ? "Complete" : "Provisional");
+        "complete", yearly.status() == ResultStatus.COMPLETED ? "Complete" : "Provisional");
     context.setVariable("earnedCredits", yearly.earnedCredits());
     context.setVariable("totalCredits", yearly.totalCredits());
     context.setVariable("validityDays", LINK_VALIDITY.toDays());
