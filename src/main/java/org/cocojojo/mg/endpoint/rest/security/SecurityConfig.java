@@ -71,9 +71,9 @@ public class SecurityConfig {
                         "/courses/*",
                         "/promotions/*/courses")
                     .hasAnyRole("ADMIN", "TEACHER")
-                    .requestMatchers(POST, "/students/*/yearly_results/*/transcript")
+                    .requestMatchers(POST, "/students/*/yearly-results/*/transcript")
                     .authenticated()
-                    .requestMatchers(GET, "/students/*/yearly_results/*")
+                    .requestMatchers(GET, "/students/*/yearly-results/*")
                     .authenticated()
                     .requestMatchers(GET, "/students/*/results-summary")
                     .authenticated()

@@ -246,7 +246,7 @@ class TranscriptIT extends FacadeIT {
 
     webTestClient
         .post()
-        .uri("/students/{id}/yearly_results/{level}/transcript", student.getId(), "L1")
+        .uri("/students/{id}/yearly-results/{level}/transcript", student.getId(), "L1")
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
@@ -267,7 +267,7 @@ class TranscriptIT extends FacadeIT {
 
     webTestClient
         .post()
-        .uri("/students/{id}/yearly_results/{level}/transcript", student.getId(), "L2")
+        .uri("/students/{id}/yearly-results/{level}/transcript", student.getId(), "L2")
         .header("Authorization", "Bearer " + token(student))
         .exchange()
         .expectStatus()
@@ -283,7 +283,7 @@ class TranscriptIT extends FacadeIT {
 
     webTestClient
         .post()
-        .uri("/students/{id}/yearly_results/{level}/transcript", student.getId(), "L1")
+        .uri("/students/{id}/yearly-results/{level}/transcript", student.getId(), "L1")
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
@@ -299,7 +299,7 @@ class TranscriptIT extends FacadeIT {
 
     webTestClient
         .post()
-        .uri("/students/{id}/yearly_results/{level}/transcript", other.getId(), "L1")
+        .uri("/students/{id}/yearly-results/{level}/transcript", other.getId(), "L1")
         .header("Authorization", "Bearer " + token(requester))
         .exchange()
         .expectStatus()
@@ -314,7 +314,7 @@ class TranscriptIT extends FacadeIT {
 
     webTestClient
         .post()
-        .uri("/students/{id}/yearly_results/{level}/transcript", student.getId(), "L1")
+        .uri("/students/{id}/yearly-results/{level}/transcript", student.getId(), "L1")
         .exchange()
         .expectStatus()
         .isUnauthorized();
@@ -326,7 +326,7 @@ class TranscriptIT extends FacadeIT {
 
     webTestClient
         .post()
-        .uri("/students/{id}/yearly_results/{level}/transcript", UUID.randomUUID(), "L1")
+        .uri("/students/{id}/yearly-results/{level}/transcript", UUID.randomUUID(), "L1")
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()

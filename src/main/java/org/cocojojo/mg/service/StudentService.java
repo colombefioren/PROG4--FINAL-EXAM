@@ -50,10 +50,8 @@ public class StudentService {
 
   public List<StudentResponse> getByGroup(UUID groupId) {
     groupService.getEntityOrThrow(groupId);
-    return groupFlowService.getCurrentStudentIdsInGroup(groupId).stream()
-        .map(this::getEntityOrThrow)
-        .map(this::toResponse)
-        .toList();
+    var ids = groupFlowService.getCurrentStudentIdsInGroup(groupId);
+    return repository.findAllById(ids).stream().map(this::toResponse).toList();
   }
 
   public Group getCurrentGroup(UUID studentId) {
@@ -99,6 +97,10 @@ public class StudentService {
   }
 
   private StudentResponse update(StudentRequest request) {
+    if (request.groupId() != null) {
+      throw new IllegalArgumentException(
+          "groupId cannot be changed on update; moves must go through /students/{id}/group-flows");
+    }
     var student = getEntityOrThrow(request.id());
     student.setFirstname(request.firstname());
     student.setLastname(request.lastname());

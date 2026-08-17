@@ -49,26 +49,26 @@ public class StudentController {
     return studentService.upsert(request);
   }
 
-  @GetMapping("/{id}/group_flows")
+  @GetMapping("/{id}/group-flows")
   public List<GroupFlowResponse> getGroupFlows(@PathVariable UUID id) {
     studentService.assertAdminOrSelf(id);
     return groupFlowService.getHistory(id);
   }
 
-  @PutMapping("/{id}/group_flows")
+  @PutMapping("/{id}/group-flows")
   public GroupFlowResponse moveToGroup(
       @PathVariable UUID id, @RequestBody @Valid MoveStudentGroupRequest request) {
     return groupFlowService.move(studentService.getEntityOrThrow(id), request);
   }
 
-  @PostMapping("/{id}/yearly_results/{level}/transcript")
+  @PostMapping("/{id}/yearly-results/{level}/transcript")
   @ResponseStatus(HttpStatus.ACCEPTED)
   public void requestTranscript(@PathVariable UUID id, @PathVariable StudentLevel level) {
     studentService.assertAdminOrSelf(id);
     transcriptService.requestTranscript(id, level);
   }
 
-  @GetMapping("/{id}/yearly_results/{level}")
+  @GetMapping("/{id}/yearly-results/{level}")
   public YearlyResultResponse getYearlyResult(
       @PathVariable UUID id, @PathVariable StudentLevel level) {
     studentService.assertAdminOrSelf(id);

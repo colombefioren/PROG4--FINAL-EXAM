@@ -26,6 +26,7 @@ import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundExcept
 import org.cocojojo.mg.file.bucket.BucketComponent;
 import org.cocojojo.mg.mail.Email;
 import org.cocojojo.mg.mail.Mailer;
+import org.cocojojo.mg.model.enums.ResultStatus;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.model.JStudent;
@@ -117,7 +118,7 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
         "overallAverage",
         yearly.overallAverage() == null ? "-" : yearly.overallAverage().toString());
     context.setVariable(
-        "complete", Boolean.TRUE.equals(yearly.complete()) ? "Complete" : "Provisional");
+        "complete", yearly.status() == ResultStatus.COMPLETED ? "Complete" : "Provisional");
     context.setVariable("earnedCredits", yearly.earnedCredits());
     context.setVariable("totalCredits", yearly.totalCredits());
     context.setVariable("courses", yearly.courses().stream().map(this::toCourseView).toList());

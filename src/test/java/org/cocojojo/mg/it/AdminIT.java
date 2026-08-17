@@ -169,4 +169,74 @@ class AdminIT extends FacadeIT {
         .expectStatus()
         .isUnauthorized();
   }
+
+  @Test
+  void adminCanGetOwnProfile() {
+    var admin = saveAdmin("admin-" + UUID.randomUUID() + "@hei.school", "secret123");
+    var token = loginToken(admin.getEmail(), "secret123");
+
+    var fetched =
+        webTestClient
+            .get()
+            .uri("/admins/" + admin.getId())
+            .header("Authorization", "Bearer " + token)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(AdminResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(fetched);
+    assertEquals(admin.getId(), fetched.id());
+    assertEquals("Ada", fetched.firstname());
+    assertEquals("Lovelace", fetched.lastname());
+    assertEquals(admin.getEmail(), fetched.email());
+  }
+
+  @Test
+  void adminCannotGetAnotherAdmin() {
+    var self = saveAdmin("self-" + UUID.randomUUID() + "@hei.school", "secret123");
+    var other = saveAdmin("other-" + UUID.randomUUID() + "@hei.school", "secret123");
+    var token = loginToken(self.getEmail(), "secret123");
+
+    webTestClient
+        .get()
+        .uri("/admins/" + other.getId())
+        .header("Authorization", "Bearer " + token)
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void teacherCannotGetAdmin() {
+    var admin = saveAdmin("admin-" + UUID.randomUUID() + "@hei.school", "secret123");
+    var teacher =
+        teacherRepository.save(
+            JTeacher.builder()
+                .firstname("Alan")
+                .lastname("Turing")
+                .email("teacher-" + UUID.randomUUID() + "@hei.school")
+                .password(passwordEncoder.encode("secret123"))
+                .build());
+
+    webTestClient
+        .get()
+        .uri("/admins/" + admin.getId())
+        .header("Authorization", "Bearer " + loginToken(teacher.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void unauthenticatedCannotGetAdmin() {
+    webTestClient
+        .get()
+        .uri("/admins/" + UUID.randomUUID())
+        .exchange()
+        .expectStatus()
+        .isUnauthorized();
+  }
 }
