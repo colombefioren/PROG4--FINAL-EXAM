@@ -53,12 +53,6 @@ public class CourseService {
     return courseMapper.toResponse(courseMapper.toModel(saved));
   }
 
-  public JCourse getByIdOrThrow(UUID id) {
-    return courseRepository
-        .findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Course with id: " + id + " not found."));
-  }
-
   public List<Course> getByStudentLevelOrderByCodeAsc(StudentLevel studentLevel) {
     return courseRepository.findByStudentLevelOrderByCodeAsc(studentLevel).stream()
         .map(courseMapper::toModel)
