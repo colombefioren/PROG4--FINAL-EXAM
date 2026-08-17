@@ -73,7 +73,10 @@ public class SecurityConfig {
                     .requestMatchers(GET, "/students/*/results-summary")
                     .authenticated()
                     .requestMatchers(
-                        GET, "/promotions/*/graduates", "/promotions/*/graduates/export")
+                        GET,
+                        "/promotions/*/graduates",
+                        "/promotions/*/graduates/export",
+                        "/promotions/*/graduates/download")
                     .hasRole("ADMIN")
                     .requestMatchers(GET, "/course-assignments/curriculum-status")
                     .hasRole("ADMIN")

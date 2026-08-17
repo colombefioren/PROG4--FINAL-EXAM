@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.time.Duration;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.SneakyThrows;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GraduateExportResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GraduateResponse;
@@ -542,6 +544,69 @@ class GraduatesIT extends FacadeIT {
     webTestClient
         .get()
         .uri("/promotions/{promotionId}/graduates/export", UUID.randomUUID())
+        .exchange()
+        .expectStatus()
+        .isUnauthorized();
+  }
+
+  @Test
+  @SneakyThrows
+  void adminCanDownloadGraduateListAsAttachment() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    var exams = createCurriculum(group);
+    saveGrade(exams.get(0), student, new BigDecimal("14"));
+    saveGrade(exams.get(1), student, new BigDecimal("15"));
+    saveGrade(exams.get(2), student, new BigDecimal("16"));
+
+    var bytes =
+        webTestClient
+            .get()
+            .uri("/promotions/{promotionId}/graduates/download", promotion.getId())
+            .header("Authorization", "Bearer " + token(admin))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectHeader()
+            .contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            .expectHeader()
+            .value(
+                "Content-Disposition",
+                value -> assertTrue(value.startsWith("attachment; filename=\"graduates-")))
+            .expectBody(byte[].class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(bytes);
+    assertTrue(bytes.length > 0);
+    try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+      var sheet = workbook.getSheet("Diplomes");
+      assertNotNull(sheet);
+      assertEquals("Rang", sheet.getRow(0).getCell(0).getStringCellValue());
+    }
+  }
+
+  @Test
+  void teacherCannotDownloadGraduateList() {
+    var teacher = saveTeacher();
+    var promotion = savePromotion();
+
+    webTestClient
+        .get()
+        .uri("/promotions/{promotionId}/graduates/download", promotion.getId())
+        .header("Authorization", "Bearer " + token(teacher))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void unauthenticatedCannotDownloadGraduateList() {
+    webTestClient
+        .get()
+        .uri("/promotions/{promotionId}/graduates/download", UUID.randomUUID())
         .exchange()
         .expectStatus()
         .isUnauthorized();
