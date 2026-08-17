@@ -168,12 +168,17 @@ class YearlyResultsIT extends FacadeIT {
   }
 
   private JCourseAssignment saveAssignment(JCourse course, JGroup group, int credits) {
+    return saveAssignment(course, group, 2023, credits);
+  }
+
+  private JCourseAssignment saveAssignment(
+      JCourse course, JGroup group, int academicYear, int credits) {
     return courseAssignmentRepository.save(
         JCourseAssignment.builder()
             .course(course)
             .group(group)
             .teachers(List.of(saveTeacher()))
-            .academicYear(2023)
+            .academicYear(academicYear)
             .semester(Semester.S1)
             .credits(credits)
             .build());
@@ -511,5 +516,31 @@ class YearlyResultsIT extends FacadeIT {
     assertEquals(1, result.courses().size());
     assertEquals(new BigDecimal("14.00"), result.overallAverage());
     assertTrue(result.complete());
+  }
+
+  @Test
+  void courseCreditsComeFromTheMostRecentAssignment() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var oldGroup = saveGroup(promotion);
+    var newGroup = saveGroup(promotion);
+    var student = saveStudent(promotion, oldGroup);
+    var course = saveCourse(4);
+    // The same course was assigned in two groups the student passed through, with different
+    // credit values: the most recent assignment (highest academic year) must win.
+    saveAssignment(course, oldGroup, 2023, 4);
+    saveAssignment(course, newGroup, 2024, 6);
+
+    groupFlowRepository.save(
+        JGroupFlow.builder()
+            .student(student)
+            .group(newGroup)
+            .groupFlowType(GroupFlowType.JOIN)
+            .build());
+
+    var result = getResult(token(admin), student.getId(), "L1");
+
+    assertEquals(1, result.courses().size());
+    assertEquals(6, result.courses().get(0).credits());
   }
 }

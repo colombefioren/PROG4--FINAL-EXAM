@@ -90,12 +90,12 @@ public class CourseAssignmentService {
     validator.validateAllAreTeachers(request.teacherIds());
     // Wire the relations with the entities directly; only build the models where the
     // curriculum validation actually needs domain fields.
-    var course = courseService.getByIdOrThrow(request.courseId());
-    var group = groupService.getByIdOrThrow(request.groupId());
+    var course = courseService.getEntityOrThrow(request.courseId());
+    var group = groupService.getEntityOrThrow(request.groupId());
     validator.validateCurriculum(
         courseMapper.toModel(course), groupMapper.toModel(group), request.semester());
 
-    var teachers = request.teacherIds().stream().map(teacherService::getByIdOrThrow).toList();
+    var teachers = request.teacherIds().stream().map(teacherService::getEntityOrThrow).toList();
     var entity =
         request.id() == null
             ? newAssignment(request, course, group, teachers)

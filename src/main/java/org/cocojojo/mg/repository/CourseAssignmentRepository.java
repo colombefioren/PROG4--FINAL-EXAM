@@ -53,6 +53,7 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
       where a.course.id = :courseId
         and a.semester in :semesters
         and a.group.id in :groupIds
+      order by a.academicYear desc
       """)
   @EntityGraph(attributePaths = {"course"})
   List<JCourseAssignment> findByCourseIdAndSemesterInAndGroupIdIn(
