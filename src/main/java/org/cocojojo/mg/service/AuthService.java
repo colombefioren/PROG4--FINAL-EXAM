@@ -1,6 +1,5 @@
 package org.cocojojo.mg.service;
 
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
@@ -22,14 +21,14 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
 
   public AuthResponse login(LoginRequest request) {
+    if (userRepository.findDeletedFlagByEmailIgnoreCase(request.email()).orElse(false)) {
+      throw new IllegalStateException("This account has been disabled");
+    }
+
     var user =
         userRepository
             .findByEmailIgnoreCase(request.email())
-            .orElseThrow(() -> new NoSuchElementException("Invalid credentials"));
-
-    if (user.isDeleted()) {
-      throw new IllegalStateException("This account has been disabled");
-    }
+            .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
       throw new IllegalArgumentException("Invalid credentials");

@@ -1,5 +1,6 @@
 package org.cocojojo.mg.validator;
 
+import java.math.BigInteger;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
@@ -22,12 +23,22 @@ public class ExamValidator {
 
   public void validateCoefficient(
       UUID courseAssignmentId, UUID examIdBeingSaved, Fraction coefficient) {
-    Fraction total =
-        examRepository.findByCourseAssignmentId(courseAssignmentId).stream()
-            .filter(exam -> !exam.getId().equals(examIdBeingSaved))
-            .map(JExam::getCoefficientFraction)
-            .reduce(coefficient, Fraction::plus);
-    if (total.isGreaterThanOne()) {
+    BigInteger num = BigInteger.valueOf(coefficient.numerator());
+    BigInteger den = BigInteger.valueOf(coefficient.denominator());
+    for (JExam exam : examRepository.findByCourseAssignmentId(courseAssignmentId)) {
+      if (exam.getId().equals(examIdBeingSaved)) {
+        continue;
+      }
+      Fraction other = exam.getCoefficientFraction();
+      BigInteger od = BigInteger.valueOf(other.denominator());
+      BigInteger on = BigInteger.valueOf(other.numerator());
+      num = num.multiply(od).add(on.multiply(den));
+      den = den.multiply(od);
+      BigInteger g = num.gcd(den);
+      num = num.divide(g);
+      den = den.divide(g);
+    }
+    if (num.compareTo(den) > 0) {
       throw new InvalidCurriculumException(
           "Sum of exam coefficients for this course assignment would exceed 1 (100%)");
     }

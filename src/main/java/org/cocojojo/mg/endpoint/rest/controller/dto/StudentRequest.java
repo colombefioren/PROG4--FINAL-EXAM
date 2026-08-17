@@ -8,10 +8,8 @@ import lombok.Builder;
 @Builder
 public record StudentRequest(
     UUID id,
-    String std,
     @NotBlank String firstname,
     @NotBlank String lastname,
     @NotBlank @Email String email,
     String password,
-    UUID promotionId,
     UUID groupId) {}

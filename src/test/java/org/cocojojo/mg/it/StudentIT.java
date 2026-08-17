@@ -108,6 +108,8 @@ class StudentIT extends FacadeIT {
   }
 
   private StudentResponse createStudent(UUID groupId, String email, String password) {
+    // std and promotion are generated server-side (std from the entry year, promotion derived from
+    // the selected group); the request deliberately omits them so a client can never supply them.
     return webTestClient
         .put()
         .uri("/students")

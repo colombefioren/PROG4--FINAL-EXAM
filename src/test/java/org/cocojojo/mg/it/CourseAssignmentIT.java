@@ -695,6 +695,28 @@ class CourseAssignmentIT extends FacadeIT {
   }
 
   @Test
+  void studentWithNoGroupGetsEmptyList() {
+    var promotion = createPromotion();
+    var student = createStudent(promotion, "student-nogroup@hei.school");
+    var studentToken = loginToken(student.getEmail(), "secret123");
+
+    var results =
+        webTestClient
+            .get()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + studentToken)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(results);
+    assertTrue(results.isEmpty());
+  }
+
+  @Test
   void unauthenticatedCannotAccessCourseAssignments() {
     webTestClient.get().uri("/course-assignments").exchange().expectStatus().isUnauthorized();
   }
