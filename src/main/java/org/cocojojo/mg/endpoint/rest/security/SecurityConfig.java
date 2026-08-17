@@ -61,6 +61,8 @@ public class SecurityConfig {
                     .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(POST, "/students/*/yearly_results/*/transcript")
                     .authenticated()
+                    .requestMatchers(GET, "/students/*/yearly_results/*")
+                    .authenticated()
                     .requestMatchers(
                         GET, "/promotions/*/graduates", "/promotions/*/graduates/export")
                     .hasRole("ADMIN")
