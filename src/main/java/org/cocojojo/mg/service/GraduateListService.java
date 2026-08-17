@@ -108,10 +108,22 @@ public class GraduateListService {
   /** Uploads the graduate list to S3 and returns a pre-signed download URL. */
   public String export(UUID promotionId) {
     var bytes = buildXlsx(promotionId);
-    var bucketKey = BUCKET_KEY_PREFIX + promotionId + "-" + System.currentTimeMillis() + ".xlsx";
+    var bucketKey = BUCKET_KEY_PREFIX + buildFileName(promotionId);
     var tempFile = writeTempFile(promotionId, bytes);
     bucketComponent.upload(tempFile, bucketKey);
     return bucketComponent.presign(bucketKey, PRESIGN_EXPIRATION).toString();
+  }
+
+  /** Human-readable file name, e.g. PROMO-2023 - GRADUATE LIST - 1710000000000.xlsx. */
+  public String buildFileName(UUID promotionId) {
+    var promotion =
+        promotionRepository
+            .findById(promotionId)
+            .orElseThrow(
+                () ->
+                    new ResourceNotFoundException(
+                        "Promotion with id:" + promotionId + " not found."));
+    return promotion.getRef() + " - GRADUATE LIST - " + System.currentTimeMillis() + ".xlsx";
   }
 
   private void assertPromotionExists(UUID promotionId) {
