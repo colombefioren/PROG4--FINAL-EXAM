@@ -67,6 +67,7 @@ class GroupStudentsIT extends FacadeIT {
     jdbcTemplate.execute("delete from \"grade_history\"");
     jdbcTemplate.execute("delete from \"grade\"");
     jdbcTemplate.execute("delete from \"exam\"");
+    jdbcTemplate.execute("delete from \"course_assignment_teacher\"");
     jdbcTemplate.execute("delete from \"course_assignment\"");
     groupFlowRepository.deleteAll();
     teacherRepository.deleteAll();
