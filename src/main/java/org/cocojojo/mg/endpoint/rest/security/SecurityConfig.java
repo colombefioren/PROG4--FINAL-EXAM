@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 @Configuration
 @EnableWebSecurity
@@ -25,6 +26,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthFilter;
+  private final RequestMappingHandlerMapping handlerMapping;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -102,6 +104,18 @@ public class SecurityConfig {
             ex ->
                 ex.authenticationEntryPoint(
                     (request, response, authException) -> {
+                      // A request that does not map to any controller is a non-existent endpoint,
+                      // so answer 404 rather than leaking an auth challenge for it.
+                      boolean mapsToHandler;
+                      try {
+                        mapsToHandler = handlerMapping.getHandler(request) != null;
+                      } catch (Exception ignored) {
+                        mapsToHandler = true;
+                      }
+                      if (!mapsToHandler) {
+                        response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                        return;
+                      }
                       // Keep the WWW-Authenticate header so browsers prompt for credentials
                       // when opening the /ui pages without a bearer token.
                       response.setHeader("WWW-Authenticate", "Basic realm=\"hei\"");
