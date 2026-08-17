@@ -48,12 +48,6 @@ public class StudentService {
         .orElseThrow(() -> new ResourceNotFoundException("Student with id: " + id + " not found."));
   }
 
-  public JStudent getByIdOrThrow(UUID id) {
-    return repository
-        .findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Student with id:" + id + " not found."));
-  }
-
   public List<StudentResponse> getByGroup(UUID groupId) {
     groupService.getEntityOrThrow(groupId);
     return groupFlowService.getCurrentStudentIdsInGroup(groupId).stream()

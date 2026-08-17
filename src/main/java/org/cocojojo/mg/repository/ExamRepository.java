@@ -35,6 +35,19 @@ public interface ExamRepository extends JpaRepository<JExam, UUID> {
       @Param("semesters") Collection<Semester> semesters,
       @Param("groupIds") Collection<UUID> groupIds);
 
+  @Query(
+      """
+      select e from JExam e
+      where e.courseAssignment.course.id in :courseIds
+        and e.courseAssignment.semester in :semesters
+        and e.courseAssignment.group.id in :groupIds
+      """)
+  @EntityGraph(attributePaths = {"courseAssignment", "courseAssignment.teachers"})
+  List<JExam> findByCourseIdsAndSemestersAndGroups(
+      @Param("courseIds") Collection<UUID> courseIds,
+      @Param("semesters") Collection<Semester> semesters,
+      @Param("groupIds") Collection<UUID> groupIds);
+
   @EntityGraph(attributePaths = {"courseAssignment", "courseAssignment.teachers"})
   @Query(
       """

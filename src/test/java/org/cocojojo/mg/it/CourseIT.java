@@ -10,10 +10,16 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
+import org.cocojojo.mg.endpoint.rest.security.JwtService;
+import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.AdminRepository;
+import org.cocojojo.mg.repository.PromotionRepository;
+import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.model.JAdmin;
+import org.cocojojo.mg.repository.model.JPromotion;
+import org.cocojojo.mg.repository.model.JStudent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +30,9 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 class CourseIT extends FacadeIT {
 
   @Autowired private AdminRepository adminRepository;
+  @Autowired private StudentRepository studentRepository;
+  @Autowired private PromotionRepository promotionRepository;
+  @Autowired private JwtService jwtService;
   @Autowired private PasswordEncoder passwordEncoder;
 
   @LocalServerPort int port;
@@ -47,6 +56,30 @@ class CourseIT extends FacadeIT {
             .password(passwordEncoder.encode(rawPassword))
             .isDeleted(isDeleted)
             .build());
+  }
+
+  private String studentToken() {
+    var promotion =
+        promotionRepository.save(
+            JPromotion.builder()
+                .ref("CI-PROMO-" + UUID.randomUUID().toString().substring(0, 8))
+                .name("CI Promotion")
+                .entryYear(2023)
+                .build());
+    var student =
+        studentRepository.save(
+            JStudent.builder()
+                .firstname("Alan")
+                .lastname("Turing")
+                .email(
+                    "course-student-"
+                        + UUID.randomUUID().toString().substring(0, 8)
+                        + "@hei.school")
+                .password(passwordEncoder.encode("secret123"))
+                .std("CI-STD-" + UUID.randomUUID().toString().substring(0, 8))
+                .promotion(promotion)
+                .build());
+    return jwtService.generateToken(student.getId(), student.getEmail(), Role.STUDENT);
   }
 
   private String adminToken() {
@@ -206,6 +239,17 @@ class CourseIT extends FacadeIT {
   @Test
   void unauthenticatedGetIsRejected() {
     webTestClient.get().uri("/courses").exchange().expectStatus().isUnauthorized();
+  }
+
+  @Test
+  void studentCannotBrowseCourseCatalog() {
+    webTestClient
+        .get()
+        .uri("/courses")
+        .header("Authorization", "Bearer " + studentToken())
+        .exchange()
+        .expectStatus()
+        .isForbidden();
   }
 
   @Test

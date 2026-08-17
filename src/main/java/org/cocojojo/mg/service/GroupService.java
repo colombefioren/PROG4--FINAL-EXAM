@@ -35,12 +35,6 @@ public class GroupService {
         .orElseThrow(() -> new ResourceNotFoundException("Group with id: " + id + " not found."));
   }
 
-  public JGroup getByIdOrThrow(UUID id) {
-    return groupRepository
-        .findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Group with id: " + id + " not found."));
-  }
-
   public Group getById(UUID id) {
     return groupMapper.toModel(
         groupRepository

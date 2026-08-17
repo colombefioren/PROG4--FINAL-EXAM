@@ -61,13 +61,20 @@
       async function downloadGraduateList(promotionId) {
         try {
           const response = await fetch(
-            `/promotions/${promotionId}/graduates/export`,
+            `/promotions/${promotionId}/graduates/download`,
           );
           if (!response.ok) {
-            throw new Error(`Export failed with status ${response.status}`);
+            throw new Error(`Download failed with status ${response.status}`);
           }
-          const body = await response.json();
-          window.location.href = body.url;
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `graduates-${promotionId}.xlsx`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
         } catch (error) {
           alert(error.message);
         }
