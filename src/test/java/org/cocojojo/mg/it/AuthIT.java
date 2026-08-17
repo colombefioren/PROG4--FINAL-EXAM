@@ -123,4 +123,21 @@ class AuthIT extends FacadeIT {
         .expectStatus()
         .isUnauthorized();
   }
+
+  @Test
+  void unknownEndpointReturnsNotFoundInsteadOfUnauthorized() {
+    webTestClient.get().uri("/definitely-not-an-endpoint").exchange().expectStatus().isNotFound();
+  }
+
+  @Test
+  void protectedEndpointStillChallengesWithBasicAuth() {
+    webTestClient
+        .get()
+        .uri("/courses")
+        .exchange()
+        .expectStatus()
+        .isUnauthorized()
+        .expectHeader()
+        .valueEquals("WWW-Authenticate", "Basic realm=\"hei\"");
+  }
 }
