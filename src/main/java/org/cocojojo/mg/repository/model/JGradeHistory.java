@@ -38,7 +38,7 @@ public class JGradeHistory {
   @Column(name = "\"previous_value\"", precision = 4, scale = 2)
   private BigDecimal previousValue;
 
-  @Column(name = "\"new_value\"", precision = 4, scale = 2, nullable = false)
+  @Column(name = "\"new_value\"", precision = 4, scale = 2)
   private BigDecimal newValue;
 
   @Column(name = "\"reason\"", nullable = false)
