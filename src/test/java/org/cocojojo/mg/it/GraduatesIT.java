@@ -54,6 +54,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -744,6 +745,21 @@ class GraduatesIT extends FacadeIT {
         .isUnauthorized()
         .expectHeader()
         .valueEquals("WWW-Authenticate", "Basic realm=\"hei\"");
+  }
+
+  @Test
+  void staticCssIsServedWithoutAuthentication() {
+    webTestClient
+        .get()
+        .uri("/css/promotions.css")
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectHeader()
+        .contentTypeCompatibleWith(MediaType.valueOf("text/css"))
+        .expectBody(String.class)
+        .consumeWith(
+            body -> assertTrue(new String(body.getResponseBody()).contains("font-family")));
   }
 
   @Test

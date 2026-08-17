@@ -43,7 +43,11 @@ public class SecurityConfig {
                         "/v3/api-docs/**",
                         "/swagger-ui",
                         "/swagger-ui.html",
-                        "/swagger-ui/**")
+                        "/swagger-ui/**",
+                        "/css/**",
+                        "/js/**",
+                        "/images/**",
+                        "/favicon.ico")
                     .permitAll()
                     .requestMatchers("/ui/login", "/ui/logout")
                     .permitAll()
