@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import java.util.UUID;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
@@ -12,12 +13,19 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.CourseResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
 import org.cocojojo.mg.model.enums.Role;
+import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.AdminRepository;
+import org.cocojojo.mg.repository.CourseAssignmentRepository;
+import org.cocojojo.mg.repository.CourseRepository;
+import org.cocojojo.mg.repository.GroupRepository;
 import org.cocojojo.mg.repository.PromotionRepository;
 import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.model.JAdmin;
+import org.cocojojo.mg.repository.model.JCourse;
+import org.cocojojo.mg.repository.model.JCourseAssignment;
+import org.cocojojo.mg.repository.model.JGroup;
 import org.cocojojo.mg.repository.model.JPromotion;
 import org.cocojojo.mg.repository.model.JStudent;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -35,6 +44,9 @@ class CourseIT extends FacadeIT {
   @Autowired private PromotionRepository promotionRepository;
   @Autowired private JwtService jwtService;
   @Autowired private PasswordEncoder passwordEncoder;
+  @Autowired private CourseRepository courseRepository;
+  @Autowired private GroupRepository groupRepository;
+  @Autowired private CourseAssignmentRepository courseAssignmentRepository;
 
   @LocalServerPort int port;
   private WebTestClient webTestClient;
@@ -64,7 +76,7 @@ class CourseIT extends FacadeIT {
         promotionRepository.save(
             JPromotion.builder()
                 .ref("CI-PROMO-" + UUID.randomUUID().toString().substring(0, 8))
-                .name("CI Promotion")
+                .name("CI Promotion " + UUID.randomUUID().toString().substring(0, 8))
                 .entryYear(2023)
                 .build());
     var student =
@@ -269,5 +281,128 @@ class CourseIT extends FacadeIT {
         .exchange()
         .expectStatus()
         .isUnauthorized();
+  }
+
+  @Test
+  void adminCanDeleteACourse() {
+    var code = uniqueCode();
+    var created =
+        webTestClient
+            .put()
+            .uri("/courses")
+            .header("Authorization", "Bearer " + adminToken())
+            .bodyValue(
+                CourseRequest.builder()
+                    .code(code)
+                    .name("Doomed course")
+                    .credits(4)
+                    .studentLevel(StudentLevel.L1)
+                    .build())
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(CourseResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    webTestClient
+        .delete()
+        .uri("/courses/" + created.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    webTestClient
+        .get()
+        .uri("/courses/" + created.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void deletingAnUnknownCourseReturnsNotFound() {
+    webTestClient
+        .delete()
+        .uri("/courses/" + UUID.randomUUID())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void studentCannotDeleteACourse() {
+    var course = saveCourse();
+
+    webTestClient
+        .delete()
+        .uri("/courses/" + course.getId())
+        .header("Authorization", "Bearer " + studentToken())
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void deletingAnAssignedCourseReturnsConflict() {
+    var course = saveCourse();
+    saveAssignment(course);
+
+    webTestClient
+        .delete()
+        .uri("/courses/" + course.getId())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isEqualTo(HttpStatus.CONFLICT);
+
+    webTestClient
+        .get()
+        .uri("/courses/" + course.getId())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isOk();
+  }
+
+  private JCourse saveCourse() {
+    return courseRepository.save(
+        JCourse.builder()
+            .code(uniqueCode())
+            .name("Course " + UUID.randomUUID().toString().substring(0, 8))
+            .credits(4)
+            .studentLevel(StudentLevel.L1)
+            .build());
+  }
+
+  private JGroup saveGroup() {
+    var promotion =
+        promotionRepository.save(
+            JPromotion.builder()
+                .ref("CI-PROMO-" + UUID.randomUUID().toString().substring(0, 8))
+                .name("CI Group Promotion")
+                .entryYear(2025)
+                .build());
+    return groupRepository.save(
+        JGroup.builder()
+            .promotion(promotion)
+            .ref("CI-G-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+            .track(Track.TN)
+            .build());
+  }
+
+  private JCourseAssignment saveAssignment(JCourse course) {
+    return courseAssignmentRepository.save(
+        JCourseAssignment.builder()
+            .course(course)
+            .group(saveGroup())
+            .teachers(List.of())
+            .academicYear(2025)
+            .semester(Semester.S1)
+            .credits(4)
+            .build());
   }
 }
