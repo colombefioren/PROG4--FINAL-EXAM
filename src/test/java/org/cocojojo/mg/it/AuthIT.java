@@ -78,7 +78,7 @@ class AuthIT extends FacadeIT {
         .bodyValue(new LoginRequest("admin2@hei.school", "wrong"))
         .exchange()
         .expectStatus()
-        .isBadRequest();
+        .isUnauthorized();
   }
 
   @Test
@@ -89,7 +89,7 @@ class AuthIT extends FacadeIT {
         .bodyValue(new LoginRequest("nobody@hei.school", "whatever"))
         .exchange()
         .expectStatus()
-        .isBadRequest()
+        .isUnauthorized()
         .expectBody()
         .jsonPath("$.error")
         .isEqualTo("Invalid credentials");
