@@ -16,6 +16,8 @@ import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.PromotionRepository;
 import org.cocojojo.mg.repository.model.JCourse;
 import org.cocojojo.mg.repository.model.JPromotion;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +29,8 @@ public class PromotionService {
   private final CourseAssignmentRepository courseAssignmentRepository;
   private final CourseMapper courseMapper;
 
-  public List<PromotionResponse> getAll() {
-    return repository.findAll().stream().map(mapper::toModel).map(mapper::toResponse).toList();
+  public Page<PromotionResponse> getAll(Pageable pageable) {
+    return repository.findAll(pageable).map(mapper::toModel).map(mapper::toResponse);
   }
 
   /**

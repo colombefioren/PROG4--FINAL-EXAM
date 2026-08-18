@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -134,14 +135,15 @@ class CourseIT extends FacadeIT {
     var all =
         webTestClient
             .get()
-            .uri("/courses")
+            .uri("/courses?size=1000")
             .header("Authorization", "Bearer " + adminToken())
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBodyList(CourseResponse.class)
+            .expectBody(new ParameterizedTypeReference<TestPage<CourseResponse>>() {})
             .returnResult()
-            .getResponseBody();
+            .getResponseBody()
+            .content();
 
     assertTrue(all.stream().anyMatch(c -> created.id().equals(c.id())));
     assertTrue(all.stream().anyMatch(c -> "PROG1".equals(c.code())));

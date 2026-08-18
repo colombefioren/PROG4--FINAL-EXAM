@@ -6,6 +6,8 @@ import java.util.UUID;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.repository.model.JCourse;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -29,6 +31,32 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
       @Param("teacherId") UUID teacherId,
       @Param("courseId") UUID courseId,
       @Param("academicYear") Integer academicYear);
+
+  @Query(
+      value =
+          """
+          select ca from JCourseAssignment ca
+          where (cast(:groupId as uuid) is null or ca.group.id = :groupId)
+            and (cast(:teacherId as uuid) is null
+              or exists (select t from ca.teachers t where t.id = :teacherId))
+            and (cast(:courseId as uuid) is null or ca.course.id = :courseId)
+            and (cast(:academicYear as integer) is null or ca.academicYear = :academicYear)
+          """,
+      countQuery =
+          """
+          select count(ca) from JCourseAssignment ca
+          where (cast(:groupId as uuid) is null or ca.group.id = :groupId)
+            and (cast(:teacherId as uuid) is null
+              or exists (select t from ca.teachers t where t.id = :teacherId))
+            and (cast(:courseId as uuid) is null or ca.course.id = :courseId)
+            and (cast(:academicYear as integer) is null or ca.academicYear = :academicYear)
+          """)
+  Page<JCourseAssignment> findFilterPaged(
+      @Param("groupId") UUID groupId,
+      @Param("teacherId") UUID teacherId,
+      @Param("courseId") UUID courseId,
+      @Param("academicYear") Integer academicYear,
+      Pageable pageable);
 
   List<JCourseAssignment> findByGroupIdAndAcademicYearAndSemester(
       UUID groupId, int academicYear, Semester semester);

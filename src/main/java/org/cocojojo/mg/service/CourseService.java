@@ -11,6 +11,8 @@ import org.cocojojo.mg.model.Course;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseRepository;
 import org.cocojojo.mg.repository.model.JCourse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,11 +23,11 @@ public class CourseService {
   private final CourseRepository courseRepository;
   private final CourseMapper courseMapper;
 
-  public List<CourseResponse> getAll() {
-    return courseRepository.findAll().stream()
+  public Page<CourseResponse> getAll(Pageable pageable) {
+    return courseRepository
+        .findAll(pageable)
         .map(courseMapper::toModel)
-        .map(courseMapper::toResponse)
-        .toList();
+        .map(courseMapper::toResponse);
   }
 
   public CourseResponse getById(UUID id) {

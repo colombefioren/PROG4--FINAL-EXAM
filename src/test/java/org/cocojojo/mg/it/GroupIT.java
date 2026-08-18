@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -133,9 +134,10 @@ class GroupIT extends FacadeIT {
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBodyList(GroupResponse.class)
+            .expectBody(new ParameterizedTypeReference<TestPage<GroupResponse>>() {})
             .returnResult()
-            .getResponseBody();
+            .getResponseBody()
+            .content();
 
     assertTrue(groupsOfA.stream().allMatch(g -> promotionA.id().equals(g.promotionId())));
     assertTrue(groupsOfA.stream().anyMatch(g -> groupA.id().equals(g.id())));
