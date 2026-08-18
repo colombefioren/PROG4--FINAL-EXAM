@@ -4,6 +4,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.TeacherRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.TeacherResponse;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.TeacherMapper;
 import org.cocojojo.mg.repository.TeacherRepository;
@@ -73,5 +74,14 @@ public class TeacherService {
     }
 
     return mapper.toResponse(mapper.toModel(repository.save(teacher)));
+  }
+
+  @Transactional
+  public void delete(UUID id) {
+    if (!securityUtil.isAdmin()) {
+      throw new ForbiddenAccessException("Only an admin can delete a teacher");
+    }
+    getEntityOrThrow(id);
+    repository.softDeleteById(id);
   }
 }

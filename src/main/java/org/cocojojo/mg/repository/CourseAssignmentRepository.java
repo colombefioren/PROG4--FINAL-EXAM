@@ -76,6 +76,8 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
   boolean existsByCourseIdAndGroupIdAndAcademicYearAndSemester(
       UUID courseId, UUID groupId, int academicYear, Semester semester);
 
+  boolean existsByCourseId(UUID courseId);
+
   /** The distinct courses actually assigned to the given groups within the given semesters. */
   @Query(
       """

@@ -5,11 +5,16 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentResponse;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.GroupMapper;
 import org.cocojojo.mg.mapper.StudentMapper;
 import org.cocojojo.mg.model.Group;
+import org.cocojojo.mg.repository.GradeHistoryRepository;
+import org.cocojojo.mg.repository.GradeRepository;
+import org.cocojojo.mg.repository.GroupFlowRepository;
 import org.cocojojo.mg.repository.StudentRepository;
+import org.cocojojo.mg.repository.model.JGrade;
 import org.cocojojo.mg.repository.model.JStudent;
 import org.cocojojo.mg.util.SecurityUtil;
 import org.cocojojo.mg.util.StdRefGenerator;
@@ -30,6 +35,9 @@ public class StudentService {
   private final StdRefGenerator stdRefGenerator;
   private final PasswordEncoder passwordEncoder;
   private final SecurityUtil securityUtil;
+  private final GradeRepository gradeRepository;
+  private final GradeHistoryRepository gradeHistoryRepository;
+  private final GroupFlowRepository groupFlowRepository;
 
   public Page<StudentResponse> getAll(Pageable pageable) {
     return repository.findAll(pageable).map(this::toResponse);
@@ -112,6 +120,20 @@ public class StudentService {
     }
 
     return toResponse(repository.save(student));
+  }
+
+  @Transactional
+  public void delete(UUID id) {
+    if (!securityUtil.isAdmin()) {
+      throw new ForbiddenAccessException("Only an admin can delete a student");
+    }
+    var student = getEntityOrThrow(id);
+    var grades = gradeRepository.findByStudentId(id);
+    gradeHistoryRepository.deleteAll(
+        gradeHistoryRepository.findByGradeIdIn(grades.stream().map(JGrade::getId).toList()));
+    gradeRepository.deleteAll(grades);
+    groupFlowRepository.deleteAll(groupFlowRepository.findByStudentId(id));
+    repository.softDeleteById(student.getId());
   }
 
   private StudentResponse toResponse(JStudent entity) {
