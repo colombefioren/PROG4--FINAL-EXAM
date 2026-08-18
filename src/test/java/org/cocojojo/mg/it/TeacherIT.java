@@ -371,11 +371,11 @@ class TeacherIT extends FacadeIT {
 
   @Test
   void teacherCannotDeleteATeacher() {
-    createTeacher(uniqueEmail());
+    var teacher = createTeacher(uniqueEmail());
 
     webTestClient
         .delete()
-        .uri("/teachers/" + UUID.randomUUID())
+        .uri("/teachers/" + teacher.id())
         .header("Authorization", "Bearer " + teacherToken())
         .exchange()
         .expectStatus()
