@@ -1,12 +1,13 @@
 package org.cocojojo.mg.endpoint.rest.controller;
 
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseResponse;
 import org.cocojojo.mg.service.CourseService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -21,8 +22,8 @@ public class CourseController {
   private final CourseService service;
 
   @GetMapping
-  public List<CourseResponse> getAll() {
-    return service.getAll();
+  public Page<CourseResponse> getAll(Pageable pageable) {
+    return service.getAll(pageable);
   }
 
   @GetMapping("/{id}")

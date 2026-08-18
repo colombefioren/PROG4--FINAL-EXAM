@@ -15,6 +15,8 @@ import org.cocojojo.mg.service.GroupFlowService;
 import org.cocojojo.mg.service.ResultService;
 import org.cocojojo.mg.service.StudentService;
 import org.cocojojo.mg.service.TranscriptService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,8 +37,8 @@ public class StudentController {
   private final ResultService resultService;
 
   @GetMapping
-  public List<StudentResponse> getAll() {
-    return studentService.getAll();
+  public Page<StudentResponse> getAll(Pageable pageable) {
+    return studentService.getAll(pageable);
   }
 
   @GetMapping("/{id}")

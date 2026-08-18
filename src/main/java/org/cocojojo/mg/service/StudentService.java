@@ -13,6 +13,8 @@ import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.model.JStudent;
 import org.cocojojo.mg.util.SecurityUtil;
 import org.cocojojo.mg.util.StdRefGenerator;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +31,8 @@ public class StudentService {
   private final PasswordEncoder passwordEncoder;
   private final SecurityUtil securityUtil;
 
-  public List<StudentResponse> getAll() {
-    return repository.findAll().stream().map(this::toResponse).toList();
+  public Page<StudentResponse> getAll(Pageable pageable) {
+    return repository.findAll(pageable).map(this::toResponse);
   }
 
   public StudentResponse getById(UUID id) {

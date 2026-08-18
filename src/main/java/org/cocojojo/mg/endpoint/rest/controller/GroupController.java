@@ -9,6 +9,8 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.GroupResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentResponse;
 import org.cocojojo.mg.service.GroupService;
 import org.cocojojo.mg.service.StudentService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -25,8 +27,9 @@ public class GroupController {
   private final StudentService studentService;
 
   @GetMapping
-  public List<GroupResponse> getAll(@RequestParam(required = false) UUID promotionId) {
-    return service.getAll(promotionId);
+  public Page<GroupResponse> getAll(
+      @RequestParam(required = false) UUID promotionId, Pageable pageable) {
+    return service.getAll(promotionId, pageable);
   }
 
   @PutMapping
