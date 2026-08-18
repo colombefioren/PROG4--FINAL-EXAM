@@ -284,6 +284,16 @@ class CourseIT extends FacadeIT {
   }
 
   @Test
+  void unauthenticatedDeleteIsRejected() {
+    webTestClient
+        .delete()
+        .uri("/courses/" + UUID.randomUUID())
+        .exchange()
+        .expectStatus()
+        .isUnauthorized();
+  }
+
+  @Test
   void adminCanDeleteACourse() {
     var code = uniqueCode();
     var created =
