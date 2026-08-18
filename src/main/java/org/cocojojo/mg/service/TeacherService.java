@@ -81,6 +81,7 @@ public class TeacherService {
     if (!securityUtil.isAdmin()) {
       throw new ForbiddenAccessException("Only an admin can delete a teacher");
     }
-    repository.delete(getEntityOrThrow(id));
+    getEntityOrThrow(id);
+    repository.softDeleteById(id);
   }
 }
