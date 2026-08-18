@@ -3,6 +3,7 @@ package org.cocojojo.mg.service;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
+import org.cocojojo.mg.endpoint.rest.controller.exception.UnauthorizedException;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
 import org.cocojojo.mg.mapper.UserMapper;
 import org.cocojojo.mg.repository.UserRepository;
@@ -22,16 +23,16 @@ public class AuthService {
 
   public AuthResponse login(LoginRequest request) {
     if (userRepository.findDeletedFlagByEmailIgnoreCase(request.email()).orElse(false)) {
-      throw new IllegalStateException("This account has been disabled");
+      throw new UnauthorizedException("This account has been disabled");
     }
 
     var user =
         userRepository
             .findByEmailIgnoreCase(request.email())
-            .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+            .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-      throw new IllegalArgumentException("Invalid credentials");
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     var role = securityUtil.getRoleFromUser(user);

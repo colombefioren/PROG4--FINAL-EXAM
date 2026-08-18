@@ -3,6 +3,7 @@ package org.cocojojo.mg.endpoint.rest.controller;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
+import org.cocojojo.mg.endpoint.rest.controller.exception.UnauthorizedException;
 import org.cocojojo.mg.endpoint.rest.security.JwtAuthenticationFilter;
 import org.cocojojo.mg.service.AuthService;
 import org.springframework.http.HttpHeaders;
@@ -41,7 +42,7 @@ public class UiAuthController {
               .build()
               .toString());
       return "redirect:/ui/promotions";
-    } catch (IllegalArgumentException | IllegalStateException e) {
+    } catch (IllegalArgumentException | IllegalStateException | UnauthorizedException e) {
       model.addAttribute("error", e.getMessage());
       return "login";
     }
