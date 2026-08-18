@@ -14,9 +14,11 @@ import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.repository.AdminRepository;
 import org.cocojojo.mg.repository.PromotionRepository;
 import org.cocojojo.mg.repository.StudentRepository;
+import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JAdmin;
 import org.cocojojo.mg.repository.model.JPromotion;
 import org.cocojojo.mg.repository.model.JStudent;
+import org.cocojojo.mg.repository.model.JTeacher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,7 @@ class TeacherIT extends FacadeIT {
   @Autowired private AdminRepository adminRepository;
   @Autowired private StudentRepository studentRepository;
   @Autowired private PromotionRepository promotionRepository;
+  @Autowired private TeacherRepository teacherRepository;
   @Autowired private JwtService jwtService;
   @Autowired private PasswordEncoder passwordEncoder;
 
@@ -116,6 +119,18 @@ class TeacherIT extends FacadeIT {
                 .promotion(promotion)
                 .build());
     return jwtService.generateToken(student.getId(), student.getEmail(), Role.STUDENT);
+  }
+
+  private String teacherToken() {
+    var teacher =
+        teacherRepository.save(
+            JTeacher.builder()
+                .firstname("Grace")
+                .lastname("Hopper")
+                .email(uniqueEmail())
+                .password(passwordEncoder.encode("secret123"))
+                .build());
+    return jwtService.generateToken(teacher.getId(), teacher.getEmail(), Role.TEACHER);
   }
 
   @Test
@@ -317,6 +332,51 @@ class TeacherIT extends FacadeIT {
                 .email(uniqueEmail())
                 .password("password123")
                 .build())
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void adminCanDeleteATeacher() {
+    var teacher = createTeacher(uniqueEmail());
+
+    webTestClient
+        .delete()
+        .uri("/teachers/" + teacher.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    webTestClient
+        .get()
+        .uri("/teachers/" + teacher.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void deletingAnUnknownTeacherReturnsNotFound() {
+    webTestClient
+        .delete()
+        .uri("/teachers/" + UUID.randomUUID())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void teacherCannotDeleteATeacher() {
+    createTeacher(uniqueEmail());
+
+    webTestClient
+        .delete()
+        .uri("/teachers/" + UUID.randomUUID())
+        .header("Authorization", "Bearer " + teacherToken())
         .exchange()
         .expectStatus()
         .isForbidden();
