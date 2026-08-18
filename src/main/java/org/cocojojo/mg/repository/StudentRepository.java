@@ -20,7 +20,7 @@ public interface StudentRepository extends JpaRepository<JStudent, UUID> {
   Optional<String> findLastStdStartingWith(@Param("prefix") String prefix);
 
   List<JStudent> findByPromotionIdOrderByLastnameAscFirstnameAsc(UUID promotionId);
-  
+
   @Modifying
   @Query(value = "update \"user\" set \"is_deleted\" = true where \"id\" = :id", nativeQuery = true)
   void softDeleteById(@Param("id") UUID id);
