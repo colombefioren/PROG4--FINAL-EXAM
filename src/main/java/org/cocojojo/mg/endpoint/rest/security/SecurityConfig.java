@@ -75,6 +75,13 @@ public class SecurityConfig {
                         "/courses/*",
                         "/promotions/*/courses")
                     .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(
+                        GET, "/students/*", "/students/*/group-flows", "/students/*/grades")
+                    .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                    .requestMatchers(GET, "/promotions", "/promotions/*")
+                    .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                    .requestMatchers(GET, "/grades/*")
+                    .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                     .requestMatchers(POST, "/students/*/yearly-results/*/transcript")
                     .authenticated()
                     .requestMatchers(GET, "/students/*/yearly-results/*")
@@ -89,6 +96,13 @@ public class SecurityConfig {
                     .hasRole("ADMIN")
                     .requestMatchers(GET, "/course-assignments/curriculum-status")
                     .hasRole("ADMIN")
+                    .requestMatchers(
+                        GET,
+                        "/course-assignments",
+                        "/course-assignments/*",
+                        "/course-assignments/*/exams",
+                        "/course-assignments/*/exams/*")
+                    .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                     .requestMatchers(
                         GET, "/exams/*/grades", "/exams/*/students/*/grade", "/grades/*/history")
                     .hasAnyRole("ADMIN", "TEACHER")
