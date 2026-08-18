@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -182,9 +183,10 @@ class TeacherIT extends FacadeIT {
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBodyList(TeacherResponse.class)
+            .expectBody(new ParameterizedTypeReference<TestPage<TeacherResponse>>() {})
             .returnResult()
             .getResponseBody()
+            .content()
             .stream()
             .filter(t -> t.email().equals(emailA) || t.email().equals(emailB))
             .toList();
