@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
 import org.cocojojo.mg.endpoint.rest.controller.exception.UnauthorizedException;
 import org.cocojojo.mg.endpoint.rest.security.JwtAuthenticationFilter;
-import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.service.AuthService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -38,7 +37,7 @@ public class UiAuthController {
       Model model,
       HttpServletResponse response) {
     try {
-      var auth = authService.login(new LoginRequest(email, password));
+      var auth = authService.loginForUi(new LoginRequest(email, password));
       response.addHeader(
           HttpHeaders.SET_COOKIE,
           ResponseCookie.from(JwtAuthenticationFilter.TOKEN_COOKIE, auth.token())
@@ -47,9 +46,7 @@ public class UiAuthController {
               .path("/")
               .build()
               .toString());
-      return auth.user().role() == Role.ADMIN
-          ? "redirect:/ui/promotions"
-          : "redirect:/ui/not-authorized";
+      return "redirect:" + auth.redirectUrl();
     } catch (IllegalArgumentException | IllegalStateException | UnauthorizedException e) {
       model.addAttribute("error", e.getMessage());
       return "login";
