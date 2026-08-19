@@ -1,6 +1,7 @@
 package org.cocojojo.mg.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -565,7 +566,7 @@ class CourseAssignmentIT extends FacadeIT {
   }
 
   @Test
-  void creditCeilingRejectsOverloadedSemesterWithoutPersisting() {
+  void creditTargetRejectsOverloadedSemesterWithoutPersisting() {
     var promotion = createPromotion();
     var group = createGroup(promotion);
     var teacher = createTeacher();
@@ -603,6 +604,91 @@ class CourseAssignmentIT extends FacadeIT {
         .isBadRequest();
 
     assertEquals(0, courseAssignmentRepository.count());
+  }
+
+  @Test
+  void curriculumStatusCompleteIsExactTargetWithNothingMissing() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var teacher = createTeacher();
+    var token = adminToken();
+    var twenty =
+        courseRepository.save(
+            JCourse.builder()
+                .code("UE-" + UUID.randomUUID())
+                .name("Twenty " + UUID.randomUUID())
+                .credits(20)
+                .totalHours(40)
+                .studentLevel(StudentLevel.L1)
+                .build());
+    var ten =
+        courseRepository.save(
+            JCourse.builder()
+                .code("UE-" + UUID.randomUUID())
+                .name("Ten " + UUID.randomUUID())
+                .credits(10)
+                .totalHours(20)
+                .studentLevel(StudentLevel.L1)
+                .build());
+    var uri =
+        "/course-assignments/curriculum-status?groupId="
+            + group.getId()
+            + "&academicYear=2024&semester=S1";
+
+    // Below the 30-credit target: not complete.
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            List.of(assignmentRequest(twenty.getId(), group.getId(), List.of(teacher.getId()), 20)))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    var partial =
+        webTestClient
+            .get()
+            .uri(uri)
+            .header("Authorization", "Bearer " + token)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(CurriculumStatusResponse.class)
+            .returnResult()
+            .getResponseBody();
+    assertEquals(20, partial.assignedCredits());
+    assertEquals(30, partial.targetCredits());
+    assertFalse(partial.complete());
+    assertFalse(partial.missingCourses().isEmpty());
+
+    // Reaching exactly the 30-credit target is still not "complete" while catalog courses of the
+    // level remain unassigned: complete requires the exact target AND nothing missing.
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            List.of(assignmentRequest(ten.getId(), group.getId(), List.of(teacher.getId()), 10)))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    var atTarget =
+        webTestClient
+            .get()
+            .uri(uri)
+            .header("Authorization", "Bearer " + token)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(CurriculumStatusResponse.class)
+            .returnResult()
+            .getResponseBody();
+    assertEquals(30, atTarget.assignedCredits());
+    assertEquals(30, atTarget.targetCredits());
+    assertFalse(atTarget.complete());
+    assertFalse(atTarget.missingCourses().isEmpty());
   }
 
   @Test

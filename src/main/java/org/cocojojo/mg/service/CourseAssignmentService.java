@@ -84,7 +84,7 @@ public class CourseAssignmentService {
 
   @Transactional
   public List<CourseAssignmentResponse> upsert(List<CourseAssignmentRequest> requests) {
-    validator.validateCreditCeilings(requests);
+    validator.validateCreditTargets(requests);
     return requests.stream().map(this::upsertOne).toList();
   }
 
@@ -158,7 +158,7 @@ public class CourseAssignmentService {
     var assignments =
         repository.findByGroupIdAndAcademicYearAndSemester(groupId, academicYear, semester);
     int assignedCredits = assignments.stream().mapToInt(JCourseAssignment::getCredits).sum();
-    var target = validator.creditsPerSemester();
+    var target = validator.targetCreditsPerSemester();
 
     var assignedCourseIds = assignments.stream().map(a -> a.getCourse().getId()).toList();
     var missing =

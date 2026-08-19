@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CourseAssignmentValidator {
 
-  private static final int MAX_CREDITS_PER_SEMESTER = 30;
+  private static final int TARGET_CREDITS_PER_SEMESTER = 30;
 
   private final CourseAssignmentRepository courseAssignmentRepository;
   private final UserRepository userRepository;
@@ -57,11 +57,11 @@ public class CourseAssignmentValidator {
     }
   }
 
-  public void validateCreditCeilings(List<CourseAssignmentRequest> requests) {
+  public void validateCreditTargets(List<CourseAssignmentRequest> requests) {
     requests.stream()
         .map(r -> new GroupYearSemester(r.groupId(), r.academicYear(), r.semester()))
         .distinct()
-        .forEach(triple -> validateCreditCeiling(triple, requests));
+        .forEach(triple -> validateCreditTarget(triple, requests));
   }
 
   public void validateNotDuplicate(
@@ -75,19 +75,19 @@ public class CourseAssignmentValidator {
     }
   }
 
-  public void validateCreditCeiling(int totalCredits) {
-    if (totalCredits > MAX_CREDITS_PER_SEMESTER) {
+  public void validateCreditTarget(int totalCredits) {
+    if (totalCredits > TARGET_CREDITS_PER_SEMESTER) {
       throw new IllegalArgumentException(
           "Total credits "
               + totalCredits
               + " exceed the "
-              + MAX_CREDITS_PER_SEMESTER
-              + "-credit ceiling for one semester");
+              + TARGET_CREDITS_PER_SEMESTER
+              + "-credit target for one semester");
     }
   }
 
-  public int creditsPerSemester() {
-    return MAX_CREDITS_PER_SEMESTER;
+  public int targetCreditsPerSemester() {
+    return TARGET_CREDITS_PER_SEMESTER;
   }
 
   private void validateTrackCompatibility(Course course, Group group) {
@@ -107,7 +107,7 @@ public class CourseAssignmentValidator {
     }
   }
 
-  private void validateCreditCeiling(
+  private void validateCreditTarget(
       GroupYearSemester triple, List<CourseAssignmentRequest> requests) {
     var existing =
         courseAssignmentRepository.findByGroupIdAndAcademicYearAndSemester(
@@ -128,7 +128,7 @@ public class CourseAssignmentValidator {
                         && r.semester() == triple.semester())
             .mapToInt(CourseAssignmentRequest::credits)
             .sum();
-    validateCreditCeiling(existingCredits + incomingCredits);
+    validateCreditTarget(existingCredits + incomingCredits);
   }
 
   private record GroupYearSemester(UUID groupId, int academicYear, Semester semester) {}
