@@ -2,6 +2,7 @@ package org.cocojojo.mg.it;
 
 import static org.hamcrest.Matchers.containsString;
 
+import java.time.Duration;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,13 @@ class OpenApiIT extends FacadeIT {
 
   @BeforeEach
   void setUp() {
-    webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    // A longer response timeout keeps the spec-generation tests (springdoc scans every
+    // controller) from flaking with a blocking-read timeout when test forks share CPU.
+    webTestClient =
+        WebTestClient.bindToServer()
+            .baseUrl("http://localhost:" + port)
+            .responseTimeout(Duration.ofSeconds(30))
+            .build();
   }
 
   @Test
