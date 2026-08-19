@@ -62,10 +62,6 @@ public class SecurityUtil {
     }
   }
 
-  public Role getCurrentRoleOrThrow() {
-    return getCurrentRole().orElseThrow(() -> new IllegalStateException("Role not found"));
-  }
-
   public boolean isAdmin() {
     return getCurrentRole().map(role -> role == Role.ADMIN).orElse(false);
   }
