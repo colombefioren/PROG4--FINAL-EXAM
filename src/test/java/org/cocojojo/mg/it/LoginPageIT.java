@@ -150,7 +150,7 @@ class LoginPageIT extends FacadeIT {
             body -> {
               var html = new String(body.getResponseBody());
               assertTrue(html.contains("Forbidden"));
-              assertTrue(html.contains("ACCÈS RESTREINT"));
+              assertTrue(html.contains("FORBIDDEN ACCESS"));
             });
   }
 
