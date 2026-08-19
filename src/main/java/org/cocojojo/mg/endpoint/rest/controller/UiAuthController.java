@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
 import org.cocojojo.mg.endpoint.rest.controller.exception.UnauthorizedException;
 import org.cocojojo.mg.endpoint.rest.security.JwtAuthenticationFilter;
+import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.service.AuthService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -25,6 +26,11 @@ public class UiAuthController {
     return "login";
   }
 
+  @GetMapping("/ui/not-authorized")
+  public String notAuthorizedPage() {
+    return "not-authorized";
+  }
+
   @PostMapping("/ui/login")
   public String login(
       @RequestParam String email,
@@ -41,7 +47,9 @@ public class UiAuthController {
               .path("/")
               .build()
               .toString());
-      return "redirect:/ui/promotions";
+      return auth.user().role() == Role.ADMIN
+          ? "redirect:/ui/promotions"
+          : "redirect:/ui/not-authorized";
     } catch (IllegalArgumentException | IllegalStateException | UnauthorizedException e) {
       model.addAttribute("error", e.getMessage());
       return "login";
