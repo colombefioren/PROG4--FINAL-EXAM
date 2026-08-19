@@ -144,13 +144,21 @@
 }
 
 .password-toggle {
+  display: flex;
+  align-items: center;
   background: transparent;
   border: none;
   padding: 0 0.85rem;
-  font-family: var(--font-mono);
-  font-size: 1rem;
   cursor: pointer;
   color: var(--navy);
+}
+
+.password-toggle svg {
+  display: block;
+}
+
+.password-toggle svg[hidden] {
+  display: none;
 }
 
 .password-toggle:hover {
