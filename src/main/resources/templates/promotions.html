@@ -59,9 +59,20 @@
                   type="button"
                   class="graduate-download btn-download"
                   th:attr="data-promotion-id=${promotion.id()}"
+                  th:classappend="${graduateEligibility[promotion.id()]} ? '' : ' disabled'"
+                  th:disabled="${!graduateEligibility[promotion.id()]}"
+                  th:title="${graduateEligibility[promotion.id()]}
+                    ? 'Download the graduate list'
+                    : 'Graduate list requires results across all 3 years'"
                 >
                   ↓ Download Graduate List
                 </button>
+                <p
+                  class="graduate-note"
+                  th:if="${!graduateEligibility[promotion.id()]}"
+                >
+                  Not yet across 3 years — only students validated across all 3 years can be considered graduates.
+                </p>
               </td>
             </tr>
           </tbody>
@@ -84,22 +95,17 @@
     async function downloadGraduateList(promotionId) {
       try {
         const response = await fetch(
-          `/promotions/${promotionId}/graduates/download`,
+          `/promotions/${promotionId}/graduates/export`,
         );
         if (!response.ok) {
           throw new Error(`Download failed with status ${response.status}`);
         }
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const disposition = response.headers.get('Content-Disposition');
-        const match = disposition && disposition.match(/filename="([^"]+)"/);
+        const { url } = await response.json();
         const link = document.createElement('a');
         link.href = url;
-        link.download = match ? match[1] : `${promotionId} - GRADUATE LIST.xlsx`;
         document.body.appendChild(link);
         link.click();
         link.remove();
-        URL.revokeObjectURL(url);
       } catch (error) {
         alert(error.message);
       }

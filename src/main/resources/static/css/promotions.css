@@ -145,6 +145,28 @@ table.roster tbody td:first-child {
   box-shadow: 1px 1px 0 var(--navy);
 }
 
+.btn-download.disabled {
+  background: var(--navy-faint);
+  color: var(--navy-soft);
+  cursor: not-allowed;
+  box-shadow: 2px 2px 0 var(--navy-soft);
+}
+
+.btn-download.disabled:hover {
+  background: var(--navy-faint);
+  transform: none;
+  box-shadow: 2px 2px 0 var(--navy-soft);
+}
+
+.graduate-note {
+  margin: 0.55rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--coral-deep);
+  max-width: 30ch;
+}
+
 .dash-foot {
   max-width: 1200px;
   margin: 0 auto;
