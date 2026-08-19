@@ -1,0 +1,81 @@
+.denied-shell {
+  min-height: calc(100vh - 84px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 6vw;
+  position: relative;
+  overflow: hidden;
+}
+
+.denied-shell .doodle-1 {
+  top: 14%;
+  left: 10%;
+  font-size: 2.2rem;
+  color: var(--coral-deep);
+  transform: rotate(-8deg);
+}
+
+.denied-shell .doodle-2 {
+  bottom: 16%;
+  left: 14%;
+  font-size: 1.8rem;
+  color: var(--mint-deep);
+}
+
+.denied-shell .doodle-3 {
+  top: 20%;
+  right: 11%;
+  font-size: 1.8rem;
+  color: var(--lilac-deep);
+  transform: rotate(6deg);
+}
+
+.denied-card {
+  position: relative;
+  width: min(480px, 100%);
+  background: var(--paper);
+  border: 3px solid var(--navy);
+  border-radius: var(--radius);
+  padding: 2.8rem 2.6rem 2.6rem;
+  box-shadow: 10px 10px 0 var(--coral-deep);
+  transform: rotate(-0.6deg);
+  text-align: center;
+}
+
+.denied-eyebrow {
+  margin-bottom: 1.2rem;
+}
+
+.denied-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 2.6rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--navy);
+  text-shadow: 4px 4px 0 var(--coral);
+  margin-bottom: 0.9rem;
+}
+
+.denied-sub {
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--navy-soft);
+  margin-bottom: 2rem;
+  max-width: 38ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.denied-actions .btn {
+  display: inline-block;
+  text-decoration: none;
+}
+
+@media (max-width: 640px) {
+  .denied-card {
+    padding: 2.2rem 1.6rem 2rem;
+    transform: none;
+  }
+}
