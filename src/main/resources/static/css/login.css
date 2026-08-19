@@ -1,8 +1,3 @@
-/* =========================================================
-   LOGIN PAGE — page-specific styles.
-   Shared design system lives in hei.css.
-   ========================================================= */
-
 .auth-shell {
   min-height: calc(100vh - 84px);
   display: flex;
@@ -20,12 +15,14 @@
   color: var(--coral-deep);
   transform: rotate(-8deg);
 }
+
 .auth-shell .doodle-2 {
   bottom: 14%;
   left: 12%;
   font-size: 1.6rem;
   color: var(--mint-deep);
 }
+
 .auth-shell .doodle-3 {
   top: 18%;
   right: 10%;
@@ -33,6 +30,7 @@
   color: var(--lilac-deep);
   transform: rotate(6deg);
 }
+
 .auth-shell .doodle-4 {
   bottom: 10%;
   right: 9%;
@@ -81,7 +79,7 @@
   color: var(--navy);
   background: var(--coral);
   border: 2.5px solid var(--navy);
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   padding: 0.7rem 0.95rem;
   margin-bottom: 1.4rem;
   box-shadow: 3px 3px 0 var(--navy);
@@ -92,6 +90,7 @@
   display: block;
   margin-bottom: 1.3rem;
 }
+
 .field-label {
   display: block;
   font-family: var(--font-mono);
@@ -102,14 +101,16 @@
   color: var(--navy-soft);
   margin-bottom: 0.5rem;
 }
+
 .input-row {
   display: flex;
   align-items: stretch;
   background: var(--cream);
   border: 2.5px solid var(--navy);
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
+
 .input-row .prompt {
   font-family: var(--font-mono);
   font-weight: 700;
@@ -120,6 +121,7 @@
   display: flex;
   align-items: center;
 }
+
 .input-row input {
   flex: 1;
   min-width: 0;
@@ -131,12 +133,28 @@
   font-size: 0.98rem;
   color: var(--navy);
 }
+
 .input-row input::placeholder {
   color: var(--navy-faint);
 }
+
 .input-row:focus-within {
   outline: 3px dashed var(--navy);
   outline-offset: 2px;
+}
+
+.password-toggle {
+  background: transparent;
+  border: none;
+  padding: 0 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--navy);
+}
+
+.password-toggle:hover {
+  color: var(--gold);
 }
 
 .auth-submit {

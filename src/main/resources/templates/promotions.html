@@ -1,111 +1,109 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Promotions · HEI</title>
-    <link rel="stylesheet" href="/css/hei.css" th:href="@{/css/hei.css}" />
-    <link rel="stylesheet" href="/css/promotions.css" th:href="@{/css/promotions.css}" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <header class="topbar">
-      <div class="brand">
-        <img class="brand-logo" th:src="@{/images/logo.png}" src="/images/logo.png" alt="HEI" />
-        <div>
-          <span class="brand-word">HEI</span>
-          <span class="brand-tag">Haute École d'Informatique</span>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Promotions · HEI</title>
+  <link rel="stylesheet" href="/css/hei.css" th:href="@{/css/hei.css}" />
+  <link rel="stylesheet" href="/css/promotions.css" th:href="@{/css/promotions.css}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-logo" th:src="@{/images/logo.png}" src="/images/logo.png" alt="HEI" />
+      <span class="brand-tag">Haute École d'Informatique</span>
+    </div>
+    <form method="post" action="/ui/logout">
+      <button type="submit" class="btn btn-ghost-invert">Logout</button>
+    </form>
+  </header>
+
+  <section class="dash-hero">
+    <span class="doodle doodle-1" aria-hidden="true">{ }</span>
+    <span class="doodle doodle-2" aria-hidden="true">01</span>
+    <span class="eyebrow-tag">ACADEMIC DOCUMENTS</span>
+    <h1 class="dash-title">Promotions<span style="color: var(--gold)">.</span></h1>
+    <p class="dash-sub">Every cohort that has come through HEI, with its reference, entry year and graduate list ready to download.</p>
+  </section>
+
+  <section class="roster-shell">
+    <div class="roster-panel bracketed">
+      <span class="bracket bracket-tl" aria-hidden="true"></span>
+      <span class="bracket bracket-tr" aria-hidden="true"></span>
+      <span class="bracket bracket-bl" aria-hidden="true"></span>
+      <span class="bracket bracket-br" aria-hidden="true"></span>
+
+      <div class="table-scroll">
+        <table class="roster">
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Name</th>
+              <th>Entry year</th>
+              <th>Graduate list</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="promotion : ${promotions}">
+              <td th:text="${promotion.ref()}">REF</td>
+              <td th:text="${promotion.name()}">Name</td>
+              <td><span class="year-chip" th:text="${promotion.entryYear()}">2025</span></td>
+              <td>
+                <button
+                  type="button"
+                  class="graduate-download btn-download"
+                  th:attr="data-promotion-id=${promotion.id()}"
+                >
+                  ↓ Download Graduate List
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <form method="post" action="/ui/logout">
-        <button type="submit" class="logout btn btn-ghost-invert">Logout ✕</button>
-      </form>
-    </header>
+    </div>
+  </section>
 
-    <section class="dash-hero">
-      <span class="doodle doodle-1" aria-hidden="true">{ }</span>
-      <span class="doodle doodle-2" aria-hidden="true">01</span>
-      <span class="eyebrow-tag">DOSSIER ACADÉMIQUE</span>
-      <h1 class="dash-title">Promotions<span style="color: var(--gold)">.</span></h1>
-      <p class="dash-sub">Every cohort that has come through HEI, with its reference, entry year and graduate list ready to download.</p>
-    </section>
+  <footer class="dash-foot">
+    <p>© 2026 Haute École d'Informatique · Habilitation MESupRES</p>
+  </footer>
 
-    <section class="roster-shell">
-      <div class="roster-panel bracketed">
-        <span class="bracket bracket-tl" aria-hidden="true"></span>
-        <span class="bracket bracket-tr" aria-hidden="true"></span>
-        <span class="bracket bracket-bl" aria-hidden="true"></span>
-        <span class="bracket bracket-br" aria-hidden="true"></span>
+  <script th:inline="none">
+    document.querySelectorAll('.graduate-download').forEach((button) => {
+      button.addEventListener('click', () =>
+        downloadGraduateList(button.dataset.promotionId),
+      );
+    });
 
-        <div class="table-scroll">
-          <table class="roster">
-            <thead>
-              <tr>
-                <th>Reference</th>
-                <th>Name</th>
-                <th>Entry year</th>
-                <th>Graduate list</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr th:each="promotion : ${promotions}">
-                <td th:text="${promotion.ref()}">REF</td>
-                <td th:text="${promotion.name()}">Name</td>
-                <td><span class="year-chip" th:text="${promotion.entryYear()}">2025</span></td>
-                <td>
-                  <button
-                    type="button"
-                    class="graduate-download btn-download"
-                    th:attr="data-promotion-id=${promotion.id()}"
-                  >
-                    ↓ Download Graduate List
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <footer class="dash-foot">
-      <p>© 2026 Haute École d'Informatique · Habilitation MESupRES</p>
-    </footer>
-
-    <script th:inline="none">
-      document.querySelectorAll('.graduate-download').forEach((button) => {
-        button.addEventListener('click', () =>
-          downloadGraduateList(button.dataset.promotionId),
+    async function downloadGraduateList(promotionId) {
+      try {
+        const response = await fetch(
+          `/promotions/${promotionId}/graduates/download`,
         );
-      });
-      async function downloadGraduateList(promotionId) {
-        try {
-          const response = await fetch(
-            `/promotions/${promotionId}/graduates/download`,
-          );
-          if (!response.ok) {
-            throw new Error(`Download failed with status ${response.status}`);
-          }
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-          const disposition = response.headers.get('Content-Disposition');
-          const match = disposition && disposition.match(/filename="([^"]+)"/);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = match ? match[1] : `${promotionId} - GRADUATE LIST.xlsx`;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          URL.revokeObjectURL(url);
-        } catch (error) {
-          alert(error.message);
+        if (!response.ok) {
+          throw new Error(`Download failed with status ${response.status}`);
         }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const disposition = response.headers.get('Content-Disposition');
+        const match = disposition && disposition.match(/filename="([^"]+)"/);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = match ? match[1] : `${promotionId} - GRADUATE LIST.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        alert(error.message);
       }
-    </script>
-  </body>
+    }
+  </script>
+</body>
 </html>

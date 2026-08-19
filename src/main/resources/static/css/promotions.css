@@ -1,14 +1,10 @@
-/* =========================================================
-   PROMOTIONS / DASHBOARD PAGE — page-specific styles.
-   Shared design system lives in hei.css.
-   ========================================================= */
-
 .dash-hero {
   max-width: 1200px;
   margin: 0 auto;
   padding: 3.2rem 5vw 1.6rem;
   position: relative;
 }
+
 .dash-hero .doodle-1 {
   top: -0.6rem;
   right: 6vw;
@@ -16,6 +12,7 @@
   color: var(--lilac-deep);
   transform: rotate(8deg);
 }
+
 .dash-hero .doodle-2 {
   bottom: -0.4rem;
   right: 18vw;
@@ -31,6 +28,7 @@
   text-shadow: 5px 5px 0 var(--gold-pale);
   margin: 0.9rem 0 0.6rem;
 }
+
 .dash-sub {
   font-family: var(--font-mono);
   font-size: 0.95rem;
@@ -75,9 +73,11 @@ table.roster thead th {
   text-align: left;
   padding: 1rem 1.2rem;
 }
+
 table.roster thead th:first-child {
   border-top-left-radius: 6px;
 }
+
 table.roster thead th:last-child {
   border-top-right-radius: 6px;
 }
@@ -86,18 +86,22 @@ table.roster tbody tr {
   border-bottom: 2px dashed var(--navy-faint);
   transition: background 0.1s linear;
 }
+
 table.roster tbody tr:last-child {
   border-bottom: none;
 }
+
 table.roster tbody tr:hover {
   background: var(--gold-pale);
 }
+
 table.roster tbody td {
   padding: 1rem 1.2rem;
   font-family: var(--font-body);
   font-size: 0.98rem;
   color: var(--navy);
 }
+
 table.roster tbody td:first-child {
   font-family: var(--font-mono);
   font-weight: 700;
@@ -129,11 +133,13 @@ table.roster tbody td:first-child {
   transition: transform 0.07s linear, box-shadow 0.07s linear, background 0.07s linear;
   white-space: nowrap;
 }
+
 .btn-download:hover {
   background: #cff2da;
   transform: translate(-2px, -2px);
   box-shadow: 5px 5px 0 var(--navy);
 }
+
 .btn-download:active {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0 var(--navy);
