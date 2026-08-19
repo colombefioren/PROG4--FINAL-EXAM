@@ -48,7 +48,7 @@ public class CourseAssignmentService {
       teacherId = securityUtil.getCurrentUserId();
     }
     if (securityUtil.isStudent()) {
-      var currentGroup = groupFlowService.getCurrentGroup(securityUtil.getCurrentUserId());
+      var currentGroup = groupFlowService.findCurrentGroup(securityUtil.getCurrentUserId());
       if (currentGroup.isEmpty()) {
         return Page.empty(pageable);
       }

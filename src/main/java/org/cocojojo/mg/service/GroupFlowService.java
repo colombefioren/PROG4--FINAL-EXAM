@@ -6,6 +6,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GroupFlowResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.MoveStudentGroupRequest;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.GroupFlowMapper;
 import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.repository.GroupFlowRepository;
@@ -33,11 +34,17 @@ public class GroupFlowService {
         .toList();
   }
 
-  public Optional<JGroup> getCurrentGroup(UUID studentId) {
+  public Optional<JGroup> findCurrentGroup(UUID studentId) {
     return repository
         .findFirstByStudentIdOrderByCreatedAtDesc(studentId)
         .filter(gf -> gf.getGroupFlowType() == GroupFlowType.JOIN)
         .map(JGroupFlow::getGroup);
+  }
+
+  public JGroup getCurrentGroup(UUID studentId) {
+    return findCurrentGroup(studentId)
+        .orElseThrow(
+            () -> new ResourceNotFoundException("Student with id:" + studentId + " has no group"));
   }
 
   public List<UUID> getCurrentStudentIdsInGroup(UUID groupId) {
@@ -46,7 +53,7 @@ public class GroupFlowService {
         .distinct()
         .filter(
             studentId ->
-                getCurrentGroup(studentId)
+                findCurrentGroup(studentId)
                     .map(group -> group.getId().equals(groupId))
                     .orElse(false))
         .toList();
