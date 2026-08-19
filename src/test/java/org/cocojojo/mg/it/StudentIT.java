@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -47,6 +48,7 @@ import org.cocojojo.mg.repository.model.JGradeHistory;
 import org.cocojojo.mg.repository.model.JGroup;
 import org.cocojojo.mg.repository.model.JPromotion;
 import org.cocojojo.mg.repository.model.JTeacher;
+import org.cocojojo.mg.util.SemesterCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -140,6 +142,25 @@ class StudentIT extends FacadeIT {
             GroupRequest.builder()
                 .ref("G" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .promotionId(promotionId)
+                .build())
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(GroupResponse.class)
+        .returnResult()
+        .getResponseBody();
+  }
+
+  private GroupResponse createTrackGroup(UUID promotionId, Track track) {
+    return webTestClient
+        .put()
+        .uri("/groups")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(
+            GroupRequest.builder()
+                .ref("G" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                .promotionId(promotionId)
+                .track(track)
                 .build())
         .exchange()
         .expectStatus()
@@ -393,6 +414,58 @@ class StudentIT extends FacadeIT {
             .getResponseBody();
 
     assertEquals(groupB.id(), refreshed.currentGroupId());
+  }
+
+  @Test
+  void studentInS4OrLaterCanBeMovedToAGroupWithATrack() {
+    var entryYear = SemesterCalculator.entryYearFor(Semester.S4, LocalDate.now());
+    var promotion = createPromotion(entryYear);
+    var commonCoreGroup = createGroup(promotion.id());
+    var trackGroup = createTrackGroup(promotion.id(), Track.TN);
+    var student = createStudent(commonCoreGroup.id(), uniqueEmail(), "password123");
+
+    webTestClient
+        .put()
+        .uri("/students/" + student.id() + "/group-flows")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(new MoveStudentGroupRequest(trackGroup.id()))
+        .exchange()
+        .expectStatus()
+        .isOk();
+  }
+
+  @Test
+  void studentBeforeS4CannotBeMovedToAGroupWithATrack() {
+    var promotion = createPromotion(LocalDate.now().getYear() + 1);
+    var commonCoreGroup = createGroup(promotion.id());
+    var trackGroup = createTrackGroup(promotion.id(), Track.EL);
+    var student = createStudent(commonCoreGroup.id(), uniqueEmail(), "password123");
+
+    webTestClient
+        .put()
+        .uri("/students/" + student.id() + "/group-flows")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(new MoveStudentGroupRequest(trackGroup.id()))
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+  }
+
+  @Test
+  void studentBeforeS4CanStillBeMovedToAGroupWithoutATrack() {
+    var promotion = createPromotion(LocalDate.now().getYear() + 1);
+    var groupA = createGroup(promotion.id());
+    var groupB = createGroup(promotion.id());
+    var student = createStudent(groupA.id(), uniqueEmail(), "password123");
+
+    webTestClient
+        .put()
+        .uri("/students/" + student.id() + "/group-flows")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(new MoveStudentGroupRequest(groupB.id()))
+        .exchange()
+        .expectStatus()
+        .isOk();
   }
 
   @Test
