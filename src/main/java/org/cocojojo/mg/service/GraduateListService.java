@@ -70,6 +70,18 @@ public class GraduateListService {
     return rows;
   }
 
+  /**
+   * Whether a promotion's computed results span the full 3-year curriculum (L1, L2, L3): true as
+   * soon as at least one of its students has completed every level. Only those students can be
+   * considered graduates.
+   */
+  public boolean isAcrossThreeYears(UUID promotionId) {
+    assertPromotionExists(promotionId);
+    var students = studentRepository.findByPromotionIdOrderByLastnameAscFirstnameAsc(promotionId);
+    return resultService.computeResultsSummaries(students).values().stream()
+        .anyMatch(ResultsSummaryResponse::graduate);
+  }
+
   /** XLSX bytes of the graduate list, ready for direct download. */
   @SneakyThrows
   public byte[] buildXlsx(UUID promotionId) {
