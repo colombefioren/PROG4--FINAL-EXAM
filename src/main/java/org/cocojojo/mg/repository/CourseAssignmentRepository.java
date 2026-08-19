@@ -78,7 +78,7 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
 
   boolean existsByCourseId(UUID courseId);
 
-  /** The distinct courses actually assigned to the given groups within the given semesters. */
+  
   @Query(
       """
       select distinct a.course from JCourseAssignment a
@@ -90,7 +90,7 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
       @Param("groupIds") Collection<UUID> groupIds,
       @Param("semesters") Collection<Semester> semesters);
 
-  /** The distinct courses of a promotion's curriculum, i.e. assigned to any of its groups. */
+  
   @Query(
       """
       select distinct a.course from JCourseAssignment a

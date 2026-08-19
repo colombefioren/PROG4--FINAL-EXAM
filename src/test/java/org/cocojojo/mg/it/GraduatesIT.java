@@ -86,8 +86,8 @@ class GraduatesIT extends FacadeIT {
   @BeforeEach
   @SneakyThrows
   void setUp() {
-    // A longer response timeout keeps the export test (xlsx generation + S3 upload) from
-    // flaking with a blocking-read timeout when test forks share CPU under CI load.
+    
+    
     webTestClient =
         WebTestClient.bindToServer()
             .baseUrl("http://localhost:" + port)
@@ -97,8 +97,8 @@ class GraduatesIT extends FacadeIT {
         .thenReturn(
             URI.create("https://dummy-bucket.s3.eu-west-3.amazonaws.com/graduates/list.xlsx")
                 .toURL());
-    // Grades are soft-deleted (is_deleted), so a physical purge is needed to free the
-    // grade.student_id FK before students can be removed.
+    
+    
     jdbcTemplate.execute("delete from \"grade_history\"");
     jdbcTemplate.execute("delete from \"grade\"");
     examRepository.deleteAll();
@@ -223,12 +223,12 @@ class GraduatesIT extends FacadeIT {
             .filter(l -> l.level() == StudentLevel.L1)
             .findFirst()
             .orElseThrow();
-    // Only a quarter of the course weight has been scheduled and graded: not complete.
+    
     assertEquals(ResultStatus.PROVISIONAL, l1.status());
     assertFalse(l1.courses().get(0).complete().booleanValue());
     assertFalse(l1.courses().get(0).passed().booleanValue());
 
-    // ... and the student is therefore not a graduate.
+    
     var graduates = getGraduates(token(admin), promotion.getId());
     assertTrue(graduates.isEmpty());
   }
@@ -271,7 +271,7 @@ class GraduatesIT extends FacadeIT {
     saveGrade(quarter, student, new BigDecimal("16"));
     saveGrade(half, student, new BigDecimal("14"));
 
-    // Half of the weight graded: still incomplete even though two of three exams are graded.
+    
     var partial = resultService.computeResultsSummary(student.getId());
     var l1Partial =
         partial.levels().stream()
@@ -290,16 +290,16 @@ class GraduatesIT extends FacadeIT {
     assertEquals(ResultStatus.COMPLETED, l1Complete.status());
     assertTrue(l1Complete.courses().get(0).passed().booleanValue());
 
-    // Only L1 exists in this curriculum, so the student cannot be a graduate yet — the point
-    // is that the course itself is complete.
+    
+    
     var graduates = getGraduates(token(admin), promotion.getId());
     assertTrue(graduates.isEmpty());
   }
 
   @Test
   void singleFullCoefficientExamStillCompletesTheCourse() {
-    // Regression: the standard one 1/1-exam-per-course curriculum (used by the other fixtures)
-    // must still complete once graded under the new coefficient rule.
+    
+    
     var promotion = savePromotion();
     var group = saveGroup(promotion, Track.TN);
     var student = saveStudent(promotion, group);
@@ -370,7 +370,7 @@ class GraduatesIT extends FacadeIT {
     return body;
   }
 
-  /** Returns the three exams of the shared curriculum (one course per level) for the group. */
+  
   private List<JExam> createCurriculum(JGroup group) {
     var courses =
         List.of(
@@ -625,7 +625,7 @@ class GraduatesIT extends FacadeIT {
 
     var graduates = getGraduates(token(admin), promotion.getId());
 
-    // EL is ranked before TN; each track restarts its rank at 1, ordered by descending average.
+    
     assertEquals(4, graduates.size());
     assertEquals(Track.EL, graduates.get(0).track());
     assertEquals(elTop.getStd(), graduates.get(0).std());
@@ -765,8 +765,8 @@ class GraduatesIT extends FacadeIT {
             .groupFlowType(GroupFlowType.JOIN)
             .build());
 
-    // Courses from BOTH groups the student passed through count toward the curriculum,
-    // while the reported track follows the most recently joined group (EL).
+    
+    
     var tnExams = createCurriculum(tnGroup);
     var elExams = createCurriculum(elGroup);
     saveGrade(tnExams.get(0), student, new BigDecimal("14"));
@@ -792,7 +792,7 @@ class GraduatesIT extends FacadeIT {
     var assignedL1 = saveCourse(StudentLevel.L1, null);
     var assignedL2 = saveCourse(StudentLevel.L2, Track.TN);
     var assignedL3 = saveCourse(StudentLevel.L3, Track.TN);
-    // A catalog course at L2 that the promotion never assigns (course substitution).
+    
     saveCourse(StudentLevel.L2, Track.TN);
 
     var exams =

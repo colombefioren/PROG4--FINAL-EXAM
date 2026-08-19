@@ -14,6 +14,6 @@ public record CourseResultResponse(
     Track track,
     BigDecimal average,
     Boolean graded,
-    /** Whether every expected exam of this course has been graded. */
+    
     Boolean complete,
     Boolean passed) {}

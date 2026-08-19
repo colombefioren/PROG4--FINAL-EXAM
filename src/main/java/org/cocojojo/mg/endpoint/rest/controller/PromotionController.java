@@ -61,13 +61,13 @@ public class PromotionController {
     return graduateListService.getGraduates(promotionId);
   }
 
-  /** Generates the XLSX, uploads it to S3 and returns the pre-signed download URL. */
+  
   @GetMapping("/{promotionId}/graduates/export")
   public GraduateExportResponse export(@PathVariable UUID promotionId) {
     return GraduateExportResponse.builder().url(graduateListService.export(promotionId)).build();
   }
 
-  /** Streams the XLSX straight from the app, so the UI button does not depend on S3. */
+  
   @GetMapping("/{promotionId}/graduates/download")
   public ResponseEntity<byte[]> download(@PathVariable UUID promotionId) {
     var bytes = graduateListService.buildXlsx(promotionId);
