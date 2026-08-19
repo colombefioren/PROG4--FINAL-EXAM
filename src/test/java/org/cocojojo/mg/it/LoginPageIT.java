@@ -110,7 +110,7 @@ class LoginPageIT extends FacadeIT {
   }
 
   @Test
-  void teacherLoginRedirectsToNotAuthorizedPage() {
+  void teacherLoginRedirectsToForbiddenPage() {
     var teacher = saveTeacher();
 
     var result =
@@ -127,20 +127,20 @@ class LoginPageIT extends FacadeIT {
             .returnResult(Void.class);
 
     assertTrue(
-        result.getResponseHeaders().getFirst(HttpHeaders.LOCATION).endsWith("/ui/not-authorized"));
+        result.getResponseHeaders().getFirst(HttpHeaders.LOCATION).endsWith("/ui/forbidden"));
     var setCookie = result.getResponseHeaders().getFirst(HttpHeaders.SET_COOKIE);
     assertNotNull(setCookie);
     assertTrue(setCookie.startsWith(JwtAuthenticationFilter.TOKEN_COOKIE + "="));
   }
 
   @Test
-  void notAuthorizedPageIsReachableWithoutAdminRole() {
+  void forbiddenPageIsReachableWithoutAdminRole() {
     var teacher = saveTeacher();
-    var cookie = loginAndGetCookie(teacher.getEmail(), "secret123", "/ui/not-authorized");
+    var cookie = loginAndGetCookie(teacher.getEmail(), "secret123", "/ui/forbidden");
 
     webTestClient
         .get()
-        .uri("/ui/not-authorized")
+        .uri("/ui/forbidden")
         .cookie(JwtAuthenticationFilter.TOKEN_COOKIE, cookie)
         .exchange()
         .expectStatus()
@@ -149,7 +149,7 @@ class LoginPageIT extends FacadeIT {
         .consumeWith(
             body -> {
               var html = new String(body.getResponseBody());
-              assertTrue(html.contains("Not authorized"));
+              assertTrue(html.contains("Forbidden"));
               assertTrue(html.contains("ACCÈS RESTREINT"));
             });
   }
@@ -268,7 +268,7 @@ class LoginPageIT extends FacadeIT {
   @Test
   void teacherCannotReachAdminUiAfterLogin() {
     var teacher = saveTeacher();
-    var cookie = loginAndGetCookie(teacher.getEmail(), "secret123", "/ui/not-authorized");
+    var cookie = loginAndGetCookie(teacher.getEmail(), "secret123", "/ui/forbidden");
 
     webTestClient
         .get()

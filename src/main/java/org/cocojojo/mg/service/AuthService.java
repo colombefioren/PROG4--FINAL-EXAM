@@ -48,7 +48,7 @@ public class AuthService {
     var auth = login(request);
     return UiLoginResult.builder()
         .token(auth.token())
-        .redirectUrl(auth.user().role() == Role.ADMIN ? "/ui/promotions" : "/ui/not-authorized")
+        .redirectUrl(auth.user().role() == Role.ADMIN ? "/ui/promotions" : "/ui/forbidden")
         .build();
   }
 }

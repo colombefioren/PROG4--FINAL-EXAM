@@ -25,9 +25,9 @@ public class UiAuthController {
     return "login";
   }
 
-  @GetMapping("/ui/not-authorized")
-  public String notAuthorizedPage() {
-    return "not-authorized";
+  @GetMapping("/ui/forbidden")
+  public String forbiddenPage() {
+    return "forbidden";
   }
 
   @PostMapping("/ui/login")

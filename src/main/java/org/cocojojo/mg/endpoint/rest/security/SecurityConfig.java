@@ -49,7 +49,7 @@ public class SecurityConfig {
                         "/images/**",
                         "/favicon.ico")
                     .permitAll()
-                    .requestMatchers("/ui/login", "/ui/logout", "/ui/not-authorized")
+                    .requestMatchers("/ui/login", "/ui/logout", "/ui/forbidden")
                     .permitAll()
                     .requestMatchers("/ui/**")
                     .hasRole("ADMIN")
