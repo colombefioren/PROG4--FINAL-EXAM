@@ -1,67 +1,80 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sign in · HEI</title>
-    <link rel="stylesheet" href="/css/hei.css" th:href="@{/css/hei.css}" />
-    <link rel="stylesheet" href="/css/login.css" th:href="@{/css/login.css}" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <header class="topbar">
-      <div class="brand">
-        <img class="brand-logo" th:src="@{/images/logo.png}" src="/images/logo.png" alt="HEI" />
-        <div>
-          <span class="brand-word">HEI</span>
-          <span class="brand-tag">Haute École d'Informatique</span>
-        </div>
-      </div>
-    </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in · HEI</title>
+  <link rel="stylesheet" href="/css/hei.css" th:href="@{/css/hei.css}" />
+  <link rel="stylesheet" href="/css/login.css" th:href="@{/css/login.css}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-logo" th:src="@{/images/logo.png}" src="/images/logo.png" alt="HEI" />
+      <span class="brand-tag">Haute École d'Informatique</span>
+    </div>
+  </header>
 
-    <main class="auth-shell">
-      <span class="doodle doodle-1" aria-hidden="true">&lt;/&gt;</span>
-      <span class="doodle doodle-2" aria-hidden="true">01</span>
-      <span class="doodle doodle-3" aria-hidden="true">✦</span>
-      <span class="doodle doodle-4" aria-hidden="true">{ }</span>
+  <main class="auth-shell">
+    <span class="doodle doodle-1" aria-hidden="true">&lt;/&gt;</span>
+    <span class="doodle doodle-2" aria-hidden="true">01</span>
+    <span class="doodle doodle-3" aria-hidden="true">✦</span>
+    <span class="doodle doodle-4" aria-hidden="true">{ }</span>
 
-      <section class="auth-card bracketed" aria-labelledby="auth-title">
-        <span class="bracket bracket-tl" aria-hidden="true"></span>
-        <span class="bracket bracket-tr" aria-hidden="true"></span>
-        <span class="bracket bracket-bl" aria-hidden="true"></span>
-        <span class="bracket bracket-br" aria-hidden="true"></span>
+    <section class="auth-card bracketed" aria-labelledby="auth-title">
+      <span class="bracket bracket-tl" aria-hidden="true"></span>
+      <span class="bracket bracket-tr" aria-hidden="true"></span>
+      <span class="bracket bracket-bl" aria-hidden="true"></span>
+      <span class="bracket bracket-br" aria-hidden="true"></span>
 
-        <span class="eyebrow-tag auth-eyebrow">PORTAIL INTRANET</span>
-        <h1 id="auth-title" class="auth-title">Sign in<span style="color: var(--gold)">.</span></h1>
-        <p class="auth-sub">Access your HEI intranet space with your school credentials.</p>
+      <span class="eyebrow-tag auth-eyebrow">PORTAIL INTRANET</span>
+      <h1 id="auth-title" class="auth-title">Sign in<span style="color: var(--gold)">.</span></h1>
+      <p class="auth-sub">Access your HEI intranet space with your school credentials.</p>
 
-        <p th:if="${error}" class="alert-stamp" th:text="${error}">Invalid credentials</p>
+      <p th:if="${error}" class="alert-stamp" th:text="${error}">Invalid credentials</p>
 
-        <form method="post" action="/ui/login">
-          <label class="field">
-            <span class="field-label">Email</span>
-            <span class="input-row">
-              <span class="prompt" aria-hidden="true">@</span>
-              <input type="email" name="email" required autofocus placeholder="you@hei.mg" />
-            </span>
-          </label>
-          <label class="field">
-            <span class="field-label">Password</span>
-            <span class="input-row">
-              <span class="prompt" aria-hidden="true">*</span>
-              <input type="password" name="password" required placeholder="••••••••" />
-            </span>
-          </label>
-          <button type="submit" class="btn btn-stamp auth-submit">Login →</button>
-        </form>
+      <form method="post" action="/ui/login">
+        <label class="field">
+          <span class="field-label">Email</span>
+          <span class="input-row">
+            <span class="prompt" aria-hidden="true">@</span>
+            <input type="email" name="email" required autofocus placeholder="you@hei.mg" />
+          </span>
+        </label>
 
-        <p class="auth-foot">© 2026 Haute École d'Informatique · Antananarivo</p>
-      </section>
-    </main>
-  </body>
+        <label class="field">
+          <span class="field-label">Password</span>
+          <span class="input-row">
+            <span class="prompt" aria-hidden="true">*</span>
+            <input type="password" name="password" id="login-password" required placeholder="••••••••" />
+            <button type="button" class="password-toggle" id="toggle-password" aria-label="Toggle password visibility">👁</button>
+          </span>
+        </label>
+
+        <button type="submit" class="btn btn-stamp auth-submit">Login →</button>
+      </form>
+
+      <p class="auth-foot">© 2026 Haute École d'Informatique</p>
+    </section>
+  </main>
+
+  <script>
+    document.getElementById('toggle-password').addEventListener('click', function() {
+      const input = document.getElementById('login-password');
+      if (input.type === 'password') {
+        input.type = 'text';
+        this.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        this.textContent = '👁';
+      }
+    });
+  </script>
+</body>
 </html>

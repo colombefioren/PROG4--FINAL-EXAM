@@ -1,15 +1,4 @@
-/* =========================================================
-   HEI PORTAL — pastel neon brutalism, on brand
-   Navy + gold, run through the same field-journal energy
-   as the rest of the design system. The bracket motif on
-   every panel is pulled straight from the HEI wordmark.
-
-   Shared design system: page-specific styles live in
-   login.css (sign-in page) and promotions.css (dashboard).
-   ========================================================= */
-
 :root {
-  /* --- brand --- */
   --navy: #001948;
   --navy-soft: #2c4674;
   --navy-faint: #9aa9c4;
@@ -17,7 +6,6 @@
   --gold-soft: #f4cc5e;
   --gold-pale: #ffe8ac;
 
-  /* --- pastel pops --- */
   --periwinkle: #b7c8ff;
   --periwinkle-deep: #7f97ec;
   --mint: #b8e8c9;
@@ -27,11 +15,9 @@
   --lilac: #ddc7f5;
   --lilac-deep: #b98ff0;
 
-  /* --- surfaces --- */
   --cream: #fbf1de;
   --paper: #fffcf5;
 
-  /* --- type --- */
   --font-display: "Unbounded", "Space Grotesk", sans-serif;
   --font-body: "Space Grotesk", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
@@ -77,61 +63,44 @@ input {
   color: inherit;
 }
 
-/* =========================================================
-   BRACKET FRAME — the signature element.
-   Four corner marks lifted straight from the HEI mark,
-   dropped onto every panel, card and stamp in the system.
-   ========================================================= */
-
 .bracketed {
   position: relative;
 }
+
 .bracket {
   position: absolute;
   width: 22px;
   height: 22px;
   pointer-events: none;
 }
+
 .bracket-tl {
   top: -4px;
   left: -4px;
   border-top: 5px solid var(--gold);
   border-left: 5px solid var(--gold);
 }
+
 .bracket-tr {
   top: -4px;
   right: -4px;
   border-top: 5px solid var(--gold);
   border-right: 5px solid var(--gold);
 }
+
 .bracket-bl {
   bottom: -4px;
   left: -4px;
   border-bottom: 5px solid var(--gold);
   border-left: 5px solid var(--gold);
 }
+
 .bracket-br {
   bottom: -4px;
   right: -4px;
   border-bottom: 5px solid var(--gold);
   border-right: 5px solid var(--gold);
 }
-.bracket-sm {
-  width: 14px;
-  height: 14px;
-}
-.bracket-sm.bracket-tl,
-.bracket-sm.bracket-tr {
-  border-width: 3px;
-}
-.bracket-sm.bracket-bl,
-.bracket-sm.bracket-br {
-  border-width: 3px;
-}
-
-/* =========================================================
-   DOODLES
-   ========================================================= */
 
 .doodle {
   position: absolute;
@@ -142,10 +111,6 @@ input {
   pointer-events: none;
   user-select: none;
 }
-
-/* =========================================================
-   TOPBAR / BRAND
-   ========================================================= */
 
 .topbar {
   background: var(--navy);
@@ -163,30 +128,19 @@ input {
   align-items: center;
   gap: 0.8rem;
 }
+
 .brand-logo {
   height: 38px;
   width: auto;
   display: block;
 }
-.brand-word {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.15rem;
-  letter-spacing: 0.5px;
+
+.brand-tag {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  letter-spacing: 1.5px;
   color: var(--paper);
 }
-.brand-tag {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 1.5px;
-  color: var(--gold-soft);
-  text-transform: uppercase;
-}
-
-/* =========================================================
-   BUTTONS
-   ========================================================= */
 
 .btn {
   font-family: var(--font-display);
@@ -202,10 +156,12 @@ input {
   box-shadow: 5px 5px 0 var(--navy);
   transition: transform 0.07s linear, box-shadow 0.07s linear, background 0.07s linear;
 }
+
 .btn:hover {
   transform: translate(-3px, -3px);
   box-shadow: 8px 8px 0 var(--navy);
 }
+
 .btn:active {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0 var(--navy);
@@ -218,15 +174,9 @@ input {
   font-size: 1.05rem;
   padding: 1rem 1.6rem;
 }
+
 .btn-stamp:hover {
   background: var(--gold-soft);
-}
-
-.btn-mint {
-  background: var(--mint);
-}
-.btn-mint:hover {
-  background: #cff2da;
 }
 
 .btn-ghost-invert {
@@ -237,17 +187,15 @@ input {
   font-size: 0.82rem;
   padding: 0.6rem 1.2rem;
 }
+
 .btn-ghost-invert:hover {
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 6px 6px 0 var(--gold-soft);
 }
+
 .btn-ghost-invert:active {
   box-shadow: 1px 1px 0 var(--gold-soft);
 }
-
-/* =========================================================
-   TAGS / CHIPS / STAMPS
-   ========================================================= */
 
 .eyebrow-tag {
   display: inline-block;
@@ -275,23 +223,18 @@ input {
   border-radius: var(--radius-pill);
   box-shadow: 2.5px 2.5px 0 var(--navy);
 }
+
 .chip-gold {
   background: var(--gold-pale);
 }
+
 .chip-periwinkle {
   background: var(--periwinkle);
 }
 
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
-
 @media (max-width: 640px) {
   .topbar {
     padding: 1rem 6vw;
-  }
-  .brand-word {
-    font-size: 1rem;
   }
   .doodle {
     display: none;
