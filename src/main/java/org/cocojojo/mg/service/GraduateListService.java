@@ -34,8 +34,10 @@ public class GraduateListService {
   private final BucketComponent bucketComponent;
 
   /**
-   * Graduates of a promotion, ranked by descending overall average. A student graduates once every
-   * course of their curriculum (L1 common + L2/L3 of their track) averages 10 or more.
+   * Graduates of a promotion, ranked by descending overall average within their track (EL first,
+   * then TN). A student graduates once every course of their curriculum (L1 common + L2/L3 of their
+   * current track) averages 10 or more. Track-less students (e.g. L1-shaped groups) are listed
+   * under EL so the two-track export always has a home for them.
    */
   public List<GraduateResponse> getGraduates(UUID promotionId) {
     assertPromotionExists(promotionId);
@@ -55,19 +57,38 @@ public class GraduateListService {
             .toList();
 
     var rows = new ArrayList<GraduateResponse>();
-    int rank = 1;
-    for (var candidate : graduates) {
-      rows.add(
-          GraduateResponse.builder()
-              .rank(rank++)
-              .std(candidate.student().getStd())
-              .firstname(candidate.student().getFirstname())
-              .lastname(candidate.student().getLastname())
-              .track(candidate.track())
-              .generalAverage(candidate.summary().overallAverage())
-              .build());
+    for (var bucket : trackBuckets(graduates)) {
+      int rank = 1;
+      for (var candidate : bucket) {
+        rows.add(
+            GraduateResponse.builder()
+                .rank(rank++)
+                .std(candidate.student().getStd())
+                .firstname(candidate.student().getFirstname())
+                .lastname(candidate.student().getLastname())
+                .track(candidate.track())
+                .generalAverage(candidate.summary().overallAverage())
+                .build());
+      }
     }
     return rows;
+  }
+
+  /** Graduates split into EL, TN then track-less buckets, each sorted by descending average. */
+  private List<List<GraduateCandidate>> trackBuckets(List<GraduateCandidate> graduates) {
+    var el = new ArrayList<GraduateCandidate>();
+    var tn = new ArrayList<GraduateCandidate>();
+    var trackless = new ArrayList<GraduateCandidate>();
+    for (var candidate : graduates) {
+      if (candidate.track() == Track.EL) {
+        el.add(candidate);
+      } else if (candidate.track() == Track.TN) {
+        tn.add(candidate);
+      } else {
+        trackless.add(candidate);
+      }
+    }
+    return List.of(el, tn, trackless);
   }
 
   /**
@@ -82,38 +103,44 @@ public class GraduateListService {
         .anyMatch(ResultsSummaryResponse::graduate);
   }
 
-  /** XLSX bytes of the graduate list, ready for direct download. */
+  /** XLSX bytes of the graduate list, one sheet per track (EL, TN), ranked within each sheet. */
   @SneakyThrows
   public byte[] buildXlsx(UUID promotionId) {
     var rows = getGraduates(promotionId);
 
     try (var workbook = new XSSFWorkbook()) {
-      var sheet = workbook.createSheet("Diplomes");
-      var header = sheet.createRow(0);
-      header.createCell(0).setCellValue("Rang");
-      header.createCell(1).setCellValue("STD");
-      header.createCell(2).setCellValue("Nom");
-      header.createCell(3).setCellValue("Prenom");
-      header.createCell(4).setCellValue("Moyenne generale");
-
-      int rowIndex = 1;
-      for (var row : rows) {
-        var xlsxRow = sheet.createRow(rowIndex++);
-        xlsxRow.createCell(0).setCellValue(row.rank());
-        xlsxRow.createCell(1).setCellValue(row.std());
-        xlsxRow.createCell(2).setCellValue(row.lastname());
-        xlsxRow.createCell(3).setCellValue(row.firstname());
-        xlsxRow
-            .createCell(4)
-            .setCellValue(row.generalAverage() == null ? 0 : row.generalAverage().doubleValue());
-      }
-      for (int i = 0; i < 5; i++) {
-        sheet.autoSizeColumn(i);
-      }
+      writeSheet(
+          workbook.createSheet("EL"), rows.stream().filter(r -> r.track() != Track.TN).toList());
+      writeSheet(
+          workbook.createSheet("TN"), rows.stream().filter(r -> r.track() == Track.TN).toList());
 
       var out = new ByteArrayOutputStream();
       workbook.write(out);
       return out.toByteArray();
+    }
+  }
+
+  private void writeSheet(org.apache.poi.ss.usermodel.Sheet sheet, List<GraduateResponse> rows) {
+    var header = sheet.createRow(0);
+    header.createCell(0).setCellValue("Rang");
+    header.createCell(1).setCellValue("STD");
+    header.createCell(2).setCellValue("Nom");
+    header.createCell(3).setCellValue("Prenom");
+    header.createCell(4).setCellValue("Moyenne generale");
+
+    int rowIndex = 1;
+    for (var row : rows) {
+      var xlsxRow = sheet.createRow(rowIndex++);
+      xlsxRow.createCell(0).setCellValue(row.rank());
+      xlsxRow.createCell(1).setCellValue(row.std());
+      xlsxRow.createCell(2).setCellValue(row.lastname());
+      xlsxRow.createCell(3).setCellValue(row.firstname());
+      xlsxRow
+          .createCell(4)
+          .setCellValue(row.generalAverage() == null ? 0 : row.generalAverage().doubleValue());
+    }
+    for (int i = 0; i < 5; i++) {
+      sheet.autoSizeColumn(i);
     }
   }
 
