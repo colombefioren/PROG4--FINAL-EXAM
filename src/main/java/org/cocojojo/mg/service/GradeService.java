@@ -138,7 +138,11 @@ public class GradeService {
           courseAssignmentMapper.toModel(entity.getExam().getCourseAssignment()));
       return history(entity);
     }
-    throw new ForbiddenAccessException("Only teachers and admins can view grade history");
+    if (securityUtil.isStudent()) {
+      securityUtil.requireSelfOrAdmin(entity.getStudent().getId());
+      return history(entity);
+    }
+    throw new ForbiddenAccessException("Only students, teachers and admins can view grade history");
   }
 
   private GradeResponse createOne(GradeRequest request, JExam exam, JUser changedBy) {

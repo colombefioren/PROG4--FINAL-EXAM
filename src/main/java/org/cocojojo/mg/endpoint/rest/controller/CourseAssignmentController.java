@@ -50,8 +50,6 @@ public class CourseAssignmentController {
     return service.curriculumStatus(groupId, academicYear, semester);
   }
 
-  // Bulk on purpose: building a curriculum means assigning many courses to a group at once,
-  // and one request lets the validator check the per-semester credit ceiling across the batch.
   @PutMapping
   public List<CourseAssignmentResponse> upsert(
       @Valid @RequestBody List<CourseAssignmentRequest> requests) {

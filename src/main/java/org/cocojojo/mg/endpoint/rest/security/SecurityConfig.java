@@ -84,6 +84,8 @@ public class SecurityConfig {
                     .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                     .requestMatchers(GET, "/grades/*")
                     .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                    .requestMatchers(GET, "/grades/*/history")
+                    .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                     .requestMatchers(POST, "/students/*/yearly-results/*/transcript")
                     .authenticated()
                     .requestMatchers(GET, "/students/*/yearly-results/*")
@@ -105,8 +107,7 @@ public class SecurityConfig {
                         "/course-assignments/*/exams",
                         "/course-assignments/*/exams/*")
                     .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
-                    .requestMatchers(
-                        GET, "/exams/*/grades", "/exams/*/students/*/grade", "/grades/*/history")
+                    .requestMatchers(GET, "/exams/*/grades", "/exams/*/students/*/grade")
                     .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(DELETE, "/grades/*")
                     .hasAnyRole("ADMIN", "TEACHER")
@@ -127,8 +128,6 @@ public class SecurityConfig {
             ex ->
                 ex.authenticationEntryPoint(
                     (request, response, authException) -> {
-                      // A request that does not map to any controller is a non-existent endpoint,
-                      // so answer 404 rather than leaking an auth challenge for it.
                       boolean mapsToHandler;
                       try {
                         mapsToHandler = handlerMapping.getHandler(request) != null;
@@ -139,8 +138,6 @@ public class SecurityConfig {
                         response.sendError(HttpServletResponse.SC_NOT_FOUND);
                         return;
                       }
-                      // Keep the WWW-Authenticate header so browsers prompt for credentials
-                      // when opening the /ui pages without a bearer token.
                       response.setHeader("WWW-Authenticate", "Basic realm=\"hei\"");
                       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
                     }))

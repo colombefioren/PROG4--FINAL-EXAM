@@ -825,10 +825,26 @@ class GradeIT extends FacadeIT {
   }
 
   @Test
-  void studentCannotViewHistory() {
+  void studentCanViewOwnGradeHistory() {
     var student = saveStudent();
     var exam = saveExam(saveAssignment(saveTeacher()));
     var grade = saveGrade(exam, student, new BigDecimal("12.0"));
+
+    webTestClient
+        .get()
+        .uri("/grades/{gradeId}/history", grade.getId())
+        .header("Authorization", "Bearer " + token(student))
+        .exchange()
+        .expectStatus()
+        .isOk();
+  }
+
+  @Test
+  void studentCannotViewOtherStudentGradeHistory() {
+    var student = saveStudent();
+    var otherStudent = saveStudent();
+    var exam = saveExam(saveAssignment(saveTeacher()));
+    var grade = saveGrade(exam, otherStudent, new BigDecimal("12.0"));
 
     webTestClient
         .get()
