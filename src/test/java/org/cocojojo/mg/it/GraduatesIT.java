@@ -736,6 +736,65 @@ class GraduatesIT extends FacadeIT {
   }
 
   @Test
+  void graduateDownloadIsDisabledUntilResultsSpanThreeYears() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    var course = saveCourse(StudentLevel.L1, null);
+    var exam = saveExam(saveAssignment(course, group, Semester.S1));
+    saveGrade(exam, student, new BigDecimal("14"));
+
+    assertFalse(resultService.computeResultsSummary(student.getId()).graduate());
+
+    webTestClient
+        .get()
+        .uri("/ui/promotions")
+        .headers(headers -> headers.setBasicAuth(admin.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(String.class)
+        .consumeWith(
+            body -> {
+              var html = new String(body.getResponseBody());
+              assertTrue(html.contains(promotion.getRef()));
+              assertTrue(html.contains("Not yet across 3 years"));
+              assertTrue(html.contains("disabled"));
+            });
+  }
+
+  @Test
+  void graduateDownloadIsEnabledWhenResultsSpanThreeYears() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    var exams = createCurriculum(group);
+    saveGrade(exams.get(0), student, new BigDecimal("14"));
+    saveGrade(exams.get(1), student, new BigDecimal("15"));
+    saveGrade(exams.get(2), student, new BigDecimal("16"));
+
+    assertTrue(resultService.computeResultsSummary(student.getId()).graduate());
+
+    webTestClient
+        .get()
+        .uri("/ui/promotions")
+        .headers(headers -> headers.setBasicAuth(admin.getEmail(), "secret123"))
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(String.class)
+        .consumeWith(
+            body -> {
+              var html = new String(body.getResponseBody());
+              assertTrue(html.contains(promotion.getRef()));
+              assertTrue(html.contains("Download Graduate List"));
+              assertFalse(html.contains("Not yet across 3 years"));
+            });
+  }
+
+  @Test
   void uiPagePromptsForBasicAuthWhenUnauthenticated() {
     webTestClient
         .get()
