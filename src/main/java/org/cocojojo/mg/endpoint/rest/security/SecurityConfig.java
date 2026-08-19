@@ -41,6 +41,8 @@ public class SecurityConfig {
                         "/error",
                         "/v3/api-docs",
                         "/v3/api-docs/**",
+                        "/spec",
+                        "/openapi.yaml",
                         "/swagger-ui",
                         "/swagger-ui.html",
                         "/swagger-ui/**",
