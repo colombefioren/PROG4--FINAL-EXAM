@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
+import org.cocojojo.mg.endpoint.rest.controller.dto.GroupFlowResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GroupRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GroupResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
@@ -47,6 +48,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -429,6 +431,53 @@ class StudentIT extends FacadeIT {
             .getResponseBody();
 
     assertEquals(promotion.id(), refreshed.promotionId());
+  }
+
+  @Test
+  void adminCanListStudentsPaginated() {
+    var promotion = createPromotion(2024);
+    var group = createGroup(promotion.id());
+    var email = uniqueEmail();
+    var student = createStudent(group.id(), email, "password123");
+
+    var page =
+        webTestClient
+            .get()
+            .uri("/students?page=0&size=10")
+            .header("Authorization", "Bearer " + adminToken())
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(new ParameterizedTypeReference<TestPage<StudentResponse>>() {})
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(page);
+    assertTrue(page.totalElements() >= 1);
+    assertTrue(page.content().stream().anyMatch(s -> s.id().equals(student.id())));
+  }
+
+  @Test
+  void adminCanReadStudentGroupFlowHistory() {
+    var promotion = createPromotion(2024);
+    var group = createGroup(promotion.id());
+    var student = createStudent(group.id(), uniqueEmail(), "password123");
+
+    var flows =
+        webTestClient
+            .get()
+            .uri("/students/" + student.id() + "/group-flows")
+            .header("Authorization", "Bearer " + adminToken())
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(new ParameterizedTypeReference<List<GroupFlowResponse>>() {})
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(flows);
+    assertTrue(flows.stream().anyMatch(f -> f.groupId().equals(group.id())));
+    assertTrue(flows.stream().anyMatch(f -> f.studentId().equals(student.id())));
   }
 
   @Test

@@ -550,7 +550,7 @@ class YearlyResultsIT extends FacadeIT {
     assertEquals(new BigDecimal("12.67"), courseResult.average());
     // coefficients sum to 3/2, not exactly 1, so the course is not complete
     assertFalse(courseResult.complete());
-    assertFalse(result.complete());
+    assertEquals(ResultStatus.PROVISIONAL, result.status());
   }
 
   @Test

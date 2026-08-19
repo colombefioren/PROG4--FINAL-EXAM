@@ -74,7 +74,7 @@ public class PromotionController {
     return ResponseEntity.ok()
         .header(
             HttpHeaders.CONTENT_DISPOSITION,
-            "attachment; filename=\"graduates-" + promotionId + ".xlsx\"")
+            "attachment; filename=\"" + graduateListService.buildFileName(promotionId) + "\"")
         .contentType(
             MediaType.parseMediaType(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
