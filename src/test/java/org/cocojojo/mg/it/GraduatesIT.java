@@ -589,9 +589,101 @@ class GraduatesIT extends FacadeIT {
     assertNotNull(bytes);
     assertTrue(bytes.length > 0);
     try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
-      var sheet = workbook.getSheet("Diplomes");
-      assertNotNull(sheet);
-      assertEquals("Rang", sheet.getRow(0).getCell(0).getStringCellValue());
+      assertNotNull(workbook.getSheet("EL"));
+      assertNotNull(workbook.getSheet("TN"));
+      assertEquals("Rang", workbook.getSheet("EL").getRow(0).getCell(0).getStringCellValue());
+      assertEquals("Rang", workbook.getSheet("TN").getRow(0).getCell(0).getStringCellValue());
+    }
+  }
+
+  @Test
+  void graduatesAreRankedWithinTheirTrack() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var tnGroup = saveGroup(promotion, Track.TN);
+    var elGroup = saveGroup(promotion, Track.EL);
+
+    var tnTop = saveStudent(promotion, tnGroup);
+    var tnLower = saveStudent(promotion, tnGroup);
+    var elTop = saveStudent(promotion, elGroup);
+    var elLower = saveStudent(promotion, elGroup);
+
+    var tnExams = createCurriculum(tnGroup);
+    var elExams = createCurriculum(elGroup);
+    saveGrade(tnExams.get(0), tnTop, new BigDecimal("16"));
+    saveGrade(tnExams.get(1), tnTop, new BigDecimal("15"));
+    saveGrade(tnExams.get(2), tnTop, new BigDecimal("17"));
+    saveGrade(tnExams.get(0), tnLower, new BigDecimal("12"));
+    saveGrade(tnExams.get(1), tnLower, new BigDecimal("11"));
+    saveGrade(tnExams.get(2), tnLower, new BigDecimal("13"));
+    saveGrade(elExams.get(0), elTop, new BigDecimal("14"));
+    saveGrade(elExams.get(1), elTop, new BigDecimal("15"));
+    saveGrade(elExams.get(2), elTop, new BigDecimal("16"));
+    saveGrade(elExams.get(0), elLower, new BigDecimal("10"));
+    saveGrade(elExams.get(1), elLower, new BigDecimal("11"));
+    saveGrade(elExams.get(2), elLower, new BigDecimal("12"));
+
+    var graduates = getGraduates(token(admin), promotion.getId());
+
+    // EL is ranked before TN; each track restarts its rank at 1, ordered by descending average.
+    assertEquals(4, graduates.size());
+    assertEquals(Track.EL, graduates.get(0).track());
+    assertEquals(elTop.getStd(), graduates.get(0).std());
+    assertEquals(1, graduates.get(0).rank());
+    assertEquals(Track.EL, graduates.get(1).track());
+    assertEquals(elLower.getStd(), graduates.get(1).std());
+    assertEquals(2, graduates.get(1).rank());
+    assertEquals(Track.TN, graduates.get(2).track());
+    assertEquals(tnTop.getStd(), graduates.get(2).std());
+    assertEquals(1, graduates.get(2).rank());
+    assertEquals(Track.TN, graduates.get(3).track());
+    assertEquals(tnLower.getStd(), graduates.get(3).std());
+    assertEquals(2, graduates.get(3).rank());
+  }
+
+  @Test
+  @SneakyThrows
+  void exportSplitsGraduatesIntoOneSheetPerTrack() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var tnGroup = saveGroup(promotion, Track.TN);
+    var elGroup = saveGroup(promotion, Track.EL);
+    var tnStudent = saveStudent(promotion, tnGroup);
+    var elStudent = saveStudent(promotion, elGroup);
+
+    var tnExams = createCurriculum(tnGroup);
+    var elExams = createCurriculum(elGroup);
+    saveGrade(tnExams.get(0), tnStudent, new BigDecimal("14"));
+    saveGrade(tnExams.get(1), tnStudent, new BigDecimal("15"));
+    saveGrade(tnExams.get(2), tnStudent, new BigDecimal("16"));
+    saveGrade(elExams.get(0), elStudent, new BigDecimal("12"));
+    saveGrade(elExams.get(1), elStudent, new BigDecimal("13"));
+    saveGrade(elExams.get(2), elStudent, new BigDecimal("14"));
+
+    var bytes =
+        webTestClient
+            .get()
+            .uri("/promotions/{promotionId}/graduates/download", promotion.getId())
+            .header("Authorization", "Bearer " + token(admin))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(byte[].class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(bytes);
+    try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+      var elSheet = workbook.getSheet("EL");
+      var tnSheet = workbook.getSheet("TN");
+      assertNotNull(elSheet);
+      assertNotNull(tnSheet);
+      assertEquals(1, elSheet.getLastRowNum());
+      assertEquals(1.0, elSheet.getRow(1).getCell(0).getNumericCellValue());
+      assertEquals(elStudent.getStd(), elSheet.getRow(1).getCell(1).getStringCellValue());
+      assertEquals(1, tnSheet.getLastRowNum());
+      assertEquals(1.0, tnSheet.getRow(1).getCell(0).getNumericCellValue());
+      assertEquals(tnStudent.getStd(), tnSheet.getRow(1).getCell(1).getStringCellValue());
     }
   }
 
