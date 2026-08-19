@@ -541,7 +541,9 @@ paths:
     get:
       tags: [Promotions]
       summary: List graduates of a promotion
-      description: Returns the ranked graduate list (by general average) for the promotion. Requires the ADMIN role.
+      description: |
+        Returns the graduate list of the promotion, ranked by descending overall average within each
+        track bucket (graduating EL students first, then TN, then trackless). Requires the ADMIN role.
       operationId: getGraduates
       parameters:
         - $ref: '#/components/parameters/PromotionIdPath'
@@ -566,8 +568,8 @@ paths:
       tags: [Promotions]
       summary: Export graduates to XLSX
       description: |
-        Generates the graduate list as an XLSX file, uploads it to S3 and returns the pre-signed
-        download URL. Requires the ADMIN role.
+        Generates the graduate list as an XLSX file (one `EL` sheet and one `TN` sheet), uploads it
+        to S3 and returns the pre-signed download URL. Requires the ADMIN role.
       operationId: exportGraduates
       parameters:
         - $ref: '#/components/parameters/PromotionIdPath'
@@ -590,8 +592,9 @@ paths:
       tags: [Promotions]
       summary: Download graduate list XLSX
       description: |
-        Streams the graduate list XLSX directly from the app, so the UI button does not depend on
-        S3. The response carries a `Content-Disposition: attachment` header. Requires the ADMIN role.
+        Streams the graduate list XLSX (one `EL` sheet and one `TN` sheet) directly from the app, so
+        the UI button does not depend on S3. The response carries a `Content-Disposition: attachment`
+        header. Requires the ADMIN role.
       operationId: downloadGraduates
       parameters:
         - $ref: '#/components/parameters/PromotionIdPath'
@@ -1242,7 +1245,7 @@ paths:
     get:
       tags: [Grades]
       summary: Get a grade's correction history
-      description: Returns every recorded correction of a grade. Requires the ADMIN or TEACHER role.
+      description: Returns every recorded correction of a grade. Requires the ADMIN, TEACHER or STUDENT role.
       operationId: getGradeHistory
       parameters:
         - $ref: '#/components/parameters/GradeIdPath'
@@ -1406,8 +1409,9 @@ paths:
       summary: Submit login form
       description: |
         Form login. On success the JWT is set as an httpOnly, SameSite=Lax cookie
-        (`hei_token`) and the browser is redirected to `/ui/promotions`. On failure the login page
-        is re-rendered with an error.
+        (`hei_token`) and the browser is redirected to `/ui/promotions` for ADMIN accounts, or to
+        `/ui/forbidden` for TEACHER and STUDENT accounts. On failure the login page is re-rendered
+        with an error.
       operationId: uiLogin
       requestBody:
         required: true
@@ -1425,7 +1429,22 @@ paths:
                   format: password
       responses:
         '302':
-          description: Redirect to /ui/promotions on success, or back to /ui/login on failure
+          description: Redirect to /ui/promotions (ADMIN) or /ui/forbidden (other roles) on success, or back to /ui/login on failure
+      security: []
+
+  /ui/forbidden:
+    get:
+      tags: [UI]
+      summary: Forbidden page
+      description: Server-rendered HTML page shown to non-ADMIN accounts after UI login. Public.
+      operationId: uiForbidden
+      responses:
+        '200':
+          description: Forbidden page
+          content:
+            text/html:
+              schema:
+                type: string
       security: []
 
   /ui/logout:
@@ -2226,11 +2245,12 @@ components:
 
     GraduateResponse:
       type: object
-      description: One row of the ranked graduate list
+      description: One row of the ranked graduate list (rank restarts within each track bucket)
       properties:
         rank:
           type: integer
           format: int32
+          description: Position within the track bucket (EL, TN or trackless), starting at 1
         std:
           type: string
         firstname:
