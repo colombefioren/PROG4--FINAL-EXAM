@@ -3,6 +3,7 @@ package org.cocojojo.mg.service;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -36,6 +37,7 @@ import org.cocojojo.mg.repository.model.JExam;
 import org.cocojojo.mg.repository.model.JGrade;
 import org.cocojojo.mg.repository.model.JGroupFlow;
 import org.cocojojo.mg.repository.model.JStudent;
+import org.cocojojo.mg.util.SemesterCalculator;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -52,13 +54,13 @@ public class ResultService {
 
   public YearlyResultResponse computeYearlyResult(UUID studentId, StudentLevel level) {
     var student = findStudent(studentId);
-    return computeYearlyResult(student, level, studentGroupIds(studentId), currentTrack(studentId));
+    return computeYearlyResult(student, level, studentGroupIds(studentId), currentTrack(student));
   }
 
   public ResultsSummaryResponse computeResultsSummary(UUID studentId) {
     var student = findStudent(studentId);
     var groupIds = studentGroupIds(studentId);
-    var track = currentTrack(studentId);
+    var track = currentTrack(student);
 
     var levels =
         List.of(StudentLevel.L1, StudentLevel.L2, StudentLevel.L3).stream()
@@ -226,10 +228,14 @@ public class ResultService {
   }
 
   public Track currentTrack(UUID studentId) {
+    return currentTrack(findStudent(studentId));
+  }
+
+  public Track currentTrack(JStudent student) {
     return groupFlowRepository
-        .findFirstByStudentIdOrderByCreatedAtDesc(studentId)
+        .findFirstByStudentIdOrderByCreatedAtDesc(student.getId())
         .filter(gf -> gf.getGroupFlowType() == GroupFlowType.JOIN)
-        .map(gf -> gf.getGroup().getTrack())
+        .map(gf -> effectiveTrack(student, gf.getGroup().getTrack()))
         .orElse(null);
   }
 
@@ -323,6 +329,7 @@ public class ResultService {
   }
 
   public Map<UUID, Track> currentTracks(Collection<JStudent> students) {
+    var studentsById = students.stream().collect(Collectors.toMap(JStudent::getId, s -> s));
     return groupFlowRepository
         .findByStudentIdIn(students.stream().map(JStudent::getId).toList())
         .stream()
@@ -334,8 +341,27 @@ public class ResultService {
                     latest ->
                         latest
                             .filter(flow -> flow.getGroupFlowType() == GroupFlowType.JOIN)
-                            .map(flow -> flow.getGroup().getTrack())
+                            .map(
+                                flow ->
+                                    effectiveTrack(
+                                        studentsById.get(flow.getStudent().getId()),
+                                        flow.getGroup().getTrack()))
                             .orElse(null))));
+  }
+
+  private Track effectiveTrack(JStudent student, Track groupTrack) {
+    if (groupTrack != null) {
+      return groupTrack;
+    }
+    if (student.getPromotion() == null) {
+      return null;
+    }
+    var semester =
+        SemesterCalculator.semesterFor(student.getPromotion().getEntryYear(), LocalDate.now());
+    if (semester.compareTo(Semester.S4) >= 0) {
+      return Track.EL;
+    }
+    return null;
   }
 
   private YearlyResultResponse computeYearlyResultBatch(

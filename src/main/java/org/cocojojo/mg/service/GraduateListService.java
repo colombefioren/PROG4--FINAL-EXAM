@@ -71,17 +71,14 @@ public class GraduateListService {
   private List<List<GraduateCandidate>> trackBuckets(List<GraduateCandidate> graduates) {
     var el = new ArrayList<GraduateCandidate>();
     var tn = new ArrayList<GraduateCandidate>();
-    var trackless = new ArrayList<GraduateCandidate>();
     for (var candidate : graduates) {
-      if (candidate.track() == Track.EL) {
-        el.add(candidate);
-      } else if (candidate.track() == Track.TN) {
+      if (candidate.track() == Track.TN) {
         tn.add(candidate);
       } else {
-        trackless.add(candidate);
+        el.add(candidate);
       }
     }
-    return List.of(el, tn, trackless);
+    return List.of(el, tn);
   }
 
   public boolean isAcrossThreeYears(UUID promotionId) {
@@ -97,7 +94,7 @@ public class GraduateListService {
 
     try (var workbook = new XSSFWorkbook()) {
       writeSheet(
-          workbook.createSheet("EL"), rows.stream().filter(r -> r.track() != Track.TN).toList());
+          workbook.createSheet("EL"), rows.stream().filter(r -> r.track() == Track.EL).toList());
       writeSheet(
           workbook.createSheet("TN"), rows.stream().filter(r -> r.track() == Track.TN).toList());
 
