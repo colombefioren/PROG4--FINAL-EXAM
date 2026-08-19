@@ -363,7 +363,7 @@ class PromotionCoursesIT extends FacadeIT {
 
     var courses = getCourses(token(admin), promotion.getId(), null);
 
-    // Unique codes carry the sequence: ABC<MID<ZED because creation order matches.
+    
     assertEquals(
         List.of(abc.getCode(), mid.getCode(), zed.getCode()),
         courses.stream().map(CourseResponse::code).toList());

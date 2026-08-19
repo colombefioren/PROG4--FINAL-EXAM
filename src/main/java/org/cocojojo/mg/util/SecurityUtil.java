@@ -78,7 +78,7 @@ public class SecurityUtil {
     return findCurrentRole().map(role -> role == Role.STUDENT).orElse(false);
   }
 
-  /** The current user may only act on their own record. */
+  
   public void requireSelf(UUID userId) {
     if (getCurrentUserId().equals(userId)) {
       return;
@@ -86,7 +86,7 @@ public class SecurityUtil {
     throw new ForbiddenAccessException("You may only access your own records");
   }
 
-  /** A student may only act on their own record; admins may act on anyone's. */
+  
   public void requireSelfOrAdmin(UUID userId) {
     if (isAdmin()) {
       return;
@@ -94,7 +94,7 @@ public class SecurityUtil {
     requireSelf(userId);
   }
 
-  /** Staff (admin/teacher) can look up any student; a student can only look up themself. */
+  
   public void requireSelfOrStaff(UUID userId) {
     if (isAdmin() || isTeacher()) {
       return;

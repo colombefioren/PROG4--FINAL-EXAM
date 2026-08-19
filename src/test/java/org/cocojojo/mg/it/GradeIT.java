@@ -76,8 +76,8 @@ class GradeIT extends FacadeIT {
   @BeforeEach
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
-    // Grades are soft-deleted (is_deleted), so a physical purge is needed to free the
-    // grade.student_id FK before students can be removed.
+    
+    
     jdbcTemplate.execute("delete from \"grade_history\"");
     jdbcTemplate.execute("delete from \"grade\"");
     examRepository.deleteAll();
@@ -636,7 +636,7 @@ class GradeIT extends FacadeIT {
         .expectStatus()
         .isNoContent();
 
-    // The grade is soft-deleted: gone from reads, but its history rows survive physically.
+    
     webTestClient
         .get()
         .uri("/grades/{gradeId}", gradeId)
@@ -645,8 +645,8 @@ class GradeIT extends FacadeIT {
         .expectStatus()
         .isNotFound();
 
-    // The soft-deleted grade is hidden from JPA (SQLRestriction), so inspect the retained
-    // history rows physically: the delete must leave an audit trail with the reason.
+    
+    
     var historyRows =
         jdbcTemplate.query(
             "select previous_value, new_value, reason from \"grade_history\" where \"grade_id\" = ?"
@@ -656,7 +656,7 @@ class GradeIT extends FacadeIT {
                   rs.getObject("previous_value"), rs.getObject("new_value"), rs.getString("reason")
                 },
             gradeId);
-    // One row from creation ("Grade recorded") and one from the delete, carrying the reason.
+    
     assertEquals(2, historyRows.size());
     var deletion = historyRows.get(historyRows.size() - 1);
     assertEquals(0, new BigDecimal("12.0").compareTo((BigDecimal) deletion[0]));
@@ -689,8 +689,8 @@ class GradeIT extends FacadeIT {
         .expectStatus()
         .isNoContent();
 
-    // The soft-deleted row is physically present, so only the partial unique index
-    // (excluding is_deleted rows) lets the same student+exam be graded again.
+    
+    
     var recreated =
         upsertGrades(
             token(admin),
@@ -730,7 +730,7 @@ class GradeIT extends FacadeIT {
         .expectStatus()
         .isBadRequest();
 
-    // Nothing was deleted: the grade is still readable.
+    
     webTestClient
         .get()
         .uri("/grades/{gradeId}", gradeId)
@@ -870,8 +870,8 @@ class GradeIT extends FacadeIT {
                 .value(new BigDecimal("14.0"))
                 .build()));
 
-    // Bulk upsert is creation-only: updating an existing grade must go through correct()
-    // so the mandatory reason rule applies.
+    
+    
     webTestClient
         .put()
         .uri("/exams/{examId}/grades", exam.getId())

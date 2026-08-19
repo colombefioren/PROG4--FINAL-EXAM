@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/*
- * Deliberately minimal: admins are provisioned out-of-band (direct DB/migration), never through
- * this API, so there is no create endpoint. An admin can only update their own profile
- * (validateIsSelf in AdminService), which is why the id comes from the path rather than the body.
- */
+
+
+
+
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admins")
