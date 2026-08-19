@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -12,7 +13,9 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CurriculumStatusResponse;
+import org.cocojojo.mg.endpoint.rest.controller.dto.ExamRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.LoginRequest;
+import org.cocojojo.mg.model.Fraction;
 import org.cocojojo.mg.model.enums.GroupFlowType;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
@@ -20,6 +23,7 @@ import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.AdminRepository;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.CourseRepository;
+import org.cocojojo.mg.repository.ExamRepository;
 import org.cocojojo.mg.repository.GroupFlowRepository;
 import org.cocojojo.mg.repository.GroupRepository;
 import org.cocojojo.mg.repository.PromotionRepository;
@@ -37,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -50,6 +55,7 @@ class CourseAssignmentIT extends FacadeIT {
   @Autowired private StudentRepository studentRepository;
   @Autowired private GroupFlowRepository groupFlowRepository;
   @Autowired private CourseAssignmentRepository courseAssignmentRepository;
+  @Autowired private ExamRepository examRepository;
   @Autowired private PasswordEncoder passwordEncoder;
 
   @LocalServerPort int port;
@@ -59,6 +65,7 @@ class CourseAssignmentIT extends FacadeIT {
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
     courseAssignmentRepository.deleteAll();
+    examRepository.deleteAll();
     groupFlowRepository.deleteAll();
     teacherRepository.deleteAll();
     studentRepository.deleteAll();
@@ -1084,5 +1091,118 @@ class CourseAssignmentIT extends FacadeIT {
         .exchange()
         .expectStatus()
         .isNotFound();
+  }
+
+  private ExamRequest examRequest(Fraction coefficient) {
+    return ExamRequest.builder()
+        .title("Exam " + UUID.randomUUID())
+        .examDatetime(Instant.parse("2024-06-01T09:00:00Z"))
+        .coefficient(coefficient)
+        .build();
+  }
+
+  @Test
+  void deletingAssignmentWithExamsIsRejected() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var token = adminToken();
+
+    var assignment =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        group.getId(),
+                        List.of(teacher.getId()),
+                        course.getCredits())))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    webTestClient
+        .put()
+        .uri("/course-assignments/" + assignment.id() + "/exams")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(examRequest(new Fraction(1, 2)))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    webTestClient
+        .delete()
+        .uri("/course-assignments/" + assignment.id())
+        .header("Authorization", "Bearer " + token)
+        .exchange()
+        .expectStatus()
+        .isEqualTo(HttpStatus.CONFLICT);
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignment.id())
+        .header("Authorization", "Bearer " + token)
+        .exchange()
+        .expectStatus()
+        .isOk();
+  }
+
+  @Test
+  void deletedAssignmentCanBeRecreated() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var token = adminToken();
+    var request =
+        List.of(
+            assignmentRequest(
+                course.getId(), group.getId(), List.of(teacher.getId()), course.getCredits()));
+
+    var created =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(request)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    webTestClient
+        .delete()
+        .uri("/course-assignments/" + created.id())
+        .header("Authorization", "Bearer " + token)
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    var recreated =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(request)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    assertNotNull(recreated);
   }
 }
