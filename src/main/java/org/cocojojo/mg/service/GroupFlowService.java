@@ -64,6 +64,7 @@ public class GroupFlowService {
     validator.validateIsStudent(student);
 
     var group = groupService.getEntityOrThrow(request.groupId());
+    validator.validateTrackGroupSwitch(student, group);
     var saved =
         repository.save(
             JGroupFlow.builder()
