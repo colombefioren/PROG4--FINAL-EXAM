@@ -834,8 +834,7 @@ class GraduatesIT extends FacadeIT {
         .expectBody(String.class)
         .consumeWith(
             body ->
-                assertTrue(
-                    new String(body.getResponseBody()).contains("downloadGraduateList")));
+                assertTrue(new String(body.getResponseBody()).contains("downloadGraduateList")));
 
     webTestClient
         .get()
@@ -847,9 +846,7 @@ class GraduatesIT extends FacadeIT {
         .contentTypeCompatibleWith(MediaType.valueOf("text/javascript"))
         .expectBody(String.class)
         .consumeWith(
-            body ->
-                assertTrue(
-                    new String(body.getResponseBody()).contains("toggle-password")));
+            body -> assertTrue(new String(body.getResponseBody()).contains("toggle-password")));
   }
 
   @Test
