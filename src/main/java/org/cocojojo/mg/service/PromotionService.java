@@ -69,4 +69,8 @@ public class PromotionService {
     var saved = repository.save(promotion);
     return mapper.toResponse(mapper.toModel(saved));
   }
+
+  public List<PromotionResponse> getAllWithoutPagination() {
+    return repository.findAll().stream().map(mapper::toModel).map(mapper::toResponse).toList();
+  }
 }

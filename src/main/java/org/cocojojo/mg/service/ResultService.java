@@ -1,6 +1,7 @@
 package org.cocojojo.mg.service;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.Comparator;
@@ -176,19 +177,20 @@ public class ResultService {
     boolean allScheduledGraded =
         !scheduledExams.isEmpty() && grades.size() == scheduledExams.size();
     // gradedCoefficientSum can span several course-assignments for the same course (a student who
-    // changed groups or retook it). Nothing validates that cross-assignment sum stays <= 1, so if
-    // it
-    // ever exceeds 1 Fraction::plus throws IllegalArgumentException here, mid-GET of the student's
-    // own
-    // results. Low likelihood (needs two overlapping assignments), but it would surface as a
-    // confusing
-    // 400 on a read path.
-    var gradedCoefficientSum =
-        grades.stream()
-            .map(grade -> grade.getExam().getCoefficientFraction())
-            .reduce(Fraction::plus)
-            .orElseThrow();
-    boolean fullWeightGraded = gradedCoefficientSum.equals(new Fraction(1, 1));
+    // changed groups or retook it). Nothing validates that cross-assignment sum stays <= 1, so sum
+    // raw numerators/denominators with BigInteger instead of Fraction::plus, which throws on sums
+    // exceeding 1 (mid-GET of the student's own results). The equality check needs no reduction.
+    BigInteger sumNumerator = BigInteger.ZERO;
+    BigInteger sumDenominator = BigInteger.ONE;
+    for (var grade : grades) {
+      var f = grade.getExam().getCoefficientFraction();
+      sumNumerator =
+          sumNumerator
+              .multiply(BigInteger.valueOf(f.denominator()))
+              .add(BigInteger.valueOf(f.numerator()).multiply(sumDenominator));
+      sumDenominator = sumDenominator.multiply(BigInteger.valueOf(f.denominator()));
+    }
+    boolean fullWeightGraded = sumNumerator.equals(sumDenominator);
     boolean complete = allScheduledGraded && fullWeightGraded;
     boolean passed = complete && average != null && average.compareTo(PASS_THRESHOLD) >= 0;
 

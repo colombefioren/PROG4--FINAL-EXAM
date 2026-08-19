@@ -520,6 +520,40 @@ class YearlyResultsIT extends FacadeIT {
   }
 
   @Test
+  void overlappingAssignmentsWithCoefficientsSummingAboveOneDoNotFail() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var oldGroup = saveGroup(promotion);
+    var newGroup = saveGroup(promotion);
+    var student = saveStudent(promotion, oldGroup);
+    var course = saveCourse(4);
+    // Two assignments for the same course in groups the student passed through; grading both
+    // yields coefficients summing to 3/2 > 1. This used to blow up mid-GET (Fraction::plus
+    // throws on sums above 1) instead of returning the results.
+    var oldExam = saveExam(saveAssignment(course, oldGroup, 2023, 4), 1, 2);
+    saveGrade(oldExam, student, new BigDecimal("10"));
+    var newExam = saveExam(saveAssignment(course, newGroup, 2024, 4), 1, 1);
+    saveGrade(newExam, student, new BigDecimal("14"));
+
+    groupFlowRepository.save(
+        JGroupFlow.builder()
+            .student(student)
+            .group(newGroup)
+            .groupFlowType(GroupFlowType.JOIN)
+            .build());
+
+    var result = getResult(token(admin), student.getId(), "L1");
+
+    var courseResult = result.courses().get(0);
+    assertTrue(courseResult.graded());
+    // (10 * 0.5 + 14 * 1) / 1.5 = 12.67
+    assertEquals(new BigDecimal("12.67"), courseResult.average());
+    // coefficients sum to 3/2, not exactly 1, so the course is not complete
+    assertFalse(courseResult.complete());
+    assertEquals(ResultStatus.PROVISIONAL, result.status());
+  }
+
+  @Test
   void courseCreditsComeFromTheMostRecentAssignment() {
     var admin = saveAdmin();
     var promotion = savePromotion();
