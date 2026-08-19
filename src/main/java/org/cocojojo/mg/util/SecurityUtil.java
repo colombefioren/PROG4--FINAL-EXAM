@@ -31,7 +31,7 @@ public class SecurityUtil {
     return auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal());
   }
 
-  public Optional<UUID> getCurrentUserId() {
+  public Optional<UUID> findCurrentUserId() {
     return Optional.ofNullable(getAuthentication())
         .filter(Authentication::isAuthenticated)
         .map(Authentication::getPrincipal)
@@ -39,12 +39,12 @@ public class SecurityUtil {
         .map(UUID::fromString);
   }
 
-  public UUID getCurrentUserIdOrThrow() {
-    return getCurrentUserId()
+  public UUID getCurrentUserId() {
+    return findCurrentUserId()
         .orElseThrow(() -> new IllegalStateException("User not authenticated"));
   }
 
-  public Optional<Role> getCurrentRole() {
+  public Optional<Role> findCurrentRole() {
     return Optional.ofNullable(getAuthentication())
         .filter(Authentication::isAuthenticated)
         .map(Authentication::getAuthorities)
@@ -62,25 +62,25 @@ public class SecurityUtil {
     }
   }
 
-  public Role getCurrentRoleOrThrow() {
-    return getCurrentRole().orElseThrow(() -> new IllegalStateException("Role not found"));
+  public Role getCurrentRole() {
+    return findCurrentRole().orElseThrow(() -> new IllegalStateException("Role not found"));
   }
 
   public boolean isAdmin() {
-    return getCurrentRole().map(role -> role == Role.ADMIN).orElse(false);
+    return findCurrentRole().map(role -> role == Role.ADMIN).orElse(false);
   }
 
   public boolean isTeacher() {
-    return getCurrentRole().map(role -> role == Role.TEACHER).orElse(false);
+    return findCurrentRole().map(role -> role == Role.TEACHER).orElse(false);
   }
 
   public boolean isStudent() {
-    return getCurrentRole().map(role -> role == Role.STUDENT).orElse(false);
+    return findCurrentRole().map(role -> role == Role.STUDENT).orElse(false);
   }
 
   /** The current user may only act on their own record. */
   public void requireSelf(UUID userId) {
-    if (getCurrentUserIdOrThrow().equals(userId)) {
+    if (getCurrentUserId().equals(userId)) {
       return;
     }
     throw new ForbiddenAccessException("You may only access your own records");
