@@ -26,11 +26,6 @@ public class SecurityUtil {
     return SecurityContextHolder.getContext().getAuthentication();
   }
 
-  public boolean isAuthenticated() {
-    var auth = getAuthentication();
-    return auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal());
-  }
-
   public Optional<UUID> findCurrentUserId() {
     return Optional.ofNullable(getAuthentication())
         .filter(Authentication::isAuthenticated)
