@@ -25,6 +25,11 @@ public class UiAuthController {
     return "login";
   }
 
+  @GetMapping("/ui/forbidden")
+  public String forbiddenPage() {
+    return "forbidden";
+  }
+
   @PostMapping("/ui/login")
   public String login(
       @RequestParam String email,
@@ -32,7 +37,7 @@ public class UiAuthController {
       Model model,
       HttpServletResponse response) {
     try {
-      var auth = authService.login(new LoginRequest(email, password));
+      var auth = authService.loginForUi(new LoginRequest(email, password));
       response.addHeader(
           HttpHeaders.SET_COOKIE,
           ResponseCookie.from(JwtAuthenticationFilter.TOKEN_COOKIE, auth.token())
@@ -41,7 +46,7 @@ public class UiAuthController {
               .path("/")
               .build()
               .toString());
-      return "redirect:/ui/promotions";
+      return "redirect:" + auth.redirectUrl();
     } catch (IllegalArgumentException | IllegalStateException | UnauthorizedException e) {
       model.addAttribute("error", e.getMessage());
       return "login";

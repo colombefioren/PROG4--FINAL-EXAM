@@ -110,6 +110,51 @@ class LoginPageIT extends FacadeIT {
   }
 
   @Test
+  void teacherLoginRedirectsToForbiddenPage() {
+    var teacher = saveTeacher();
+
+    var result =
+        webTestClient
+            .post()
+            .uri("/ui/login")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(
+                BodyInserters.fromFormData("email", teacher.getEmail())
+                    .with("password", "secret123"))
+            .exchange()
+            .expectStatus()
+            .is3xxRedirection()
+            .returnResult(Void.class);
+
+    assertTrue(
+        result.getResponseHeaders().getFirst(HttpHeaders.LOCATION).endsWith("/ui/forbidden"));
+    var setCookie = result.getResponseHeaders().getFirst(HttpHeaders.SET_COOKIE);
+    assertNotNull(setCookie);
+    assertTrue(setCookie.startsWith(JwtAuthenticationFilter.TOKEN_COOKIE + "="));
+  }
+
+  @Test
+  void forbiddenPageIsReachableWithoutAdminRole() {
+    var teacher = saveTeacher();
+    var cookie = loginAndGetCookie(teacher.getEmail(), "secret123", "/ui/forbidden");
+
+    webTestClient
+        .get()
+        .uri("/ui/forbidden")
+        .cookie(JwtAuthenticationFilter.TOKEN_COOKIE, cookie)
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(String.class)
+        .consumeWith(
+            body -> {
+              var html = new String(body.getResponseBody());
+              assertTrue(html.contains("Forbidden"));
+              assertTrue(html.contains("FORBIDDEN ACCESS"));
+            });
+  }
+
+  @Test
   void loginWithWrongPasswordRendersError() {
     var admin = saveAdmin();
 
@@ -178,7 +223,7 @@ class LoginPageIT extends FacadeIT {
   @Test
   void cookieGrantsAccessToUiPages() {
     var admin = saveAdmin();
-    var cookie = loginAndGetCookie(admin.getEmail(), "secret123");
+    var cookie = loginAndGetCookie(admin.getEmail(), "secret123", "/ui/promotions");
 
     webTestClient
         .get()
@@ -194,7 +239,7 @@ class LoginPageIT extends FacadeIT {
   @Test
   void logoutClearsCookieAndRevokesAccess() {
     var admin = saveAdmin();
-    var cookie = loginAndGetCookie(admin.getEmail(), "secret123");
+    var cookie = loginAndGetCookie(admin.getEmail(), "secret123", "/ui/promotions");
 
     var result =
         webTestClient
@@ -223,7 +268,7 @@ class LoginPageIT extends FacadeIT {
   @Test
   void teacherCannotReachAdminUiAfterLogin() {
     var teacher = saveTeacher();
-    var cookie = loginAndGetCookie(teacher.getEmail(), "secret123");
+    var cookie = loginAndGetCookie(teacher.getEmail(), "secret123", "/ui/forbidden");
 
     webTestClient
         .get()
@@ -234,7 +279,7 @@ class LoginPageIT extends FacadeIT {
         .isForbidden();
   }
 
-  private String loginAndGetCookie(String email, String password) {
+  private String loginAndGetCookie(String email, String password, String redirectPath) {
     var result =
         webTestClient
             .post()
@@ -245,8 +290,7 @@ class LoginPageIT extends FacadeIT {
             .expectStatus()
             .is3xxRedirection()
             .returnResult(Void.class);
-    assertTrue(
-        result.getResponseHeaders().getFirst(HttpHeaders.LOCATION).endsWith("/ui/promotions"));
+    assertTrue(result.getResponseHeaders().getFirst(HttpHeaders.LOCATION).endsWith(redirectPath));
     var setCookie = result.getResponseHeaders().getFirst(HttpHeaders.SET_COOKIE);
     assertNotNull(setCookie);
     assertTrue(setCookie.startsWith(JwtAuthenticationFilter.TOKEN_COOKIE + "="));

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forbidden · HEI</title>
+  <link rel="stylesheet" href="/css/hei.css" th:href="@{/css/hei.css}" />
+  <link rel="stylesheet" href="/css/forbidden.css" th:href="@{/css/forbidden.css}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-logo" th:src="@{/images/logo.png}" src="/images/logo.png" alt="HEI" />
+      <span class="brand-tag">Haute École d'Informatique</span>
+    </div>
+    <form method="post" action="/ui/logout">
+      <button type="submit" class="btn btn-ghost-invert">Logout</button>
+    </form>
+  </header>
+
+  <main class="denied-shell">
+    <span class="doodle doodle-1" aria-hidden="true">403</span>
+    <span class="doodle doodle-2" aria-hidden="true">✕</span>
+    <span class="doodle doodle-3" aria-hidden="true">&lt;/&gt;</span>
+
+    <section class="denied-card bracketed" aria-labelledby="denied-title">
+      <span class="bracket bracket-tl" aria-hidden="true"></span>
+      <span class="bracket bracket-tr" aria-hidden="true"></span>
+      <span class="bracket bracket-bl" aria-hidden="true"></span>
+      <span class="bracket bracket-br" aria-hidden="true"></span>
+
+      <span class="eyebrow-tag denied-eyebrow">FORBIDDEN ACCESS</span>
+      <h1 id="denied-title" class="denied-title">Forbidden<span style="color: var(--coral-deep)">.</span></h1>
+      <p class="denied-sub">
+        Your account does not have the admin rights required to open this intranet space.
+      </p>
+
+      <div class="denied-actions">
+        <a class="btn" th:href="@{/ui/login}">Back to sign in</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="dash-foot">
+    <p>© 2026 Haute École d'Informatique · Habilitation MESupRES</p>
+  </footer>
+</body>
+</html>
