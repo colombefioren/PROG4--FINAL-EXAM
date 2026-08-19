@@ -642,6 +642,23 @@ class GraduatesIT extends FacadeIT {
   }
 
   @Test
+  void tracklessGraduateDefaultsToEl() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, null);
+    var student = saveStudent(promotion, group);
+    var exams = createCurriculum(group);
+    saveGrade(exams.get(0), student, new BigDecimal("14"));
+    saveGrade(exams.get(1), student, new BigDecimal("15"));
+    saveGrade(exams.get(2), student, new BigDecimal("16"));
+
+    var graduates = getGraduates(token(admin), promotion.getId());
+
+    assertEquals(1, graduates.size());
+    assertEquals(Track.EL, graduates.get(0).track());
+  }
+
+  @Test
   @SneakyThrows
   void exportSplitsGraduatesIntoOneSheetPerTrack() {
     var admin = saveAdmin();

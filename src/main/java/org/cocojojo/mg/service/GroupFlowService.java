@@ -34,7 +34,10 @@ public class GroupFlowService {
   }
 
   public Optional<JGroup> getCurrentGroup(UUID studentId) {
-    return repository.findFirstByStudentIdOrderByCreatedAtDesc(studentId).map(JGroupFlow::getGroup);
+    return repository
+        .findFirstByStudentIdOrderByCreatedAtDesc(studentId)
+        .filter(gf -> gf.getGroupFlowType() == GroupFlowType.JOIN)
+        .map(JGroupFlow::getGroup);
   }
 
   public List<UUID> getCurrentStudentIdsInGroup(UUID groupId) {

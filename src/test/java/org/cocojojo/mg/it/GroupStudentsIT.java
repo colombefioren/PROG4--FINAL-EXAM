@@ -331,4 +331,22 @@ class GroupStudentsIT extends FacadeIT {
     assertEquals(1, students.size());
     assertEquals(student.getId(), students.get(0).id());
   }
+
+  @Test
+  void leftStudentHasNoCurrentGroupAndIsNotListed() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion);
+    var student = saveStudent(promotion, group, "Alan");
+    groupFlowRepository.save(
+        JGroupFlow.builder()
+            .student(student)
+            .group(group)
+            .groupFlowType(GroupFlowType.LEAVE)
+            .build());
+
+    var students = getStudents(token(admin), group.getId());
+
+    assertTrue(students.isEmpty());
+  }
 }
