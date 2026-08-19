@@ -15,7 +15,10 @@ import org.cocojojo.mg.service.GroupFlowService;
 import org.cocojojo.mg.service.ResultService;
 import org.cocojojo.mg.service.StudentService;
 import org.cocojojo.mg.service.TranscriptService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,8 +38,8 @@ public class StudentController {
   private final ResultService resultService;
 
   @GetMapping
-  public List<StudentResponse> getAll() {
-    return studentService.getAll();
+  public Page<StudentResponse> getAll(Pageable pageable) {
+    return studentService.getAll(pageable);
   }
 
   @GetMapping("/{id}")
@@ -49,26 +52,32 @@ public class StudentController {
     return studentService.upsert(request);
   }
 
-  @GetMapping("/{id}/group_flows")
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void delete(@PathVariable UUID id) {
+    studentService.delete(id);
+  }
+
+  @GetMapping("/{id}/group-flows")
   public List<GroupFlowResponse> getGroupFlows(@PathVariable UUID id) {
     studentService.assertAdminOrSelf(id);
     return groupFlowService.getHistory(id);
   }
 
-  @PutMapping("/{id}/group_flows")
+  @PutMapping("/{id}/group-flows")
   public GroupFlowResponse moveToGroup(
       @PathVariable UUID id, @RequestBody @Valid MoveStudentGroupRequest request) {
     return groupFlowService.move(studentService.getEntityOrThrow(id), request);
   }
 
-  @PostMapping("/{id}/yearly_results/{level}/transcript")
+  @PostMapping("/{id}/yearly-results/{level}/transcript")
   @ResponseStatus(HttpStatus.ACCEPTED)
   public void requestTranscript(@PathVariable UUID id, @PathVariable StudentLevel level) {
     studentService.assertAdminOrSelf(id);
     transcriptService.requestTranscript(id, level);
   }
 
-  @GetMapping("/{id}/yearly_results/{level}")
+  @GetMapping("/{id}/yearly-results/{level}")
   public YearlyResultResponse getYearlyResult(
       @PathVariable UUID id, @PathVariable StudentLevel level) {
     studentService.assertAdminOrSelf(id);

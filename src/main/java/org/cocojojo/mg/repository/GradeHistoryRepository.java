@@ -1,5 +1,6 @@
 package org.cocojojo.mg.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.cocojojo.mg.repository.model.JGradeHistory;
@@ -12,4 +13,6 @@ public interface GradeHistoryRepository extends JpaRepository<JGradeHistory, UUI
 
   @EntityGraph(attributePaths = {"grade", "grade.exam", "grade.student", "changedBy"})
   List<JGradeHistory> findByGradeIdOrderByChangedAtDesc(UUID gradeId);
+
+  List<JGradeHistory> findByGradeIdIn(Collection<UUID> gradeIds);
 }

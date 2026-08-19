@@ -21,6 +21,7 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.YearlyResultResponse;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.model.Fraction;
 import org.cocojojo.mg.model.enums.GroupFlowType;
+import org.cocojojo.mg.model.enums.ResultStatus;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.model.enums.Track;
@@ -69,7 +70,7 @@ public class ResultService {
                 .filter(l -> l.overallAverage() != null)
                 .map(l -> new WeightedValue(l.overallAverage(), l.totalCredits()))
                 .toList());
-    var graduate = levels.stream().allMatch(YearlyResultResponse::complete);
+    var graduate = levels.stream().allMatch(y -> y.status() == ResultStatus.COMPLETED);
 
     return ResultsSummaryResponse.builder()
         .studentId(student.getId())
@@ -116,7 +117,7 @@ public class ResultService {
         .overallAverage(overallAverage)
         .earnedCredits(earnedCredits)
         .totalCredits(totalCredits)
-        .complete(complete)
+        .status(complete ? ResultStatus.COMPLETED : ResultStatus.PROVISIONAL)
         .build();
   }
 
@@ -302,7 +303,7 @@ public class ResultService {
                     .filter(l -> l.overallAverage() != null)
                     .map(l -> new WeightedValue(l.overallAverage(), l.totalCredits()))
                     .toList());
-        var graduate = levels.stream().allMatch(YearlyResultResponse::complete);
+        var graduate = levels.stream().allMatch(y -> y.status() == ResultStatus.COMPLETED);
 
         summaries.put(
             student.getId(),
@@ -407,7 +408,7 @@ public class ResultService {
         .overallAverage(overallAverage)
         .earnedCredits(earnedCredits)
         .totalCredits(totalCredits)
-        .complete(complete)
+        .status(complete ? ResultStatus.COMPLETED : ResultStatus.PROVISIONAL)
         .build();
   }
 

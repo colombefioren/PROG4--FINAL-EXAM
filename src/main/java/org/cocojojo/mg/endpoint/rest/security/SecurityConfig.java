@@ -43,7 +43,11 @@ public class SecurityConfig {
                         "/v3/api-docs/**",
                         "/swagger-ui",
                         "/swagger-ui.html",
-                        "/swagger-ui/**")
+                        "/swagger-ui/**",
+                        "/css/**",
+                        "/js/**",
+                        "/images/**",
+                        "/favicon.ico")
                     .permitAll()
                     .requestMatchers("/ui/login", "/ui/logout")
                     .permitAll()
@@ -71,9 +75,16 @@ public class SecurityConfig {
                         "/courses/*",
                         "/promotions/*/courses")
                     .hasAnyRole("ADMIN", "TEACHER")
-                    .requestMatchers(POST, "/students/*/yearly_results/*/transcript")
+                    .requestMatchers(
+                        GET, "/students/*", "/students/*/group-flows", "/students/*/grades")
+                    .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                    .requestMatchers(GET, "/promotions", "/promotions/*")
+                    .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                    .requestMatchers(GET, "/grades/*")
+                    .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                    .requestMatchers(POST, "/students/*/yearly-results/*/transcript")
                     .authenticated()
-                    .requestMatchers(GET, "/students/*/yearly_results/*")
+                    .requestMatchers(GET, "/students/*/yearly-results/*")
                     .authenticated()
                     .requestMatchers(GET, "/students/*/results-summary")
                     .authenticated()
@@ -85,6 +96,13 @@ public class SecurityConfig {
                     .hasRole("ADMIN")
                     .requestMatchers(GET, "/course-assignments/curriculum-status")
                     .hasRole("ADMIN")
+                    .requestMatchers(
+                        GET,
+                        "/course-assignments",
+                        "/course-assignments/*",
+                        "/course-assignments/*/exams",
+                        "/course-assignments/*/exams/*")
+                    .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                     .requestMatchers(
                         GET, "/exams/*/grades", "/exams/*/students/*/grade", "/grades/*/history")
                     .hasAnyRole("ADMIN", "TEACHER")

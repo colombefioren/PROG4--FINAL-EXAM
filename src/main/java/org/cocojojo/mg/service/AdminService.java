@@ -21,6 +21,18 @@ public class AdminService {
   private final SecurityUtil securityUtil;
   private final PasswordEncoder passwordEncoder;
 
+  public AdminResponse getById(UUID adminId) {
+    securityUtil.requireSelf(adminId);
+    return mapper.toResponse(
+        mapper.toModel(
+            adminRepository
+                .findById(adminId)
+                .orElseThrow(
+                    () ->
+                        new ResourceNotFoundException(
+                            "Admin with id:" + adminId + " not found."))));
+  }
+
   @Transactional
   public AdminResponse update(UUID adminId, AdminRequest request) {
     securityUtil.requireSelf(adminId);

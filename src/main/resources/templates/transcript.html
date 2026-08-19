@@ -4,85 +4,112 @@
   <meta charset="UTF-8"/>
   <title th:text="${title}">Grade transcript</title>
   <style>
-    body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #1a1a2e; margin: 0; }
-    .header { background-color: #1a73e8; color: #ffffff; padding: 16px 20px; border-radius: 8px; }
-    .header h1 { font-size: 18px; margin: 0 0 4px 0; }
-    .header .subtitle { font-size: 12px; color: #d9e6ff; }
-    .meta { color: #5f6368; margin: 12px 2px 0 2px; font-size: 11px; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #001948; margin: 0; background-color: #fbf1de; }
+    .page { padding: 24px; }
+    .bracket-panel { position: relative; background-color: #fffcf5; border: 3px solid #001948; border-radius: 10px; padding: 20px 24px; }
+    .bracket { position: absolute; width: 22px; height: 22px; }
+    .bracket-tl { top: -6px; left: -6px; border-top: 5px solid #dfa408; border-left: 5px solid #dfa408; }
+    .bracket-tr { top: -6px; right: -6px; border-top: 5px solid #dfa408; border-right: 5px solid #dfa408; }
+    .bracket-bl { bottom: -6px; left: -6px; border-bottom: 5px solid #dfa408; border-left: 5px solid #dfa408; }
+    .bracket-br { bottom: -6px; right: -6px; border-bottom: 5px solid #dfa408; border-right: 5px solid #dfa408; }
+
+    .header { background-color: #001948; border-bottom: 5px solid #dfa408; padding: 18px 24px; border-radius: 8px 8px 0 0; }
+    .header h1 { font-size: 20px; margin: 0 0 4px 0; color: #fffcf5; }
+    .header h1 .gold { color: #dfa408; }
+    .header .subtitle { font-size: 12px; color: #f4cc5e; font-family: "Courier New", monospace; letter-spacing: 1.5px; text-transform: uppercase; }
+
+    .meta { color: #2c4674; margin: 14px 4px 0 4px; font-size: 11px; font-family: "Courier New", monospace; }
+    .meta strong { color: #001948; }
+
     .summary { width: 100%; border-collapse: separate; border-spacing: 8px 0; margin: 16px -8px 0 -8px; }
-    .summary td { width: 33%; background-color: #f8fafc; border: 1px solid #e4e8ee; border-radius: 8px; padding: 10px 14px; }
-    .summary .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368; }
-    .summary .value { font-size: 16px; font-weight: bold; margin-top: 4px; }
-    .summary .value.average { color: #1a73e8; }
+    .summary td { width: 33%; border: 2.5px solid #001948; border-radius: 8px; padding: 10px 14px; }
+    .summary .label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: #2c4674; font-family: "Courier New", monospace; font-weight: bold; }
+    .summary .value { font-size: 17px; font-weight: bold; margin-top: 4px; }
+    .summary td.avg { background-color: #b7c8ff; }
+    .summary td.stat { background-color: #b8e8c9; }
+    .summary td.cred { background-color: #ddc7f5; }
     .summary .value.complete { color: #0a7a2f; }
     .summary .value.provisional { color: #b45309; }
-    table.courses { width: 100%; border-collapse: collapse; margin-top: 16px; }
-    table.courses th { background-color: #1a73e8; color: #ffffff; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-    table.courses td { border-bottom: 1px solid #e4e8ee; padding: 8px 10px; font-size: 12px; }
-    table.courses tr:nth-child(even) td { background-color: #f8fafc; }
+
+    table.courses { width: 100%; border-collapse: collapse; margin-top: 18px; border: 2.5px solid #001948; }
+    table.courses th { background-color: #001948; color: #f4cc5e; padding: 9px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; font-family: "Courier New", monospace; }
+    table.courses td { border-bottom: 2px dashed #9aa9c4; padding: 9px 10px; font-size: 12px; }
+    table.courses tr:nth-child(even) td { background-color: #fffcf5; }
+    table.courses tr:nth-child(odd) td { background-color: #fbf1de; }
+    table.courses tbody tr:last-child td { border-bottom: none; }
     .passed { color: #0a7a2f; font-weight: bold; }
     .not-passed { color: #b00020; font-weight: bold; }
-    .not-graded { color: #5f6368; }
-    .footer { margin-top: 20px; padding-top: 8px; border-top: 2px solid #1a73e8; font-size: 10px; color: #5f6368; text-align: center; }
+    .not-graded { color: #2c4674; }
+
+    .footer { margin-top: 20px; padding-top: 10px; border-top: 3px dashed #9aa9c4; font-size: 10px; color: #2c4674; text-align: center; font-family: "Courier New", monospace; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>HEI - Haute École d'Informatique</h1>
-    <div class="subtitle" th:text="${title}">Grade transcript</div>
-  </div>
+  <div class="page">
+    <div class="header">
+      <h1>HEI<span class="gold">.</span> — Haute École d'Informatique</h1>
+      <div class="subtitle" th:text="${title}">Grade transcript</div>
+    </div>
 
-  <p class="meta">
-    Student: <strong th:text="${studentName}">Name</strong> (<span th:text="${stdRef}">STD00000</span>)
-    - generated on <span th:text="${generatedAt}">date</span>
-  </p>
+    <div class="bracket-panel">
+      <span class="bracket bracket-tl"></span>
+      <span class="bracket bracket-tr"></span>
+      <span class="bracket bracket-bl"></span>
+      <span class="bracket bracket-br"></span>
 
-  <table class="summary">
-    <tr>
-      <td>
-        <div class="label">Level average</div>
-        <div class="value average" th:text="${overallAverage}">-</div>
-      </td>
-      <td>
-        <div class="label">Status</div>
-        <div class="value"
-            th:text="${complete}"
-            th:classappend="${complete == 'Complete'} ? 'value complete' : 'value provisional'">-</div>
-      </td>
-      <td>
-        <div class="label">Credits</div>
-        <div class="value">
-          <span th:text="${earnedCredits}">0</span> / <span th:text="${totalCredits}">0</span>
-        </div>
-      </td>
-    </tr>
-  </table>
+      <p class="meta">
+        STUDENT: <strong th:text="${studentName}">Name</strong> (<span th:text="${stdRef}">STD00000</span>)
+        — GENERATED ON <span th:text="${generatedAt}">date</span>
+      </p>
 
-  <table class="courses">
-    <thead>
-      <tr>
-        <th>Code</th>
-        <th>Subject</th>
-        <th>Credits</th>
-        <th>Average</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr th:each="course : ${courses}">
-        <td th:text="${course.code}">CODE</td>
-        <td th:text="${course.name}">Name</td>
-        <td th:text="${course.credits}">0</td>
-        <td th:text="${course.average}">-</td>
-        <td th:text="${course.validated}"
-            th:class="${course.validated == 'Passed'} ? 'passed' : (${course.validated == 'Not passed'} ? 'not-passed' : 'not-graded')">-</td>
-      </tr>
-    </tbody>
-  </table>
+      <table class="summary">
+        <tr>
+          <td class="avg">
+            <div class="label">Level average</div>
+            <div class="value" th:text="${overallAverage}">-</div>
+          </td>
+          <td class="stat">
+            <div class="label">Status</div>
+            <div class="value"
+                th:text="${complete}"
+                th:classappend="${complete == 'Complete'} ? 'value complete' : 'value provisional'">-</div>
+          </td>
+          <td class="cred">
+            <div class="label">Credits</div>
+            <div class="value">
+              <span th:text="${earnedCredits}">0</span> / <span th:text="${totalCredits}">0</span>
+            </div>
+          </td>
+        </tr>
+      </table>
 
-  <div class="footer">
-    HEI - Haute École d'Informatique - Official document generated on
-    <span th:text="${generatedAt}">date</span>
+      <table class="courses">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Subject</th>
+            <th>Credits</th>
+            <th>Average</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="course : ${courses}">
+            <td th:text="${course.code}">CODE</td>
+            <td th:text="${course.name}">Name</td>
+            <td th:text="${course.credits}">0</td>
+            <td th:text="${course.average}">-</td>
+            <td th:text="${course.validated}"
+                th:class="${course.validated == 'Passed'} ? 'passed' : (${course.validated == 'Not passed'} ? 'not-passed' : 'not-graded')">-</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      © 2026 HEI — Haute École d'Informatique · Habilitation MESupRES · Official document generated on
+      <span th:text="${generatedAt}">date</span>
+    </div>
   </div>
 </body>
 </html>

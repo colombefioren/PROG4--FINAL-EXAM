@@ -3,6 +3,7 @@ package org.cocojojo.mg.it;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.util.List;
 import java.util.UUID;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
@@ -11,16 +12,28 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.TeacherRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.TeacherResponse;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
 import org.cocojojo.mg.model.enums.Role;
+import org.cocojojo.mg.model.enums.Semester;
+import org.cocojojo.mg.model.enums.StudentLevel;
+import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.AdminRepository;
+import org.cocojojo.mg.repository.CourseAssignmentRepository;
+import org.cocojojo.mg.repository.CourseRepository;
+import org.cocojojo.mg.repository.GroupRepository;
 import org.cocojojo.mg.repository.PromotionRepository;
 import org.cocojojo.mg.repository.StudentRepository;
+import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JAdmin;
+import org.cocojojo.mg.repository.model.JCourse;
+import org.cocojojo.mg.repository.model.JCourseAssignment;
+import org.cocojojo.mg.repository.model.JGroup;
 import org.cocojojo.mg.repository.model.JPromotion;
 import org.cocojojo.mg.repository.model.JStudent;
+import org.cocojojo.mg.repository.model.JTeacher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -29,6 +42,10 @@ class TeacherIT extends FacadeIT {
   @Autowired private AdminRepository adminRepository;
   @Autowired private StudentRepository studentRepository;
   @Autowired private PromotionRepository promotionRepository;
+  @Autowired private TeacherRepository teacherRepository;
+  @Autowired private CourseRepository courseRepository;
+  @Autowired private GroupRepository groupRepository;
+  @Autowired private CourseAssignmentRepository courseAssignmentRepository;
   @Autowired private JwtService jwtService;
   @Autowired private PasswordEncoder passwordEncoder;
 
@@ -117,6 +134,18 @@ class TeacherIT extends FacadeIT {
     return jwtService.generateToken(student.getId(), student.getEmail(), Role.STUDENT);
   }
 
+  private String teacherToken() {
+    var teacher =
+        teacherRepository.save(
+            JTeacher.builder()
+                .firstname("Grace")
+                .lastname("Hopper")
+                .email(uniqueEmail())
+                .password(passwordEncoder.encode("secret123"))
+                .build());
+    return jwtService.generateToken(teacher.getId(), teacher.getEmail(), Role.TEACHER);
+  }
+
   @Test
   void adminCanCreateATeacher() {
     var teacher = createTeacher(uniqueEmail());
@@ -182,9 +211,10 @@ class TeacherIT extends FacadeIT {
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBodyList(TeacherResponse.class)
+            .expectBody(new ParameterizedTypeReference<TestPage<TeacherResponse>>() {})
             .returnResult()
             .getResponseBody()
+            .content()
             .stream()
             .filter(t -> t.email().equals(emailA) || t.email().equals(emailB))
             .toList();
@@ -318,6 +348,113 @@ class TeacherIT extends FacadeIT {
         .exchange()
         .expectStatus()
         .isForbidden();
+  }
+
+  @Test
+  void adminCanDeleteATeacher() {
+    var teacher = createTeacher(uniqueEmail());
+
+    webTestClient
+        .delete()
+        .uri("/teachers/" + teacher.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    webTestClient
+        .get()
+        .uri("/teachers/" + teacher.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void deletingAnUnknownTeacherReturnsNotFound() {
+    webTestClient
+        .delete()
+        .uri("/teachers/" + UUID.randomUUID())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void teacherCannotDeleteATeacher() {
+    var teacher = createTeacher(uniqueEmail());
+
+    webTestClient
+        .delete()
+        .uri("/teachers/" + teacher.id())
+        .header("Authorization", "Bearer " + teacherToken())
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void adminCanDeleteATeacherThatIsAssignedToACourse() {
+    var teacher = createTeacher(uniqueEmail());
+    saveAssignment(teacherRepository.getReferenceById(teacher.id()));
+
+    webTestClient
+        .delete()
+        .uri("/teachers/" + teacher.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    webTestClient
+        .get()
+        .uri("/teachers/" + teacher.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  private JCourse saveCourse() {
+    return courseRepository.save(
+        JCourse.builder()
+            .code("TI-C-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+            .name("TI Course")
+            .credits(4)
+            .studentLevel(StudentLevel.L3)
+            .build());
+  }
+
+  private JGroup saveGroup() {
+    return groupRepository.save(
+        JGroup.builder()
+            .promotion(saveAssignmentPromotion())
+            .ref("TI-G-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+            .track(Track.TN)
+            .build());
+  }
+
+  private JPromotion saveAssignmentPromotion() {
+    return promotionRepository.save(
+        JPromotion.builder()
+            .ref("TI-PROMO-" + UUID.randomUUID().toString().substring(0, 8))
+            .name("TI Assignment Promotion " + UUID.randomUUID().toString().substring(0, 8))
+            .entryYear(2025)
+            .build());
+  }
+
+  private JCourseAssignment saveAssignment(JTeacher teacher) {
+    return courseAssignmentRepository.save(
+        JCourseAssignment.builder()
+            .course(saveCourse())
+            .group(saveGroup())
+            .teachers(List.of(teacher))
+            .academicYear(2025)
+            .semester(Semester.S1)
+            .credits(4)
+            .build());
   }
 
   private String uniqueEmail() {

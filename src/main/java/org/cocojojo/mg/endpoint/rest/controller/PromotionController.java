@@ -13,6 +13,8 @@ import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.service.GraduateListService;
 import org.cocojojo.mg.service.PromotionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,8 +34,8 @@ public class PromotionController {
   private final GraduateListService graduateListService;
 
   @GetMapping
-  public List<PromotionResponse> getAll() {
-    return service.getAll();
+  public Page<PromotionResponse> getAll(Pageable pageable) {
+    return service.getAll(pageable);
   }
 
   @GetMapping("/{id}")

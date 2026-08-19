@@ -36,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -336,9 +337,10 @@ class CourseAssignmentIT extends FacadeIT {
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBodyList(CourseAssignmentResponse.class)
+            .expectBody(new ParameterizedTypeReference<TestPage<CourseAssignmentResponse>>() {})
             .returnResult()
-            .getResponseBody();
+            .getResponseBody()
+            .content();
 
     assertNotNull(results);
     assertTrue(
@@ -439,9 +441,10 @@ class CourseAssignmentIT extends FacadeIT {
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBodyList(CourseAssignmentResponse.class)
+            .expectBody(new ParameterizedTypeReference<TestPage<CourseAssignmentResponse>>() {})
             .returnResult()
-            .getResponseBody();
+            .getResponseBody()
+            .content();
 
     assertNotNull(results);
     assertTrue(results.stream().allMatch(a -> a.groupId().equals(groupA.getId())));
@@ -491,9 +494,10 @@ class CourseAssignmentIT extends FacadeIT {
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBodyList(CourseAssignmentResponse.class)
+            .expectBody(new ParameterizedTypeReference<TestPage<CourseAssignmentResponse>>() {})
             .returnResult()
-            .getResponseBody();
+            .getResponseBody()
+            .content();
 
     assertNotNull(results);
     assertEquals(1, results.size());
@@ -708,9 +712,10 @@ class CourseAssignmentIT extends FacadeIT {
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBodyList(CourseAssignmentResponse.class)
+            .expectBody(new ParameterizedTypeReference<TestPage<CourseAssignmentResponse>>() {})
             .returnResult()
-            .getResponseBody();
+            .getResponseBody()
+            .content();
 
     assertNotNull(results);
     assertTrue(results.isEmpty());

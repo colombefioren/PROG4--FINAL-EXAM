@@ -1,15 +1,17 @@
 package org.cocojojo.mg.service;
 
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.TeacherRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.TeacherResponse;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.TeacherMapper;
 import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JTeacher;
 import org.cocojojo.mg.util.SecurityUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,8 +24,8 @@ public class TeacherService {
   private final PasswordEncoder passwordEncoder;
   private final SecurityUtil securityUtil;
 
-  public List<TeacherResponse> getAll() {
-    return repository.findAll().stream().map(mapper::toModel).map(mapper::toResponse).toList();
+  public Page<TeacherResponse> getAll(Pageable pageable) {
+    return repository.findAll(pageable).map(mapper::toModel).map(mapper::toResponse);
   }
 
   public TeacherResponse getById(UUID id) {
@@ -72,5 +74,14 @@ public class TeacherService {
     }
 
     return mapper.toResponse(mapper.toModel(repository.save(teacher)));
+  }
+
+  @Transactional
+  public void delete(UUID id) {
+    if (!securityUtil.isAdmin()) {
+      throw new ForbiddenAccessException("Only an admin can delete a teacher");
+    }
+    getEntityOrThrow(id);
+    repository.softDeleteById(id);
   }
 }

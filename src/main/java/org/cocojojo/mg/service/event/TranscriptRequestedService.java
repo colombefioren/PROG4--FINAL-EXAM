@@ -7,7 +7,6 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -26,6 +25,7 @@ import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundExcept
 import org.cocojojo.mg.file.bucket.BucketComponent;
 import org.cocojojo.mg.mail.Email;
 import org.cocojojo.mg.mail.Mailer;
+import org.cocojojo.mg.model.enums.ResultStatus;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.StudentRepository;
 import org.cocojojo.mg.repository.model.JStudent;
@@ -43,6 +43,10 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
   private static final String EMAIL_TEMPLATE = "transcript-email";
   private static final Duration LINK_VALIDITY = Duration.ofDays(7);
 
+  static String transcriptFileName(String std, StudentLevel level) {
+    return "transcript-" + std + "-" + level + ".pdf";
+  }
+
   private final StudentRepository studentRepository;
   private final ResultService resultService;
   private final ITemplateEngine templateEngine;
@@ -59,7 +63,8 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
     String html = render(student, yearly);
     byte[] pdf = renderPdf(html);
 
-    String key = "transcripts/" + student.getStd() + "/" + Instant.now().toEpochMilli() + ".pdf";
+    String fileName = transcriptFileName(student.getStd(), level);
+    String key = "transcripts/" + student.getStd() + "/" + fileName;
     var tempFile = File.createTempFile("transcript-" + student.getStd() + "-", ".pdf");
     Files.write(tempFile.toPath(), pdf);
     bucketComponent.upload(tempFile, key);
@@ -96,7 +101,7 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
         "overallAverage",
         yearly.overallAverage() == null ? "-" : yearly.overallAverage().toString());
     context.setVariable(
-        "complete", Boolean.TRUE.equals(yearly.complete()) ? "Complete" : "Provisional");
+        "complete", yearly.status() == ResultStatus.COMPLETED ? "Complete" : "Provisional");
     context.setVariable("earnedCredits", yearly.earnedCredits());
     context.setVariable("totalCredits", yearly.totalCredits());
     context.setVariable("validityDays", LINK_VALIDITY.toDays());
@@ -117,7 +122,7 @@ public class TranscriptRequestedService implements Consumer<TranscriptRequested>
         "overallAverage",
         yearly.overallAverage() == null ? "-" : yearly.overallAverage().toString());
     context.setVariable(
-        "complete", Boolean.TRUE.equals(yearly.complete()) ? "Complete" : "Provisional");
+        "complete", yearly.status() == ResultStatus.COMPLETED ? "Complete" : "Provisional");
     context.setVariable("earnedCredits", yearly.earnedCredits());
     context.setVariable("totalCredits", yearly.totalCredits());
     context.setVariable("courses", yearly.courses().stream().map(this::toCourseView).toList());

@@ -21,6 +21,8 @@ import org.cocojojo.mg.repository.model.JGroup;
 import org.cocojojo.mg.repository.model.JTeacher;
 import org.cocojojo.mg.util.SecurityUtil;
 import org.cocojojo.mg.validator.CourseAssignmentValidator;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,21 +42,21 @@ public class CourseAssignmentService {
   private final CourseAssignmentValidator validator;
   private final SecurityUtil securityUtil;
 
-  public List<CourseAssignmentResponse> getByFilter(
-      UUID groupId, UUID teacherId, UUID courseId, Integer academicYear) {
+  public Page<CourseAssignmentResponse> getByFilter(
+      UUID groupId, UUID teacherId, UUID courseId, Integer academicYear, Pageable pageable) {
     if (securityUtil.isTeacher()) {
       teacherId = securityUtil.getCurrentUserIdOrThrow();
     }
     if (securityUtil.isStudent()) {
       var currentGroup = groupFlowService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow());
       if (currentGroup.isEmpty()) {
-        return List.of();
+        return Page.empty(pageable);
       }
       groupId = currentGroup.get().getId();
     }
-    return repository.findFilter(groupId, teacherId, courseId, academicYear).stream()
-        .map(mapper::toResponse)
-        .toList();
+    return repository
+        .findFilterPaged(groupId, teacherId, courseId, academicYear, pageable)
+        .map(mapper::toResponse);
   }
 
   public CourseAssignmentResponse getById(UUID id) {

@@ -5,12 +5,18 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseResponse;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ConflictException;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.CourseMapper;
 import org.cocojojo.mg.model.Course;
 import org.cocojojo.mg.model.enums.StudentLevel;
+import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.CourseRepository;
 import org.cocojojo.mg.repository.model.JCourse;
+import org.cocojojo.mg.util.SecurityUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,12 +26,14 @@ public class CourseService {
 
   private final CourseRepository courseRepository;
   private final CourseMapper courseMapper;
+  private final CourseAssignmentRepository courseAssignmentRepository;
+  private final SecurityUtil securityUtil;
 
-  public List<CourseResponse> getAll() {
-    return courseRepository.findAll().stream()
+  public Page<CourseResponse> getAll(Pageable pageable) {
+    return courseRepository
+        .findAll(pageable)
         .map(courseMapper::toModel)
-        .map(courseMapper::toResponse)
-        .toList();
+        .map(courseMapper::toResponse);
   }
 
   public CourseResponse getById(UUID id) {
@@ -57,5 +65,18 @@ public class CourseService {
     return courseRepository.findByStudentLevelOrderByCodeAsc(studentLevel).stream()
         .map(courseMapper::toModel)
         .toList();
+  }
+
+  @Transactional
+  public void delete(UUID id) {
+    if (!securityUtil.isAdmin()) {
+      throw new ForbiddenAccessException("Only an admin can delete a course");
+    }
+    var course = getEntityOrThrow(id);
+    if (courseAssignmentRepository.existsByCourseId(id)) {
+      throw new ConflictException(
+          "Course with id: " + id + " is still assigned to a group and cannot be deleted.");
+    }
+    courseRepository.delete(course);
   }
 }

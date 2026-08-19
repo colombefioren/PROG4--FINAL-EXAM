@@ -9,6 +9,8 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CurriculumStatusResponse;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.service.CourseAssignmentService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,12 +30,13 @@ public class CourseAssignmentController {
   private final CourseAssignmentService service;
 
   @GetMapping
-  public List<CourseAssignmentResponse> getByFilter(
+  public Page<CourseAssignmentResponse> getByFilter(
       @RequestParam(required = false) UUID groupId,
       @RequestParam(required = false) UUID teacherId,
       @RequestParam(required = false) UUID courseId,
-      @RequestParam(required = false) Integer academicYear) {
-    return service.getByFilter(groupId, teacherId, courseId, academicYear);
+      @RequestParam(required = false) Integer academicYear,
+      Pageable pageable) {
+    return service.getByFilter(groupId, teacherId, courseId, academicYear, pageable);
   }
 
   @GetMapping("/{id}")

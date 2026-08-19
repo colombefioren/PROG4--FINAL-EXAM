@@ -14,7 +14,7 @@ public class PromotionViewController {
 
   @GetMapping("/ui/promotions")
   public String promotions(Model model) {
-    model.addAttribute("promotions", promotionService.getAll());
+    model.addAttribute("promotions", promotionService.getAllWithoutPagination());
     return "promotions";
   }
 }

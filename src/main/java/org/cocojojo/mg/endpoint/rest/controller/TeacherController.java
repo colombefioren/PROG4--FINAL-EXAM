@@ -1,17 +1,21 @@
 package org.cocojojo.mg.endpoint.rest.controller;
 
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.TeacherRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.TeacherResponse;
 import org.cocojojo.mg.service.TeacherService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -21,8 +25,8 @@ public class TeacherController {
   private final TeacherService service;
 
   @GetMapping
-  public List<TeacherResponse> getAll() {
-    return service.getAll();
+  public Page<TeacherResponse> getAll(Pageable pageable) {
+    return service.getAll(pageable);
   }
 
   @GetMapping("/{id}")
@@ -33,5 +37,11 @@ public class TeacherController {
   @PutMapping
   public TeacherResponse upsert(@RequestBody @Valid TeacherRequest request) {
     return service.upsert(request);
+  }
+
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void delete(@PathVariable UUID id) {
+    service.delete(id);
   }
 }

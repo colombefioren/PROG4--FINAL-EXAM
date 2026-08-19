@@ -1,6 +1,5 @@
 package org.cocojojo.mg.service;
 
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GroupRequest;
@@ -10,6 +9,8 @@ import org.cocojojo.mg.mapper.GroupMapper;
 import org.cocojojo.mg.model.Group;
 import org.cocojojo.mg.repository.GroupRepository;
 import org.cocojojo.mg.repository.model.JGroup;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,12 +22,12 @@ public class GroupService {
   private final GroupMapper groupMapper;
   private final PromotionService promotionService;
 
-  public List<GroupResponse> getAll(UUID promotionId) {
+  public Page<GroupResponse> getAll(UUID promotionId, Pageable pageable) {
     var groups =
         promotionId == null
-            ? groupRepository.findAll()
-            : groupRepository.findByPromotionId(promotionId);
-    return groups.stream().map(groupMapper::toModel).map(groupMapper::toResponse).toList();
+            ? groupRepository.findAll(pageable)
+            : groupRepository.findByPromotionId(promotionId, pageable);
+    return groups.map(groupMapper::toModel).map(groupMapper::toResponse);
   }
 
   public JGroup getEntityOrThrow(UUID id) {

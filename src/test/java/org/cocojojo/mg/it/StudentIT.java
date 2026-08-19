@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
@@ -15,8 +18,31 @@ import org.cocojojo.mg.endpoint.rest.controller.dto.PromotionRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.PromotionResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.StudentResponse;
+import org.cocojojo.mg.endpoint.rest.security.JwtService;
+import org.cocojojo.mg.model.enums.Role;
+import org.cocojojo.mg.model.enums.Semester;
+import org.cocojojo.mg.model.enums.StudentLevel;
+import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.AdminRepository;
+import org.cocojojo.mg.repository.CourseAssignmentRepository;
+import org.cocojojo.mg.repository.CourseRepository;
+import org.cocojojo.mg.repository.ExamRepository;
+import org.cocojojo.mg.repository.GradeHistoryRepository;
+import org.cocojojo.mg.repository.GradeRepository;
+import org.cocojojo.mg.repository.GroupFlowRepository;
+import org.cocojojo.mg.repository.GroupRepository;
+import org.cocojojo.mg.repository.PromotionRepository;
+import org.cocojojo.mg.repository.StudentRepository;
+import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JAdmin;
+import org.cocojojo.mg.repository.model.JCourse;
+import org.cocojojo.mg.repository.model.JCourseAssignment;
+import org.cocojojo.mg.repository.model.JExam;
+import org.cocojojo.mg.repository.model.JGrade;
+import org.cocojojo.mg.repository.model.JGradeHistory;
+import org.cocojojo.mg.repository.model.JGroup;
+import org.cocojojo.mg.repository.model.JPromotion;
+import org.cocojojo.mg.repository.model.JTeacher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +54,17 @@ class StudentIT extends FacadeIT {
 
   @Autowired private AdminRepository adminRepository;
   @Autowired private PasswordEncoder passwordEncoder;
+  @Autowired private JwtService jwtService;
+  @Autowired private PromotionRepository promotionRepository;
+  @Autowired private GroupRepository groupRepository;
+  @Autowired private CourseRepository courseRepository;
+  @Autowired private TeacherRepository teacherRepository;
+  @Autowired private CourseAssignmentRepository courseAssignmentRepository;
+  @Autowired private ExamRepository examRepository;
+  @Autowired private GradeRepository gradeRepository;
+  @Autowired private GradeHistoryRepository gradeHistoryRepository;
+  @Autowired private StudentRepository studentRepository;
+  @Autowired private GroupFlowRepository groupFlowRepository;
 
   @LocalServerPort int port;
   private WebTestClient webTestClient;
@@ -128,6 +165,71 @@ class StudentIT extends FacadeIT {
         .expectBody(StudentResponse.class)
         .returnResult()
         .getResponseBody();
+  }
+
+  private String studentToken(UUID studentId, String email) {
+    return jwtService.generateToken(studentId, email, Role.STUDENT);
+  }
+
+  private JPromotion savePromotion() {
+    return promotionRepository.save(
+        JPromotion.builder()
+            .ref("SI-PROMO-" + UUID.randomUUID().toString().substring(0, 8))
+            .name("SI Promotion")
+            .entryYear(2025)
+            .build());
+  }
+
+  private JTeacher saveTeacher() {
+    return teacherRepository.save(
+        JTeacher.builder()
+            .firstname("Grace")
+            .lastname("Hopper")
+            .email("si-teacher-" + UUID.randomUUID().toString().substring(0, 8) + "@hei.school")
+            .password(passwordEncoder.encode("secret123"))
+            .build());
+  }
+
+  private JCourse saveCourse() {
+    return courseRepository.save(
+        JCourse.builder()
+            .code("SI-C-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+            .name("SI Course")
+            .credits(4)
+            .studentLevel(StudentLevel.L3)
+            .build());
+  }
+
+  private JGroup saveGroup() {
+    return groupRepository.save(
+        JGroup.builder()
+            .promotion(savePromotion())
+            .ref("SI-G-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+            .track(Track.TN)
+            .build());
+  }
+
+  private JExam saveExam(JCourseAssignment assignment) {
+    return examRepository.save(
+        JExam.builder()
+            .courseAssignment(assignment)
+            .title("SI Exam")
+            .examDatetime(Instant.parse("2026-06-01T08:00:00Z"))
+            .coefficientNumerator(1)
+            .coefficientDenominator(1)
+            .build());
+  }
+
+  private JCourseAssignment saveAssignment(JCourse course, JGroup group, JTeacher teacher) {
+    return courseAssignmentRepository.save(
+        JCourseAssignment.builder()
+            .course(course)
+            .group(group)
+            .teachers(List.of(teacher))
+            .academicYear(2025)
+            .semester(Semester.S1)
+            .credits(4)
+            .build());
   }
 
   private String studentToken(String email, String password) {
@@ -237,7 +339,7 @@ class StudentIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/students/" + student.id() + "/group_flows")
+        .uri("/students/" + student.id() + "/group-flows")
         .header("Authorization", "Bearer " + adminToken())
         .bodyValue(new MoveStudentGroupRequest(groupB.id()))
         .exchange()
@@ -273,7 +375,7 @@ class StudentIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/students/" + student.id() + "/group_flows")
+        .uri("/students/" + student.id() + "/group-flows")
         .header("Authorization", "Bearer " + adminToken())
         .bodyValue(new MoveStudentGroupRequest(group2025.id()))
         .exchange()
@@ -307,7 +409,7 @@ class StudentIT extends FacadeIT {
 
     webTestClient
         .put()
-        .uri("/students/" + student.id() + "/group_flows")
+        .uri("/students/" + student.id() + "/group-flows")
         .header("Authorization", "Bearer " + adminToken())
         .bodyValue(new MoveStudentGroupRequest(groupB.id()))
         .exchange()
@@ -369,6 +471,29 @@ class StudentIT extends FacadeIT {
   }
 
   @Test
+  void updatingStudentWithGroupIdIsRejected() {
+    var promotion = createPromotion(2024);
+    var group = createGroup(promotion.id());
+    var student = createStudent(group.id(), uniqueEmail(), "password123");
+
+    webTestClient
+        .put()
+        .uri("/students")
+        .header("Authorization", "Bearer " + adminToken())
+        .bodyValue(
+            StudentRequest.builder()
+                .id(student.id())
+                .firstname("Student")
+                .lastname("Moved")
+                .email(student.email())
+                .groupId(group.id())
+                .build())
+        .exchange()
+        .expectStatus()
+        .isBadRequest();
+  }
+
+  @Test
   void unauthenticatedPutIsRejected() {
     webTestClient
         .put()
@@ -383,6 +508,99 @@ class StudentIT extends FacadeIT {
         .exchange()
         .expectStatus()
         .isUnauthorized();
+  }
+
+  @Test
+  void adminCanDeleteAStudent() {
+    var promotion = createPromotion(2025);
+    var group = createGroup(promotion.id());
+    var email = "to-delete-" + UUID.randomUUID().toString().substring(0, 8) + "@hei.school";
+    var student = createStudent(group.id(), email, "secret123");
+
+    webTestClient
+        .delete()
+        .uri("/students/" + student.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    webTestClient
+        .get()
+        .uri("/students/" + student.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void deletingAnUnknownStudentReturnsNotFound() {
+    webTestClient
+        .delete()
+        .uri("/students/" + UUID.randomUUID())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNotFound();
+  }
+
+  @Test
+  void studentCannotDeleteAStudent() {
+    var promotion = createPromotion(2025);
+    var group = createGroup(promotion.id());
+    var email = "victim-" + UUID.randomUUID().toString().substring(0, 8) + "@hei.school";
+    var student = createStudent(group.id(), email, "secret123");
+
+    webTestClient
+        .delete()
+        .uri("/students/" + student.id())
+        .header("Authorization", "Bearer " + studentToken(student.id(), email))
+        .exchange()
+        .expectStatus()
+        .isForbidden();
+  }
+
+  @Test
+  void deletingAStudentCascadesGradesGroupFlowsAndHistories() {
+    var promotion = createPromotion(2025);
+    var group = createGroup(promotion.id());
+    var email = "cascade-" + UUID.randomUUID().toString().substring(0, 8) + "@hei.school";
+    var student = createStudent(group.id(), email, "secret123");
+
+    var course = saveCourse();
+    var teacher = saveTeacher();
+    var exam = saveExam(saveAssignment(course, saveGroup(), teacher));
+    var jStudent = studentRepository.getReferenceById(student.id());
+    var grade =
+        gradeRepository.save(
+            JGrade.builder()
+                .exam(exam)
+                .student(jStudent)
+                .value(new BigDecimal("12.50"))
+                .comment("ok")
+                .build());
+    var history =
+        gradeHistoryRepository.save(
+            JGradeHistory.builder()
+                .grade(grade)
+                .previousValue(new BigDecimal("10.00"))
+                .newValue(new BigDecimal("12.50"))
+                .reason("correction")
+                .changedBy(jStudent)
+                .build());
+
+    webTestClient
+        .delete()
+        .uri("/students/" + student.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    assertTrue(gradeHistoryRepository.findById(history.getId()).isEmpty());
+    assertTrue(gradeRepository.findById(grade.getId()).isEmpty());
+    assertTrue(groupFlowRepository.findByStudentId(student.id()).isEmpty());
   }
 
   private String uniqueEmail() {

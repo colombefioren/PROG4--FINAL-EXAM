@@ -3,9 +3,11 @@ package org.cocojojo.mg.endpoint.rest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ConflictException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.InvalidCurriculumException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
+import org.cocojojo.mg.endpoint.rest.controller.exception.UnauthorizedException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,12 +32,23 @@ public class GlobalExceptionHandler {
     return error(HttpStatus.BAD_REQUEST, ex.getMessage());
   }
 
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity<Map<String, String>> handleConflict(ConflictException ex) {
+    return error(HttpStatus.CONFLICT, ex.getMessage());
+  }
+
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(
       DataIntegrityViolationException ex) {
     return error(HttpStatus.BAD_REQUEST, "Request violates a uniqueness or integrity constraint");
   }
 
+  @ExceptionHandler(UnauthorizedException.class)
+  public ResponseEntity<Map<String, String>> handleUnauthorized(UnauthorizedException ex) {
+    return error(HttpStatus.UNAUTHORIZED, ex.getMessage());
+  }
+
+  // Kept: SecurityUtil and GradeService still throw IllegalStateException for auth failures.
   @ExceptionHandler(IllegalStateException.class)
   public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
     return error(HttpStatus.UNAUTHORIZED, ex.getMessage());
