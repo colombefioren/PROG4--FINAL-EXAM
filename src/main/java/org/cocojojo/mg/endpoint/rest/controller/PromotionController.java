@@ -61,13 +61,11 @@ public class PromotionController {
     return graduateListService.getGraduates(promotionId);
   }
 
-  
   @GetMapping("/{promotionId}/graduates/export")
   public GraduateExportResponse export(@PathVariable UUID promotionId) {
     return GraduateExportResponse.builder().url(graduateListService.export(promotionId)).build();
   }
 
-  
   @GetMapping("/{promotionId}/graduates/download")
   public ResponseEntity<byte[]> download(@PathVariable UUID promotionId) {
     var bytes = graduateListService.buildXlsx(promotionId);

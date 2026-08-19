@@ -279,7 +279,7 @@ class StudentIT extends FacadeIT {
 
     assertNotNull(student.std());
     assertTrue(student.std().startsWith("STD24"));
-    assertEquals(8, student.std().length()); 
+    assertEquals(8, student.std().length());
     assertEquals(promotion.id(), student.promotionId());
     assertEquals(group.id(), student.currentGroupId());
   }

@@ -76,8 +76,7 @@ class GradeIT extends FacadeIT {
   @BeforeEach
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
-    
-    
+
     jdbcTemplate.execute("delete from \"grade_history\"");
     jdbcTemplate.execute("delete from \"grade\"");
     examRepository.deleteAll();
@@ -636,7 +635,6 @@ class GradeIT extends FacadeIT {
         .expectStatus()
         .isNoContent();
 
-    
     webTestClient
         .get()
         .uri("/grades/{gradeId}", gradeId)
@@ -645,8 +643,6 @@ class GradeIT extends FacadeIT {
         .expectStatus()
         .isNotFound();
 
-    
-    
     var historyRows =
         jdbcTemplate.query(
             "select previous_value, new_value, reason from \"grade_history\" where \"grade_id\" = ?"
@@ -656,7 +652,7 @@ class GradeIT extends FacadeIT {
                   rs.getObject("previous_value"), rs.getObject("new_value"), rs.getString("reason")
                 },
             gradeId);
-    
+
     assertEquals(2, historyRows.size());
     var deletion = historyRows.get(historyRows.size() - 1);
     assertEquals(0, new BigDecimal("12.0").compareTo((BigDecimal) deletion[0]));
@@ -689,8 +685,6 @@ class GradeIT extends FacadeIT {
         .expectStatus()
         .isNoContent();
 
-    
-    
     var recreated =
         upsertGrades(
             token(admin),
@@ -730,7 +724,6 @@ class GradeIT extends FacadeIT {
         .expectStatus()
         .isBadRequest();
 
-    
     webTestClient
         .get()
         .uri("/grades/{gradeId}", gradeId)
@@ -870,8 +863,6 @@ class GradeIT extends FacadeIT {
                 .value(new BigDecimal("14.0"))
                 .build()));
 
-    
-    
     webTestClient
         .put()
         .uri("/exams/{examId}/grades", exam.getId())

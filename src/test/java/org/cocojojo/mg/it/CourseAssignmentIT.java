@@ -980,8 +980,7 @@ class CourseAssignmentIT extends FacadeIT {
 
   @Test
   void trackSpecificCourseOnNullTrackGroupIsRejected() {
-    
-    
+
     var promotion = createPromotion();
     var teacher = createTeacher();
     var group =
@@ -1013,7 +1012,7 @@ class CourseAssignmentIT extends FacadeIT {
 
   @Test
   void commonCourseOnTrackGroupIsStillAllowed() {
-    
+
     var promotion = createPromotion();
     var teacher = createTeacher();
     var group =

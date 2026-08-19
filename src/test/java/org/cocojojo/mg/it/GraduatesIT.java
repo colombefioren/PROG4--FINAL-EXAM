@@ -86,8 +86,7 @@ class GraduatesIT extends FacadeIT {
   @BeforeEach
   @SneakyThrows
   void setUp() {
-    
-    
+
     webTestClient =
         WebTestClient.bindToServer()
             .baseUrl("http://localhost:" + port)
@@ -97,8 +96,7 @@ class GraduatesIT extends FacadeIT {
         .thenReturn(
             URI.create("https://dummy-bucket.s3.eu-west-3.amazonaws.com/graduates/list.xlsx")
                 .toURL());
-    
-    
+
     jdbcTemplate.execute("delete from \"grade_history\"");
     jdbcTemplate.execute("delete from \"grade\"");
     examRepository.deleteAll();
@@ -223,12 +221,11 @@ class GraduatesIT extends FacadeIT {
             .filter(l -> l.level() == StudentLevel.L1)
             .findFirst()
             .orElseThrow();
-    
+
     assertEquals(ResultStatus.PROVISIONAL, l1.status());
     assertFalse(l1.courses().get(0).complete().booleanValue());
     assertFalse(l1.courses().get(0).passed().booleanValue());
 
-    
     var graduates = getGraduates(token(admin), promotion.getId());
     assertTrue(graduates.isEmpty());
   }
@@ -271,7 +268,6 @@ class GraduatesIT extends FacadeIT {
     saveGrade(quarter, student, new BigDecimal("16"));
     saveGrade(half, student, new BigDecimal("14"));
 
-    
     var partial = resultService.computeResultsSummary(student.getId());
     var l1Partial =
         partial.levels().stream()
@@ -290,16 +286,13 @@ class GraduatesIT extends FacadeIT {
     assertEquals(ResultStatus.COMPLETED, l1Complete.status());
     assertTrue(l1Complete.courses().get(0).passed().booleanValue());
 
-    
-    
     var graduates = getGraduates(token(admin), promotion.getId());
     assertTrue(graduates.isEmpty());
   }
 
   @Test
   void singleFullCoefficientExamStillCompletesTheCourse() {
-    
-    
+
     var promotion = savePromotion();
     var group = saveGroup(promotion, Track.TN);
     var student = saveStudent(promotion, group);
@@ -370,7 +363,6 @@ class GraduatesIT extends FacadeIT {
     return body;
   }
 
-  
   private List<JExam> createCurriculum(JGroup group) {
     var courses =
         List.of(
@@ -625,7 +617,6 @@ class GraduatesIT extends FacadeIT {
 
     var graduates = getGraduates(token(admin), promotion.getId());
 
-    
     assertEquals(4, graduates.size());
     assertEquals(Track.EL, graduates.get(0).track());
     assertEquals(elTop.getStd(), graduates.get(0).std());
@@ -765,8 +756,6 @@ class GraduatesIT extends FacadeIT {
             .groupFlowType(GroupFlowType.JOIN)
             .build());
 
-    
-    
     var tnExams = createCurriculum(tnGroup);
     var elExams = createCurriculum(elGroup);
     saveGrade(tnExams.get(0), student, new BigDecimal("14"));
@@ -792,7 +781,7 @@ class GraduatesIT extends FacadeIT {
     var assignedL1 = saveCourse(StudentLevel.L1, null);
     var assignedL2 = saveCourse(StudentLevel.L2, Track.TN);
     var assignedL3 = saveCourse(StudentLevel.L3, Track.TN);
-    
+
     saveCourse(StudentLevel.L2, Track.TN);
 
     var exams =
