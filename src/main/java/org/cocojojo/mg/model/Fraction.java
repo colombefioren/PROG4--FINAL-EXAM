@@ -19,16 +19,6 @@ public record Fraction(int numerator, int denominator) {
     }
   }
 
-  public Fraction plus(Fraction other) {
-    return new Fraction(
-        numerator * other.denominator + other.numerator * denominator,
-        denominator * other.denominator);
-  }
-
-  public boolean isGreaterThanOne() {
-    return numerator > denominator;
-  }
-
   private static int gcd(int a, int b) {
     return b == 0 ? a : gcd(b, a % b);
   }
