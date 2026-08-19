@@ -47,6 +47,6 @@ public class AdminService {
     if (request.password() != null && !request.password().isBlank()) {
       entity.setPassword(passwordEncoder.encode(request.password()));
     }
-    return mapper.toResponse(mapper.toModel(entity));
+    return mapper.toResponse(mapper.toModel(adminRepository.save(entity)));
   }
 }

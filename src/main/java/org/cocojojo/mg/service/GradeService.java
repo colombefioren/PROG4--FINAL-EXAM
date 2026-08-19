@@ -82,7 +82,7 @@ public class GradeService {
                         "Grade not found for exam " + examId + " and student " + studentId));
     recordHistory(entity, entity.getValue(), request.value(), request.reason(), currentUser());
     entity.setValue(request.value());
-    return mapper.toResponse(entity);
+    return mapper.toResponse(gradeRepository.save(entity));
   }
 
   public List<GradeResponse> getByStudentId(UUID studentId) {
