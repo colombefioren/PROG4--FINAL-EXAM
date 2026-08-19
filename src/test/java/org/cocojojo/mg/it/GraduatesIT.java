@@ -822,6 +822,34 @@ class GraduatesIT extends FacadeIT {
   }
 
   @Test
+  void staticJsIsServedWithoutAuthentication() {
+    webTestClient
+        .get()
+        .uri("/js/promotions.js")
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectHeader()
+        .contentTypeCompatibleWith(MediaType.valueOf("text/javascript"))
+        .expectBody(String.class)
+        .consumeWith(
+            body ->
+                assertTrue(new String(body.getResponseBody()).contains("downloadGraduateList")));
+
+    webTestClient
+        .get()
+        .uri("/js/login.js")
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectHeader()
+        .contentTypeCompatibleWith(MediaType.valueOf("text/javascript"))
+        .expectBody(String.class)
+        .consumeWith(
+            body -> assertTrue(new String(body.getResponseBody()).contains("toggle-password")));
+  }
+
+  @Test
   void teacherCannotSeePromotionsUiPageWithBasicAuth() {
     var teacher = saveTeacher();
 
