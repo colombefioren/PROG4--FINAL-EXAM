@@ -12,8 +12,9 @@ public class StdRefGenerator {
 
   public String generate(int entryYear) {
     var prefix = "STD" + String.format("%02d", entryYear % 100);
+    studentRepository.lockStdPrefix(prefix);
     return studentRepository
-        .findLastStdStartingWith(prefix)
+        .findLastStdStartingWithForUpdate(prefix)
         .map(last -> prefix + String.format("%03d", nextSequence(last, prefix)))
         .orElse(prefix + "001");
   }

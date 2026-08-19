@@ -6,8 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.AuthResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GroupFlowResponse;
@@ -147,8 +150,6 @@ class StudentIT extends FacadeIT {
   }
 
   private StudentResponse createStudent(UUID groupId, String email, String password) {
-    // std and promotion are generated server-side (std from the entry year, promotion derived from
-    // the selected group); the request deliberately omits them so a client can never supply them.
     return webTestClient
         .put()
         .uri("/students")
@@ -273,6 +274,37 @@ class StudentIT extends FacadeIT {
     int firstSeq = Integer.parseInt(first.std().substring(5));
     int secondSeq = Integer.parseInt(second.std().substring(5));
     assertEquals(firstSeq + 1, secondSeq);
+  }
+
+  @Test
+  void concurrentCreationGeneratesUniqueSequentialStds() {
+    var promotion = createPromotion(2025);
+    var group = createGroup(promotion.id());
+    var seed = createStudent(group.id(), uniqueEmail(), "password123");
+    int seedSeq = Integer.parseInt(seed.std().substring(5));
+
+    int threads = 5;
+    var executor = Executors.newFixedThreadPool(threads);
+    try {
+      var stds =
+          java.util.stream.IntStream.range(0, threads)
+              .mapToObj(
+                  i ->
+                      CompletableFuture.supplyAsync(
+                          () -> createStudent(group.id(), uniqueEmail(), "password123"), executor))
+              .map(f -> f.join().std())
+              .toList();
+
+      assertEquals(threads, stds.stream().distinct().count());
+      assertTrue(stds.stream().allMatch(s -> s.startsWith("STD25")));
+      var expected = new HashSet<String>();
+      for (int i = 1; i <= threads; i++) {
+        expected.add("STD25" + String.format("%03d", seedSeq + i));
+      }
+      assertEquals(expected, new HashSet<>(stds));
+    } finally {
+      executor.shutdownNow();
+    }
   }
 
   @Test
