@@ -142,18 +142,23 @@ class ResultsSummaryBatchIT extends FacadeIT {
             .credits(credits)
             .totalHours(30)
             .studentLevel(level)
-            .track(Track.TN)
+            .track(level == StudentLevel.L1 ? null : Track.TN)
             .build());
   }
 
   private JCourseAssignment saveAssignment(
       JCourse course, JGroup group, int credits, Semester semester) {
+    return saveAssignment(course, group, credits, semester, 2023);
+  }
+
+  private JCourseAssignment saveAssignment(
+      JCourse course, JGroup group, int credits, Semester semester, int academicYear) {
     return courseAssignmentRepository.save(
         JCourseAssignment.builder()
             .course(course)
             .group(group)
             .teachers(List.of(saveTeacher()))
-            .academicYear(2023)
+            .academicYear(academicYear)
             .semester(semester)
             .credits(credits)
             .build());
@@ -288,5 +293,70 @@ class ResultsSummaryBatchIT extends FacadeIT {
     assertEquals(graduate.getStd(), row.std());
     assertEquals(Track.TN, row.track());
     assertEquals(new BigDecimal("13.00"), row.generalAverage());
+  }
+
+  @Test
+  void batchRetakeUsesOnlyLatestAttempt() {
+    var promotion = savePromotion();
+    var group = saveGroup(promotion, Track.TN);
+    var student = saveStudent(promotion, group);
+    var course = saveCourse(4, StudentLevel.L1);
+
+    var first = saveAssignment(course, group, 4, Semester.S1, 2023);
+    var retake = saveAssignment(course, group, 6, Semester.S1, 2024);
+    saveGrade(saveExam(first), student, new BigDecimal("8"));
+    saveGrade(saveExam(retake), student, new BigDecimal("14"));
+
+    var batch = resultService.computeResultsSummaries(List.of(student)).get(student.getId());
+    var perStudent = resultService.computeResultsSummary(student.getId());
+
+    assertEquals(perStudent, batch);
+    var l1 =
+        batch.levels().stream().filter(l -> l.level() == StudentLevel.L1).findFirst().orElseThrow();
+    var courseResult = l1.courses().get(0);
+    assertEquals(new BigDecimal("14.00"), courseResult.average());
+    assertEquals(6, courseResult.credits());
+    assertTrue(courseResult.passed());
+  }
+
+  @Test
+  void batchTrackSwitchDropsCoursesOfTheLeftTrack() {
+    var promotion = savePromotion();
+    var tnGroup = saveGroup(promotion, Track.TN);
+    var elGroup = saveGroup(promotion, Track.EL);
+    var student = saveStudent(promotion, tnGroup);
+
+    var l1Course = saveCourse(4, StudentLevel.L1);
+    var elL2Course =
+        courseRepository.save(
+            JCourse.builder()
+                .code("RB-CODE" + SEQUENCE.incrementAndGet())
+                .name("EL L2 " + SEQUENCE.incrementAndGet())
+                .credits(4)
+                .totalHours(30)
+                .studentLevel(StudentLevel.L2)
+                .track(Track.EL)
+                .build());
+    saveGrade(
+        saveExam(saveAssignment(l1Course, tnGroup, 4, Semester.S1)), student, new BigDecimal("14"));
+    moveToGroup(student, elGroup);
+    saveGrade(
+        saveExam(saveAssignment(elL2Course, elGroup, 4, Semester.S3)),
+        student,
+        new BigDecimal("12"));
+    // A failed TN L2 course must not appear in the EL student's curriculum.
+    saveGrade(
+        saveExam(saveAssignment(saveCourse(4, StudentLevel.L2), tnGroup, 4, Semester.S3)),
+        student,
+        new BigDecimal("8"));
+
+    var batch = resultService.computeResultsSummaries(List.of(student)).get(student.getId());
+    var perStudent = resultService.computeResultsSummary(student.getId());
+
+    assertEquals(perStudent, batch);
+    var l2 =
+        batch.levels().stream().filter(l -> l.level() == StudentLevel.L2).findFirst().orElseThrow();
+    assertEquals(1, l2.courses().size());
+    assertEquals(Track.EL, l2.courses().get(0).track());
   }
 }

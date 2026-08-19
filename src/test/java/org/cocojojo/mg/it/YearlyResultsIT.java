@@ -520,16 +520,16 @@ class YearlyResultsIT extends FacadeIT {
   }
 
   @Test
-  void overlappingAssignmentsWithCoefficientsSummingAboveOneDoNotFail() {
+  void overlappingAssignmentsUseOnlyTheLatestAttempt() {
     var admin = saveAdmin();
     var promotion = savePromotion();
     var oldGroup = saveGroup(promotion);
     var newGroup = saveGroup(promotion);
     var student = saveStudent(promotion, oldGroup);
     var course = saveCourse(4);
-    // Two assignments for the same course in groups the student passed through; grading both
-    // yields coefficients summing to 3/2 > 1. This used to blow up mid-GET (Fraction::plus
-    // throws on sums above 1) instead of returning the results.
+    // Two assignments for the same course in groups the student passed through (a retake).
+    // Only the latest attempt counts: the older 1/2-coefficient grade must not drag the average,
+    // and the coefficients of the two attempts must not be summed together.
     var oldExam = saveExam(saveAssignment(course, oldGroup, 2023, 4), 1, 2);
     saveGrade(oldExam, student, new BigDecimal("10"));
     var newExam = saveExam(saveAssignment(course, newGroup, 2024, 4), 1, 1);
@@ -546,11 +546,10 @@ class YearlyResultsIT extends FacadeIT {
 
     var courseResult = result.courses().get(0);
     assertTrue(courseResult.graded());
-    // (10 * 0.5 + 14 * 1) / 1.5 = 12.67
-    assertEquals(new BigDecimal("12.67"), courseResult.average());
-    // coefficients sum to 3/2, not exactly 1, so the course is not complete
-    assertFalse(courseResult.complete());
-    assertEquals(ResultStatus.PROVISIONAL, result.status());
+    // The 2024 attempt alone sets the average, credits and completeness.
+    assertEquals(new BigDecimal("14.00"), courseResult.average());
+    assertTrue(courseResult.complete());
+    assertEquals(ResultStatus.COMPLETED, result.status());
   }
 
   @Test

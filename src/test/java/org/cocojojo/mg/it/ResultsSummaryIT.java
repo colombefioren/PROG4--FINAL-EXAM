@@ -136,6 +136,15 @@ class ResultsSummaryIT extends FacadeIT {
             .build());
   }
 
+  private JGroup saveGroup(JPromotion promotion, Track track) {
+    return groupRepository.save(
+        JGroup.builder()
+            .promotion(promotion)
+            .ref("RS-GRP" + SEQUENCE.incrementAndGet())
+            .track(track)
+            .build());
+  }
+
   private JStudent saveStudent(JPromotion promotion, JGroup group) {
     var student =
         studentRepository.save(
@@ -157,6 +166,10 @@ class ResultsSummaryIT extends FacadeIT {
   }
 
   private JCourse saveCourse(int credits, StudentLevel level) {
+    return saveCourse(credits, level, level == StudentLevel.L1 ? null : Track.TN);
+  }
+
+  private JCourse saveCourse(int credits, StudentLevel level, Track track) {
     return courseRepository.save(
         JCourse.builder()
             .code("RS-CODE" + SEQUENCE.incrementAndGet())
@@ -164,18 +177,23 @@ class ResultsSummaryIT extends FacadeIT {
             .credits(credits)
             .totalHours(30)
             .studentLevel(level)
-            .track(Track.TN)
+            .track(track)
             .build());
   }
 
   private JCourseAssignment saveAssignment(
       JCourse course, JGroup group, int credits, Semester semester) {
+    return saveAssignment(course, group, credits, semester, 2023);
+  }
+
+  private JCourseAssignment saveAssignment(
+      JCourse course, JGroup group, int credits, Semester semester, int academicYear) {
     return courseAssignmentRepository.save(
         JCourseAssignment.builder()
             .course(course)
             .group(group)
             .teachers(List.of(saveTeacher()))
-            .academicYear(2023)
+            .academicYear(academicYear)
             .semester(semester)
             .credits(credits)
             .build());
@@ -205,6 +223,19 @@ class ResultsSummaryIT extends FacadeIT {
       Semester semester,
       BigDecimal value) {
     var course = saveCourse(credits, level);
+    var exam = saveExam(saveAssignment(course, group, credits, semester));
+    saveGrade(exam, student, value);
+  }
+
+  private void gradeCompleteCourse(
+      JStudent student,
+      JGroup group,
+      int credits,
+      StudentLevel level,
+      Semester semester,
+      BigDecimal value,
+      Track track) {
+    var course = saveCourse(credits, level, track);
     var exam = saveExam(saveAssignment(course, group, credits, semester));
     saveGrade(exam, student, value);
   }
@@ -387,5 +418,77 @@ class ResultsSummaryIT extends FacadeIT {
 
     assertEquals(new BigDecimal("12.67"), summary.overallAverage());
     assertEquals(6, summary.levels().stream().mapToInt(l -> l.totalCredits()).sum());
+  }
+
+  @Test
+  void retakeCountsOnlyTheLatestAttempt() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion);
+    var student = saveStudent(promotion, group);
+    var course = saveCourse(4, StudentLevel.L1);
+
+    var firstAttempt = saveAssignment(course, group, 4, Semester.S1, 2023);
+    var retake = saveAssignment(course, group, 6, Semester.S1, 2024);
+    saveGrade(saveExam(firstAttempt), student, new BigDecimal("8"));
+    saveGrade(saveExam(retake), student, new BigDecimal("14"));
+
+    var summary = getSummary(token(admin), student.getId());
+    var l1 =
+        summary.levels().stream()
+            .filter(l -> l.level() == StudentLevel.L1)
+            .findFirst()
+            .orElseThrow();
+    var courseResult = l1.courses().get(0);
+
+    // The failed 2023 attempt is ignored: only the 2024 retake sets the average, credits and
+    // completeness, otherwise the two attempts' coefficients would sum past 1.0.
+    assertEquals(new BigDecimal("14.00"), courseResult.average());
+    assertEquals(6, courseResult.credits());
+    assertTrue(courseResult.complete());
+    assertTrue(courseResult.passed());
+    assertEquals(ResultStatus.COMPLETED, l1.status());
+  }
+
+  @Test
+  void trackSwitchKeepsOnlyCurrentTrackCoursesRequired() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var tnGroup = saveGroup(promotion, Track.TN);
+    var elGroup = saveGroup(promotion, Track.EL);
+    var student = saveStudent(promotion, tnGroup);
+    groupFlowRepository.save(
+        JGroupFlow.builder()
+            .student(student)
+            .group(elGroup)
+            .groupFlowType(GroupFlowType.JOIN)
+            .build());
+
+    // L1 common core and the EL-specific L2/L3 are completed; the TN-specific L2/L3 are failed
+    // but must not block an EL student.
+    gradeCompleteCourse(
+        student, tnGroup, 4, StudentLevel.L1, Semester.S1, new BigDecimal("14"), null);
+    gradeCompleteCourse(
+        student, elGroup, 4, StudentLevel.L2, Semester.S3, new BigDecimal("12"), Track.EL);
+    gradeCompleteCourse(
+        student, elGroup, 4, StudentLevel.L3, Semester.S5, new BigDecimal("13"), Track.EL);
+    gradeCompleteCourse(
+        student, tnGroup, 4, StudentLevel.L2, Semester.S3, new BigDecimal("8"), Track.TN);
+    gradeCompleteCourse(
+        student, tnGroup, 4, StudentLevel.L3, Semester.S5, new BigDecimal("9"), Track.TN);
+
+    var summary = getSummary(token(admin), student.getId());
+
+    // Only the EL track-specific courses remain in the curriculum; the failed TN ones are gone.
+    var l2 =
+        summary.levels().stream()
+            .filter(l -> l.level() == StudentLevel.L2)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(1, l2.courses().size());
+    assertEquals(Track.EL, l2.courses().get(0).track());
+    assertTrue(summary.levels().stream().allMatch(l -> l.status() == ResultStatus.COMPLETED));
+    assertEquals(new BigDecimal("13.00"), summary.overallAverage());
+    assertTrue(summary.graduate());
   }
 }

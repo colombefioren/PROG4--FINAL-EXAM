@@ -52,16 +52,17 @@ public class ResultService {
 
   public YearlyResultResponse computeYearlyResult(UUID studentId, StudentLevel level) {
     var student = findStudent(studentId);
-    return computeYearlyResult(student, level, studentGroupIds(studentId));
+    return computeYearlyResult(student, level, studentGroupIds(studentId), currentTrack(studentId));
   }
 
   public ResultsSummaryResponse computeResultsSummary(UUID studentId) {
     var student = findStudent(studentId);
     var groupIds = studentGroupIds(studentId);
+    var track = currentTrack(studentId);
 
     var levels =
         List.of(StudentLevel.L1, StudentLevel.L2, StudentLevel.L3).stream()
-            .map(level -> computeYearlyResult(student, level, groupIds))
+            .map(level -> computeYearlyResult(student, level, groupIds, track))
             .toList();
 
     var overallAverage =
@@ -82,12 +83,16 @@ public class ResultService {
   }
 
   private YearlyResultResponse computeYearlyResult(
-      JStudent student, StudentLevel level, List<UUID> groupIds) {
+      JStudent student, StudentLevel level, List<UUID> groupIds, Track currentTrack) {
     // The curriculum is the courses actually assigned to the student's groups, not the whole
     // catalog: a promotion that substitutes one course for another (e.g. SYS3 for PROG4) must
-    // not penalise its students for a catalog course that was never assigned to them.
+    // not penalise its students for a catalog course that was never assigned to them. On top of
+    // that, a student who switched tracks is only held to the courses of their current track: a
+    // leftover TN course must not block a student who moved to EL.
     var requiredCourses =
-        courseAssignmentRepository.findCurriculumCourses(groupIds, level.semesters());
+        courseAssignmentRepository.findCurriculumCourses(groupIds, level.semesters()).stream()
+            .filter(course -> isTrackCompatible(course, currentTrack))
+            .toList();
 
     var courseResults =
         requiredCourses.stream()
@@ -124,20 +129,47 @@ public class ResultService {
   private CourseResultResponse computeCourseResult(
       JStudent student, JCourse course, StudentLevel level, List<UUID> groupIds) {
     var semesters = level.semesters();
+    // A student who retook a course has several assignments for it (one per attempt). Only the
+    // latest attempt counts: its academic year, credits and exams define the course result.
+    var latestAssignment =
+        resolveLatestAssignment(
+            courseAssignmentRepository.findByCourseIdAndSemesterInAndGroupIdIn(
+                course.getId(), semesters, groupIds));
+    if (latestAssignment.isEmpty()) {
+      return buildCourseResult(course, course.getCredits(), List.of(), List.of());
+    }
+    var assignment = latestAssignment.get();
     var grades =
-        gradeRepository.findByStudentAndCourseAndSemesters(
-            student.getId(), course.getId(), semesters);
-    var relevantAssignments =
-        courseAssignmentRepository.findByCourseIdAndSemesterInAndGroupIdIn(
-            course.getId(), semesters, groupIds);
-    int credits =
-        relevantAssignments.stream()
-            .findFirst()
-            .map(a -> a.getCredits())
-            .orElse(course.getCredits());
+        gradeRepository
+            .findByStudentAndCourseAndSemesters(student.getId(), course.getId(), semesters)
+            .stream()
+            .filter(g -> g.getExam().getCourseAssignment().getId().equals(assignment.getId()))
+            .toList();
     var scheduledExams =
-        examRepository.findByCourseAndSemestersAndGroups(course.getId(), semesters, groupIds);
-    return buildCourseResult(course, credits, grades, scheduledExams);
+        examRepository
+            .findByCourseAndSemestersAndGroups(course.getId(), semesters, groupIds)
+            .stream()
+            .filter(e -> e.getCourseAssignment().getId().equals(assignment.getId()))
+            .toList();
+    return buildCourseResult(course, assignment.getCredits(), grades, scheduledExams);
+  }
+
+  /** The single, latest course assignment deterministically (max academic year, then id). */
+  private java.util.Optional<JCourseAssignment> resolveLatestAssignment(
+      List<JCourseAssignment> assignments) {
+    return assignments.stream()
+        .max(
+            Comparator.comparing(JCourseAssignment::getAcademicYear)
+                .thenComparing(JCourseAssignment::getId));
+  }
+
+  /**
+   * A course is part of the student's curriculum when it is track-agnostic (L1 common core) or
+   * belongs to their current track. Courses of a track the student left no longer apply, which
+   * mirrors the write-side rule that a course can only be assigned to a group of its own track.
+   */
+  private boolean isTrackCompatible(JCourse course, Track currentTrack) {
+    return currentTrack == null || course.getTrack() == null || course.getTrack() == currentTrack;
   }
 
   /** Pure computation of one course result, shared by the per-student and the batch paths. */
@@ -176,10 +208,10 @@ public class ResultService {
     // not been scheduled yet.
     boolean allScheduledGraded =
         !scheduledExams.isEmpty() && grades.size() == scheduledExams.size();
-    // gradedCoefficientSum can span several course-assignments for the same course (a student who
-    // changed groups or retook it). Nothing validates that cross-assignment sum stays <= 1, so sum
-    // raw numerators/denominators with BigInteger instead of Fraction::plus, which throws on sums
-    // exceeding 1 (mid-GET of the student's own results). The equality check needs no reduction.
+    // gradedCoefficientSum covers the grades of a single course-assignment (the latest attempt),
+    // so it stays within 1.0. Sum the raw numerators/denominators with BigInteger to avoid
+    // Fraction::plus, which throws if a malformed assignment ever sums to more than 1.
+    // The equality check needs no reduction.
     BigInteger sumNumerator = BigInteger.ZERO;
     BigInteger sumDenominator = BigInteger.ONE;
     for (var grade : grades) {
@@ -217,8 +249,8 @@ public class ResultService {
   }
 
   /**
-   * The track of the group the student most recently joined. Used for reporting only: the
-   * curriculum itself spans every group the student ever joined (see studentGroupIds).
+   * The track of the group the student most recently joined. Track-switched students are only held
+   * to the courses of this track (see {@link #isTrackCompatible}).
    */
   public Track currentTrack(UUID studentId) {
     return groupFlowRepository
@@ -246,6 +278,7 @@ public class ResultService {
     var gradesByStudent =
         gradeRepository.findByStudentIdIn(studentIds).stream()
             .collect(Collectors.groupingBy(grade -> grade.getStudent().getId()));
+    var tracksByStudent = currentTracks(students);
 
     var studentsByGroupSet =
         students.stream()
@@ -284,6 +317,7 @@ public class ResultService {
 
       for (var student : groupStudents) {
         var grades = gradesByStudent.getOrDefault(student.getId(), List.of());
+        var currentTrack = tracksByStudent.getOrDefault(student.getId(), null);
         var levels =
             List.of(StudentLevel.L1, StudentLevel.L2, StudentLevel.L3).stream()
                 .map(
@@ -294,7 +328,8 @@ public class ResultService {
                             coursesByLevel.get(level),
                             grades,
                             assignmentsByCourse,
-                            examsByCourse))
+                            examsByCourse,
+                            currentTrack))
                 .toList();
 
         var overallAverage =
@@ -342,46 +377,41 @@ public class ResultService {
       List<JCourse> requiredCourses,
       List<JGrade> studentGrades,
       Map<UUID, List<JCourseAssignment>> assignmentsByCourse,
-      Map<UUID, List<JExam>> examsByCourse) {
+      Map<UUID, List<JExam>> examsByCourse,
+      Track currentTrack) {
     var courseResults =
         requiredCourses.stream()
             .filter(Objects::nonNull)
+            .filter(course -> isTrackCompatible(course, currentTrack))
             .map(
                 course -> {
+                  var levelAssignments =
+                      assignmentsByCourse.getOrDefault(course.getId(), List.of()).stream()
+                          .filter(
+                              assignment -> level.semesters().contains(assignment.getSemester()))
+                          .toList();
+                  var latestAssignment = resolveLatestAssignment(levelAssignments);
+                  if (latestAssignment.isEmpty()) {
+                    return buildCourseResult(course, course.getCredits(), List.of(), List.of());
+                  }
+                  var assignment = latestAssignment.get();
                   var courseGrades =
                       studentGrades.stream()
                           .filter(
                               grade ->
-                                  grade.getExam().getCourseAssignment().getCourse() != null
-                                      && grade
-                                          .getExam()
-                                          .getCourseAssignment()
-                                          .getCourse()
-                                          .getId()
-                                          .equals(course.getId()))
-                          .filter(
-                              grade ->
-                                  level
-                                      .semesters()
-                                      .contains(
-                                          grade.getExam().getCourseAssignment().getSemester()))
+                                  grade
+                                      .getExam()
+                                      .getCourseAssignment()
+                                      .getId()
+                                      .equals(assignment.getId()))
                           .toList();
                   var scheduledExams =
                       examsByCourse.getOrDefault(course.getId(), List.of()).stream()
                           .filter(
-                              exam ->
-                                  level
-                                      .semesters()
-                                      .contains(exam.getCourseAssignment().getSemester()))
+                              exam -> exam.getCourseAssignment().getId().equals(assignment.getId()))
                           .toList();
-                  var credits =
-                      assignmentsByCourse.getOrDefault(course.getId(), List.of()).stream()
-                          .filter(
-                              assignment -> level.semesters().contains(assignment.getSemester()))
-                          .findFirst()
-                          .map(JCourseAssignment::getCredits)
-                          .orElse(course.getCredits());
-                  return buildCourseResult(course, credits, courseGrades, scheduledExams);
+                  return buildCourseResult(
+                      course, assignment.getCredits(), courseGrades, scheduledExams);
                 })
             .toList();
 
