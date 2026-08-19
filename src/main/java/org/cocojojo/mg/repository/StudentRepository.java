@@ -19,6 +19,16 @@ public interface StudentRepository extends JpaRepository<JStudent, UUID> {
       nativeQuery = true)
   Optional<String> findLastStdStartingWith(@Param("prefix") String prefix);
 
+  @Query(
+      value =
+          "select std from \"student\" where std like concat(:prefix, '%') order by std desc limit"
+              + " 1 for update",
+      nativeQuery = true)
+  Optional<String> findLastStdStartingWithForUpdate(@Param("prefix") String prefix);
+
+  @Query(value = "select pg_advisory_xact_lock(hashtext(:prefix)) is null", nativeQuery = true)
+  boolean lockStdPrefix(@Param("prefix") String prefix);
+
   List<JStudent> findByPromotionIdOrderByLastnameAscFirstnameAsc(UUID promotionId);
 
   @Modifying
