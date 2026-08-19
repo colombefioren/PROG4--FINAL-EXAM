@@ -31,8 +31,6 @@ public class GradeController {
     return gradeService.getByExamId(examId);
   }
 
-  
-  
   @PutMapping("/exams/{examId}/grades")
   public List<GradeResponse> create(
       @PathVariable UUID examId, @Valid @RequestBody List<GradeRequest> requests) {

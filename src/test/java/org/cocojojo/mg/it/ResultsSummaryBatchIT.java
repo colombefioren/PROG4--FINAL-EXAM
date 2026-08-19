@@ -344,7 +344,7 @@ class ResultsSummaryBatchIT extends FacadeIT {
         saveExam(saveAssignment(elL2Course, elGroup, 4, Semester.S3)),
         student,
         new BigDecimal("12"));
-    
+
     saveGrade(
         saveExam(saveAssignment(saveCourse(4, StudentLevel.L2), tnGroup, 4, Semester.S3)),
         student,

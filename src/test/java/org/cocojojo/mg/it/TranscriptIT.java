@@ -353,7 +353,7 @@ class TranscriptIT extends FacadeIT {
     assertTrue(uploadCaptor.getValue().getName().startsWith("transcript-" + student.getStd()));
     assertTrue(keyCaptor.getValue().startsWith("transcripts/" + student.getStd() + "/"));
     assertEquals("transcript-" + student.getStd() + "-L1.pdf", fileNameOf(keyCaptor.getValue()));
-    assertTrue(uploadCaptor.getValue().length() > 100); 
+    assertTrue(uploadCaptor.getValue().length() > 100);
 
     var emailCaptor = ArgumentCaptor.forClass(Email.class);
     verify(mailer).accept(emailCaptor.capture());
@@ -392,7 +392,7 @@ class TranscriptIT extends FacadeIT {
     var group = saveGroup(promotion);
     var student = saveStudent(promotion, group);
     var course = saveCourse();
-    saveAssignment(course, group); 
+    saveAssignment(course, group);
 
     transcriptRequestedService.accept(
         TranscriptRequested.builder().studentId(student.getId().toString()).level("L1").build());

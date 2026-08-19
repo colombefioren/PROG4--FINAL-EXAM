@@ -78,7 +78,6 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
 
   boolean existsByCourseId(UUID courseId);
 
-  
   @Query(
       """
       select distinct a.course from JCourseAssignment a
@@ -90,7 +89,6 @@ public interface CourseAssignmentRepository extends JpaRepository<JCourseAssignm
       @Param("groupIds") Collection<UUID> groupIds,
       @Param("semesters") Collection<Semester> semesters);
 
-  
   @Query(
       """
       select distinct a.course from JCourseAssignment a

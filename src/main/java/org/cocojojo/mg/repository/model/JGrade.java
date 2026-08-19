@@ -22,8 +22,6 @@ import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-
-
 @Table(name = "\"grade\"")
 @AllArgsConstructor
 @NoArgsConstructor

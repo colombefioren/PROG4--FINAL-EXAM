@@ -13,5 +13,4 @@ public record YearlyResultResponse(
     BigDecimal overallAverage,
     int earnedCredits,
     int totalCredits,
-    
     ResultStatus status) {}

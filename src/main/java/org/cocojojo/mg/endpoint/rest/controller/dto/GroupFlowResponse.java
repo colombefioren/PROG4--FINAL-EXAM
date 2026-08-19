@@ -5,9 +5,6 @@ import java.util.UUID;
 import lombok.Builder;
 import org.cocojojo.mg.model.enums.GroupFlowType;
 
-
-
-
 @Builder
 public record GroupFlowResponse(
     UUID id,

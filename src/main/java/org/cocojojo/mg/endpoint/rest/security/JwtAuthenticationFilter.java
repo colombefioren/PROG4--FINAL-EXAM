@@ -19,9 +19,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-  
-
-
   public static final String TOKEN_COOKIE = "hei_token";
 
   private final JwtService jwtService;

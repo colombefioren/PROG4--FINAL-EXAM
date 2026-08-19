@@ -33,10 +33,6 @@ public class PromotionService {
     return repository.findAll(pageable).map(mapper::toModel).map(mapper::toResponse);
   }
 
-  
-
-
-
   public List<CourseResponse> getCourses(UUID promotionId, StudentLevel level, Track track) {
     getEntityOrThrow(promotionId);
     return courseAssignmentRepository.findCurriculumCoursesByPromotion(promotionId).stream()

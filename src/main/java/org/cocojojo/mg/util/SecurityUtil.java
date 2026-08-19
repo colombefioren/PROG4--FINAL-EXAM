@@ -78,7 +78,6 @@ public class SecurityUtil {
     return findCurrentRole().map(role -> role == Role.STUDENT).orElse(false);
   }
 
-  
   public void requireSelf(UUID userId) {
     if (getCurrentUserId().equals(userId)) {
       return;
@@ -86,7 +85,6 @@ public class SecurityUtil {
     throw new ForbiddenAccessException("You may only access your own records");
   }
 
-  
   public void requireSelfOrAdmin(UUID userId) {
     if (isAdmin()) {
       return;
@@ -94,7 +92,6 @@ public class SecurityUtil {
     requireSelf(userId);
   }
 
-  
   public void requireSelfOrStaff(UUID userId) {
     if (isAdmin() || isTeacher()) {
       return;

@@ -441,8 +441,6 @@ class ResultsSummaryIT extends FacadeIT {
             .orElseThrow();
     var courseResult = l1.courses().get(0);
 
-    
-    
     assertEquals(new BigDecimal("14.00"), courseResult.average());
     assertEquals(6, courseResult.credits());
     assertTrue(courseResult.complete());
@@ -464,8 +462,6 @@ class ResultsSummaryIT extends FacadeIT {
             .groupFlowType(GroupFlowType.JOIN)
             .build());
 
-    
-    
     gradeCompleteCourse(
         student, tnGroup, 4, StudentLevel.L1, Semester.S1, new BigDecimal("14"), null);
     gradeCompleteCourse(
@@ -479,7 +475,6 @@ class ResultsSummaryIT extends FacadeIT {
 
     var summary = getSummary(token(admin), student.getId());
 
-    
     var l2 =
         summary.levels().stream()
             .filter(l -> l.level() == StudentLevel.L2)

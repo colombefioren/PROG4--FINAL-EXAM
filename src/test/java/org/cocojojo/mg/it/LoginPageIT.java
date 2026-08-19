@@ -81,7 +81,6 @@ class LoginPageIT extends FacadeIT {
               assertTrue(html.contains("name=\"password\""));
             });
 
-    
     assertNotNull(admin);
   }
 
