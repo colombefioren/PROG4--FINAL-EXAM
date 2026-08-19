@@ -84,14 +84,12 @@ public class CourseAssignmentService {
 
   @Transactional
   public List<CourseAssignmentResponse> upsert(List<CourseAssignmentRequest> requests) {
-    validator.validateCreditCeilings(requests);
+    validator.validateCreditTargets(requests);
     return requests.stream().map(this::upsertOne).toList();
   }
 
   private CourseAssignmentResponse upsertOne(CourseAssignmentRequest request) {
     validator.validateAllAreTeachers(request.teacherIds());
-    // Wire the relations with the entities directly; only build the models where the
-    // curriculum validation actually needs domain fields.
     var course = courseService.getEntityOrThrow(request.courseId());
     var group = groupService.getEntityOrThrow(request.groupId());
     validator.validateCurriculum(
@@ -158,7 +156,7 @@ public class CourseAssignmentService {
     var assignments =
         repository.findByGroupIdAndAcademicYearAndSemester(groupId, academicYear, semester);
     int assignedCredits = assignments.stream().mapToInt(JCourseAssignment::getCredits).sum();
-    var target = validator.creditsPerSemester();
+    var target = validator.targetCreditsPerSemester();
 
     var assignedCourseIds = assignments.stream().map(a -> a.getCourse().getId()).toList();
     var missing =
