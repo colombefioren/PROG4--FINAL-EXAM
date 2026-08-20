@@ -9,9 +9,12 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.cocojojo.mg.conf.FacadeIT;
+import org.cocojojo.mg.endpoint.rest.controller.dto.CourseResultResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.YearlyResultResponse;
 import org.cocojojo.mg.endpoint.rest.security.JwtService;
 import org.cocojojo.mg.model.enums.GroupFlowType;
@@ -157,6 +160,10 @@ class YearlyResultsIT extends FacadeIT {
   }
 
   private JCourse saveCourse(int credits) {
+    return saveCourse(credits, Track.TN);
+  }
+
+  private JCourse saveCourse(int credits, Track track) {
     return courseRepository.save(
         JCourse.builder()
             .code("YR-CODE" + SEQUENCE.incrementAndGet())
@@ -164,7 +171,7 @@ class YearlyResultsIT extends FacadeIT {
             .credits(credits)
             .totalHours(30)
             .studentLevel(StudentLevel.L1)
-            .track(Track.TN)
+            .track(track)
             .build());
   }
 
@@ -573,5 +580,59 @@ class YearlyResultsIT extends FacadeIT {
 
     assertEquals(1, result.courses().size());
     assertEquals(6, result.courses().get(0).credits());
+  }
+
+  @Test
+  void studentWithoutTrackDoesNotSeeTrackSpecificCourses() {
+    var admin = saveAdmin();
+    var promotion =
+        promotionRepository.save(
+            JPromotion.builder()
+                .ref("YR-NT-PROMO" + SEQUENCE.incrementAndGet())
+                .name("YR No Track Promotion " + SEQUENCE.incrementAndGet())
+                .entryYear(2025)
+                .build());
+    var group =
+        groupRepository.save(
+            JGroup.builder()
+                .promotion(promotion)
+                .ref("YR-NT-GRP" + SEQUENCE.incrementAndGet())
+                .track(null)
+                .build());
+    var student = saveStudent(promotion, group);
+
+    var common = saveCourse(2, null);
+    var elCourse = saveCourse(2, Track.EL);
+    var tnCourse = saveCourse(2, Track.TN);
+    saveAssignment(common, group, 2);
+    saveAssignment(elCourse, group, 2);
+    saveAssignment(tnCourse, group, 2);
+
+    var result = getResult(token(admin), student.getId(), "L1");
+
+    var codes =
+        result.courses().stream().map(CourseResultResponse::courseCode).collect(Collectors.toSet());
+    assertEquals(Set.of(common.getCode()), codes);
+  }
+
+  @Test
+  void studentDoesNotSeeCoursesOfAnotherTrack() {
+    var admin = saveAdmin();
+    var promotion = savePromotion();
+    var group = saveGroup(promotion);
+    var student = saveStudent(promotion, group);
+
+    var common = saveCourse(2, null);
+    var elCourse = saveCourse(2, Track.EL);
+    var tnCourse = saveCourse(2, Track.TN);
+    saveAssignment(common, group, 2);
+    saveAssignment(elCourse, group, 2);
+    saveAssignment(tnCourse, group, 2);
+
+    var result = getResult(token(admin), student.getId(), "L1");
+
+    var codes =
+        result.courses().stream().map(CourseResultResponse::courseCode).collect(Collectors.toSet());
+    assertEquals(Set.of(common.getCode(), tnCourse.getCode()), codes);
   }
 }
