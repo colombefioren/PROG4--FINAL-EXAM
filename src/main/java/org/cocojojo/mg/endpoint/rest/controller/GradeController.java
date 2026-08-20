@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeCorrectionRequest;
-import org.cocojojo.mg.endpoint.rest.controller.dto.GradeDeleteRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeHistoryResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeResponse;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -63,8 +63,8 @@ public class GradeController {
 
   @DeleteMapping("/grades/{gradeId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void delete(@PathVariable UUID gradeId, @Valid @RequestBody GradeDeleteRequest request) {
-    gradeService.delete(gradeId, request.reason());
+  public void delete(@PathVariable UUID gradeId, @RequestParam String reason) {
+    gradeService.delete(gradeId, reason);
   }
 
   @GetMapping("/grades/{gradeId}/history")

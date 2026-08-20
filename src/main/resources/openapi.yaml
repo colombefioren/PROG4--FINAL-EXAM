@@ -134,7 +134,7 @@ paths:
     get:
       tags: [Teachers]
       summary: List teachers (paginated)
-      description: Lists teachers. Requires the ADMIN or TEACHER role.
+      description: Lists teachers. Requires authentication.
       operationId: listTeachers
       parameters:
         - $ref: '#/components/parameters/PageParam'
@@ -182,6 +182,7 @@ paths:
     get:
       tags: [Teachers]
       summary: Get a teacher by id
+      description: Requires the ADMIN role.
       operationId: getTeacher
       parameters:
         - $ref: '#/components/parameters/IdPath'
@@ -1239,12 +1240,12 @@ paths:
       operationId: deleteGrade
       parameters:
         - $ref: '#/components/parameters/GradeIdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GradeDeleteRequest'
+        - name: reason
+          in: query
+          required: true
+          description: Reason for deleting the grade, recorded for traceability.
+          schema:
+            type: string
       responses:
         '204':
           description: Grade deleted
@@ -2155,15 +2156,6 @@ components:
           type: string
           minLength: 1
           description: Mandatory justification of the correction
-
-    GradeDeleteRequest:
-      type: object
-      description: Deletion reason mandatory for traceability
-      required: [reason]
-      properties:
-        reason:
-          type: string
-          minLength: 1
 
     GradeHistoryResponse:
       type: object
