@@ -1,5 +1,7 @@
 package org.cocojojo.mg.endpoint.rest.controller;
 
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -19,7 +21,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = PromotionViewController.class)
+@WebMvcTest(PromotionViewController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class PromotionViewControllerTest {
 
@@ -29,23 +31,40 @@ class PromotionViewControllerTest {
   @MockBean private GraduateListService graduateListService;
   @MockBean private JwtService jwtService;
 
+  private final UUID promotionId = UUID.randomUUID();
+
+  private PromotionResponse promotion() {
+    return PromotionResponse.builder()
+        .id(promotionId)
+        .ref("2025")
+        .name("2025")
+        .entryYear(2024)
+        .build();
+  }
+
   @Test
-  void promotions_renders_view_with_eligibility_map() throws Exception {
-    var promotion =
-        PromotionResponse.builder()
-            .id(UUID.randomUUID())
-            .ref("P1")
-            .name("Promotion")
-            .entryYear(2023)
-            .build();
+  void promotions_renders_promotions_view_with_graduate_eligibility() throws Exception {
+    var promotion = promotion();
     given(promotionService.getAllWithoutPagination()).willReturn(List.of(promotion));
-    given(graduateListService.isAcrossThreeYears(promotion.id())).willReturn(true);
+    given(graduateListService.isAcrossThreeYears(promotionId)).willReturn(true);
 
     mockMvc
         .perform(get("/ui/promotions"))
         .andExpect(status().isOk())
         .andExpect(view().name("promotions"))
-        .andExpect(model().attributeExists("promotions"))
+        .andExpect(model().attribute("promotions", hasSize(1)))
+        .andExpect(model().attribute("graduateEligibility", hasEntry(promotionId, true)));
+  }
+
+  @Test
+  void promotions_renders_empty_view_when_no_promotions() throws Exception {
+    given(promotionService.getAllWithoutPagination()).willReturn(List.of());
+
+    mockMvc
+        .perform(get("/ui/promotions"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("promotions"))
+        .andExpect(model().attribute("promotions", hasSize(0)))
         .andExpect(model().attributeExists("graduateEligibility"));
   }
 }

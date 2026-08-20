@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GroupFlowResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.MoveStudentGroupRequest;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.GroupFlowMapper;
 import org.cocojojo.mg.model.Group;
 import org.cocojojo.mg.model.GroupFlow;
@@ -100,18 +101,18 @@ class GroupFlowServiceTest {
   }
 
   @Test
-  void getCurrentGroup_returns_join_group() {
+  void findCurrentGroup_returns_join_group() {
     given(repository.findFirstByStudentIdOrderByCreatedAtDesc(studentId))
         .willReturn(Optional.of(jFlow));
 
-    var group = service.getCurrentGroup(studentId);
+    var group = service.findCurrentGroup(studentId);
 
     assertTrue(group.isPresent());
     assertEquals(groupId, group.get().getId());
   }
 
   @Test
-  void getCurrentGroup_is_empty_when_leave_flow() {
+  void findCurrentGroup_is_empty_when_leave_flow() {
     var leaveFlow =
         JGroupFlow.builder()
             .id(flowId)
@@ -122,9 +123,27 @@ class GroupFlowServiceTest {
     given(repository.findFirstByStudentIdOrderByCreatedAtDesc(studentId))
         .willReturn(Optional.of(leaveFlow));
 
-    var group = service.getCurrentGroup(studentId);
+    var group = service.findCurrentGroup(studentId);
 
     assertTrue(group.isEmpty());
+  }
+
+  @Test
+  void getCurrentGroup_returns_join_group() {
+    given(repository.findFirstByStudentIdOrderByCreatedAtDesc(studentId))
+        .willReturn(Optional.of(jFlow));
+
+    var group = service.getCurrentGroup(studentId);
+
+    assertEquals(groupId, group.getId());
+  }
+
+  @Test
+  void getCurrentGroup_throws_when_no_group() {
+    given(repository.findFirstByStudentIdOrderByCreatedAtDesc(studentId))
+        .willReturn(Optional.empty());
+
+    assertThrows(ResourceNotFoundException.class, () -> service.getCurrentGroup(studentId));
   }
 
   @Test

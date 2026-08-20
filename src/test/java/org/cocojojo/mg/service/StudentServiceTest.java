@@ -128,7 +128,7 @@ class StudentServiceTest {
   @Test
   void getAll_maps_paged_students() {
     given(repository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(entity)));
-    given(groupFlowService.getCurrentGroup(id)).willReturn(Optional.of(jGroup));
+    given(groupFlowService.findCurrentGroup(id)).willReturn(Optional.of(jGroup));
     given(mapper.toModel(any(), any())).willReturn(model);
     given(mapper.toResponse(model)).willReturn(response);
 
@@ -141,7 +141,7 @@ class StudentServiceTest {
   @Test
   void getById_requires_self_or_staff() {
     given(repository.findById(id)).willReturn(Optional.of(entity));
-    given(groupFlowService.getCurrentGroup(id)).willReturn(Optional.of(jGroup));
+    given(groupFlowService.findCurrentGroup(id)).willReturn(Optional.of(jGroup));
     given(mapper.toModel(any(), any())).willReturn(model);
     given(mapper.toResponse(model)).willReturn(response);
 
@@ -174,7 +174,7 @@ class StudentServiceTest {
     given(groupService.getEntityOrThrow(groupId)).willReturn(jGroup);
     given(groupFlowService.getCurrentStudentIdsInGroup(groupId)).willReturn(List.of(id));
     given(repository.findAllById(List.of(id))).willReturn(List.of(entity));
-    given(groupFlowService.getCurrentGroup(id)).willReturn(Optional.of(jGroup));
+    given(groupFlowService.findCurrentGroup(id)).willReturn(Optional.of(jGroup));
     given(mapper.toModel(any(), any())).willReturn(model);
     given(mapper.toResponse(model)).willReturn(response);
 
@@ -186,7 +186,8 @@ class StudentServiceTest {
 
   @Test
   void getCurrentGroup_throws_when_no_group() {
-    given(groupFlowService.getCurrentGroup(id)).willReturn(Optional.empty());
+    given(groupFlowService.getCurrentGroup(id))
+        .willThrow(new ResourceNotFoundException("Student with id:" + id + " has no group"));
 
     assertThrows(ResourceNotFoundException.class, () -> service.getCurrentGroup(id));
   }
@@ -230,7 +231,7 @@ class StudentServiceTest {
     given(stdRefGenerator.generate(2023)).willReturn("STD-01");
     given(passwordEncoder.encode("secret")).willReturn("encoded");
     given(repository.save(any(JStudent.class))).willReturn(entity);
-    given(groupFlowService.getCurrentGroup(id)).willReturn(Optional.of(jGroup));
+    given(groupFlowService.findCurrentGroup(id)).willReturn(Optional.of(jGroup));
     given(mapper.toModel(any(), any())).willReturn(model);
     given(mapper.toResponse(model)).willReturn(response);
 
@@ -266,7 +267,7 @@ class StudentServiceTest {
             .build();
     given(repository.findById(id)).willReturn(Optional.of(entity));
     given(repository.save(entity)).willReturn(entity);
-    given(groupFlowService.getCurrentGroup(id)).willReturn(Optional.of(jGroup));
+    given(groupFlowService.findCurrentGroup(id)).willReturn(Optional.of(jGroup));
     given(mapper.toModel(any(), any())).willReturn(model);
     given(mapper.toResponse(model)).willReturn(response);
 
@@ -288,7 +289,7 @@ class StudentServiceTest {
     given(repository.findById(id)).willReturn(Optional.of(entity));
     given(passwordEncoder.encode("newSecret")).willReturn("newEncoded");
     given(repository.save(entity)).willReturn(entity);
-    given(groupFlowService.getCurrentGroup(id)).willReturn(Optional.of(jGroup));
+    given(groupFlowService.findCurrentGroup(id)).willReturn(Optional.of(jGroup));
     given(mapper.toModel(any(), any())).willReturn(model);
     given(mapper.toResponse(model)).willReturn(response);
 
