@@ -1221,20 +1221,27 @@ paths:
       tags: [Grades]
       summary: Delete a grade
       description: |
-        Deletes a grade; the deletion reason is required and recorded for traceability. Requires the
-        ADMIN or TEACHER role.
+        Deletes a grade; the deletion reason is required and recorded for traceability. Returns the
+        full history including the deletion record (most recent first). Requires the ADMIN or TEACHER
+        role.
       operationId: deleteGrade
       parameters:
         - $ref: '#/components/parameters/GradeIdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GradeDeleteRequest'
+        - name: reason
+          in: query
+          required: true
+          description: Reason for deleting the grade, recorded for traceability.
+          schema:
+            type: string
       responses:
-        '204':
-          description: Grade deleted
+        '200':
+          description: Grade deleted, full history returned (including the deletion record, most recent first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GradeHistoryResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':

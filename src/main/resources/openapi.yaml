@@ -1249,8 +1249,14 @@ paths:
           schema:
             type: string
       responses:
-        '204':
-          description: Grade deleted
+        '200':
+          description: Grade deleted, full history returned (including the deletion record, most recent first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GradeHistoryResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':

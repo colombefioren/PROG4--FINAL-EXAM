@@ -122,11 +122,13 @@ public class GradeService {
   }
 
   @Transactional
-  public void delete(UUID gradeId, String reason) {
+  public List<GradeHistoryResponse> delete(UUID gradeId, String reason) {
     var entity = getGradeOrThrow(gradeId);
     requireCanManageExam(courseAssignmentMapper.toModel(entity.getExam().getCourseAssignment()));
     recordHistory(entity, entity.getValue(), null, reason, currentUser());
+    var result = history(entity);
     gradeRepository.delete(entity);
+    return result;
   }
 
   public List<GradeHistoryResponse> getHistory(UUID gradeId) {

@@ -178,10 +178,26 @@ class GradeControllerTest {
   }
 
   @Test
-  void delete_returns_no_content_and_passes_reason() throws Exception {
+  void delete_returns_grade_history_and_passes_reason() throws Exception {
+    var history =
+        GradeHistoryResponse.builder()
+            .id(UUID.randomUUID())
+            .gradeId(gradeId)
+            .previousValue(new BigDecimal("14.50"))
+            .newValue(null)
+            .reason("removed")
+            .changedById(studentId)
+            .changedByName("Grace Hopper")
+            .changedAt(Instant.parse("2024-10-05T08:00:00Z"))
+            .build();
+    given(service.delete(gradeId, "removed")).willReturn(List.of(history));
+
     mockMvc
         .perform(delete("/grades/{gradeId}", gradeId).param("reason", "removed"))
-        .andExpect(status().isNoContent());
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].previousValue").value(14.5))
+        .andExpect(jsonPath("$[0].newValue").doesNotExist())
+        .andExpect(jsonPath("$[0].reason").value("removed"));
 
     then(service).should().delete(gradeId, "removed");
   }

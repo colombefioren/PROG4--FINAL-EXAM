@@ -488,10 +488,14 @@ class GradeServiceTest {
                 null, grade, new BigDecimal("15.50"), null, "grade error", changedBy))
         .willReturn(history);
     given(gradeHistoryRepository.save(history)).willReturn(history);
+    given(gradeHistoryRepository.findByGradeIdOrderByChangedAtDesc(gradeId))
+        .willReturn(List.of(history));
+    given(historyMapper.toResponse(history)).willReturn(historyResponse);
 
-    service.delete(gradeId, "grade error");
+    var result = service.delete(gradeId, "grade error");
 
     then(gradeRepository).should().delete(grade);
+    assertEquals(List.of(historyResponse), result);
   }
 
   @Test
