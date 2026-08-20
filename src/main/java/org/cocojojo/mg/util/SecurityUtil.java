@@ -26,11 +26,6 @@ public class SecurityUtil {
     return SecurityContextHolder.getContext().getAuthentication();
   }
 
-  public boolean isAuthenticated() {
-    var auth = getAuthentication();
-    return auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal());
-  }
-
   public Optional<UUID> getCurrentUserId() {
     return Optional.ofNullable(getAuthentication())
         .filter(Authentication::isAuthenticated)
@@ -62,10 +57,6 @@ public class SecurityUtil {
     }
   }
 
-  public Role getCurrentRoleOrThrow() {
-    return getCurrentRole().orElseThrow(() -> new IllegalStateException("Role not found"));
-  }
-
   public boolean isAdmin() {
     return getCurrentRole().map(role -> role == Role.ADMIN).orElse(false);
   }
@@ -78,7 +69,6 @@ public class SecurityUtil {
     return getCurrentRole().map(role -> role == Role.STUDENT).orElse(false);
   }
 
-  /** The current user may only act on their own record. */
   public void requireSelf(UUID userId) {
     if (getCurrentUserIdOrThrow().equals(userId)) {
       return;
@@ -86,7 +76,6 @@ public class SecurityUtil {
     throw new ForbiddenAccessException("You may only access your own records");
   }
 
-  /** A student may only act on their own record; admins may act on anyone's. */
   public void requireSelfOrAdmin(UUID userId) {
     if (isAdmin()) {
       return;
@@ -94,7 +83,6 @@ public class SecurityUtil {
     requireSelf(userId);
   }
 
-  /** Staff (admin/teacher) can look up any student; a student can only look up themself. */
   public void requireSelfOrStaff(UUID userId) {
     if (isAdmin() || isTeacher()) {
       return;

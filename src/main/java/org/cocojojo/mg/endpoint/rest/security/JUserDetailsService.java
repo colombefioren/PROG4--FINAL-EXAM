@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-/** Loads accounts from the same user table the JWT flow uses, so HTTP Basic shares them. */
 @Service
 @RequiredArgsConstructor
 public class JUserDetailsService implements UserDetailsService {

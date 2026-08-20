@@ -48,7 +48,6 @@ public class GlobalExceptionHandler {
     return error(HttpStatus.UNAUTHORIZED, ex.getMessage());
   }
 
-  // Kept: SecurityUtil and GradeService still throw IllegalStateException for auth failures.
   @ExceptionHandler(IllegalStateException.class)
   public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
     return error(HttpStatus.UNAUTHORIZED, ex.getMessage());

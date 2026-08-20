@@ -527,9 +527,7 @@ class YearlyResultsIT extends FacadeIT {
     var newGroup = saveGroup(promotion);
     var student = saveStudent(promotion, oldGroup);
     var course = saveCourse(4);
-    // Two assignments for the same course in groups the student passed through (a retake).
-    // Only the latest attempt counts: the older 1/2-coefficient grade must not drag the average,
-    // and the coefficients of the two attempts must not be summed together.
+
     var oldExam = saveExam(saveAssignment(course, oldGroup, 2023, 4), 1, 2);
     saveGrade(oldExam, student, new BigDecimal("10"));
     var newExam = saveExam(saveAssignment(course, newGroup, 2024, 4), 1, 1);
@@ -546,7 +544,7 @@ class YearlyResultsIT extends FacadeIT {
 
     var courseResult = result.courses().get(0);
     assertTrue(courseResult.graded());
-    // The 2024 attempt alone sets the average, credits and completeness.
+
     assertEquals(new BigDecimal("14.00"), courseResult.average());
     assertTrue(courseResult.complete());
     assertEquals(ResultStatus.COMPLETED, result.status());
@@ -560,8 +558,7 @@ class YearlyResultsIT extends FacadeIT {
     var newGroup = saveGroup(promotion);
     var student = saveStudent(promotion, oldGroup);
     var course = saveCourse(4);
-    // The same course was assigned in two groups the student passed through, with different
-    // credit values: the most recent assignment (highest academic year) must win.
+
     saveAssignment(course, oldGroup, 2023, 4);
     saveAssignment(course, newGroup, 2024, 6);
 

@@ -19,9 +19,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-  /**
-   * Cookie set by the /ui/login form so browsers can authenticate UI pages without a bearer header.
-   */
   public static final String TOKEN_COOKIE = "hei_token";
 
   private final JwtService jwtService;

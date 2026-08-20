@@ -344,7 +344,7 @@ class ResultsSummaryBatchIT extends FacadeIT {
         saveExam(saveAssignment(elL2Course, elGroup, 4, Semester.S3)),
         student,
         new BigDecimal("12"));
-    // A failed TN L2 course must not appear in the EL student's curriculum.
+
     saveGrade(
         saveExam(saveAssignment(saveCourse(4, StudentLevel.L2), tnGroup, 4, Semester.S3)),
         student,

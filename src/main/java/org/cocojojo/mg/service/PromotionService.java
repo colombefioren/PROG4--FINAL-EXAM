@@ -33,10 +33,6 @@ public class PromotionService {
     return repository.findAll(pageable).map(mapper::toModel).map(mapper::toResponse);
   }
 
-  /**
-   * The curriculum of a promotion: the distinct courses assigned to any of its groups, optionally
-   * filtered by level and track. A course without a track (common) applies to every track.
-   */
   public List<CourseResponse> getCourses(UUID promotionId, StudentLevel level, Track track) {
     getEntityOrThrow(promotionId);
     return courseAssignmentRepository.findCurriculumCoursesByPromotion(promotionId).stream()

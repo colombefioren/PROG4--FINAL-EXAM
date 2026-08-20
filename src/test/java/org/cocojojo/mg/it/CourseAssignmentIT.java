@@ -980,8 +980,7 @@ class CourseAssignmentIT extends FacadeIT {
 
   @Test
   void trackSpecificCourseOnNullTrackGroupIsRejected() {
-    // A track-specific course must not be assignable to an L1-shaped group whose track is null;
-    // the old check silently no-oped because of a group.track() != null guard.
+
     var promotion = createPromotion();
     var teacher = createTeacher();
     var group =
@@ -1013,7 +1012,7 @@ class CourseAssignmentIT extends FacadeIT {
 
   @Test
   void commonCourseOnTrackGroupIsStillAllowed() {
-    // Regression: courses without a track remain assignable to any group, including track ones.
+
     var promotion = createPromotion();
     var teacher = createTeacher();
     var group =

@@ -13,5 +13,4 @@ public record YearlyResultResponse(
     BigDecimal overallAverage,
     int earnedCredits,
     int totalCredits,
-    /** COMPLETED when every course of this level has been passed, PROVISIONAL otherwise. */
     ResultStatus status) {}

@@ -81,7 +81,6 @@ class LoginPageIT extends FacadeIT {
               assertTrue(html.contains("name=\"password\""));
             });
 
-    // The page is reachable without any credential, even with an account present.
     assertNotNull(admin);
   }
 

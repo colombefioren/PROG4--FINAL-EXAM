@@ -22,8 +22,6 @@ import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-// (student_id, exam_id) uniqueness is enforced by a partial unique index that only
-// covers live rows (see V63), so re-grading a student+exam after a soft delete works.
 @Table(name = "\"grade\"")
 @AllArgsConstructor
 @NoArgsConstructor

@@ -12,9 +12,6 @@ import org.springframework.stereotype.Repository;
 public interface UserRepository extends JpaRepository<JUser, UUID> {
   Optional<JUser> findByEmailIgnoreCase(String email);
 
-  /**
-   * Native query on purpose: @SQLRestriction hides soft-deleted users from derived/JPQL queries.
-   */
   @Query(
       value = "select is_deleted from \"user\" where lower(email) = lower(:email)",
       nativeQuery = true)

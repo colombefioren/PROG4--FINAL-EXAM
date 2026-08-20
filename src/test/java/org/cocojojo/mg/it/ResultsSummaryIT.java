@@ -441,8 +441,6 @@ class ResultsSummaryIT extends FacadeIT {
             .orElseThrow();
     var courseResult = l1.courses().get(0);
 
-    // The failed 2023 attempt is ignored: only the 2024 retake sets the average, credits and
-    // completeness, otherwise the two attempts' coefficients would sum past 1.0.
     assertEquals(new BigDecimal("14.00"), courseResult.average());
     assertEquals(6, courseResult.credits());
     assertTrue(courseResult.complete());
@@ -464,8 +462,6 @@ class ResultsSummaryIT extends FacadeIT {
             .groupFlowType(GroupFlowType.JOIN)
             .build());
 
-    // L1 common core and the EL-specific L2/L3 are completed; the TN-specific L2/L3 are failed
-    // but must not block an EL student.
     gradeCompleteCourse(
         student, tnGroup, 4, StudentLevel.L1, Semester.S1, new BigDecimal("14"), null);
     gradeCompleteCourse(
@@ -479,7 +475,6 @@ class ResultsSummaryIT extends FacadeIT {
 
     var summary = getSummary(token(admin), student.getId());
 
-    // Only the EL track-specific courses remain in the curriculum; the failed TN ones are gone.
     var l2 =
         summary.levels().stream()
             .filter(l -> l.level() == StudentLevel.L2)
