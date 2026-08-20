@@ -64,8 +64,8 @@ class CourseAssignmentIT extends FacadeIT {
   @BeforeEach
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
-    courseAssignmentRepository.deleteAll();
     examRepository.deleteAll();
+    courseAssignmentRepository.deleteAll();
     groupFlowRepository.deleteAll();
     teacherRepository.deleteAll();
     studentRepository.deleteAll();

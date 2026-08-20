@@ -65,6 +65,7 @@ class ExamIT extends FacadeIT {
   @BeforeEach
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    gradeRepository.deleteAll();
     examRepository.deleteAll();
     courseAssignmentRepository.deleteAll();
     groupFlowRepository.deleteAll();
