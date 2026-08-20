@@ -17,12 +17,10 @@ import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(
-    name = "\"course_assignment\"",
-    uniqueConstraints =
-        @UniqueConstraint(
-            name = "course_assignment_uk",
-            columnNames = {"\"course_id\"", "\"group_id\"", "\"academic_year\"", "\"semester\""}))
+// (course_id, group_id, academic_year, semester) uniqueness is enforced by a
+// partial unique index that only covers live rows (see V64), so re-assigning
+// the same course to the same group after a soft delete works.
+@Table(name = "\"course_assignment\"")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder

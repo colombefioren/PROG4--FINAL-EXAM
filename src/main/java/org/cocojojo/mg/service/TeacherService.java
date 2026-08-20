@@ -4,9 +4,11 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.TeacherRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.TeacherResponse;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ConflictException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.TeacherMapper;
+import org.cocojojo.mg.repository.GradeHistoryRepository;
 import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JTeacher;
 import org.cocojojo.mg.util.SecurityUtil;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TeacherService {
   private final TeacherRepository repository;
+  private final GradeHistoryRepository gradeHistoryRepository;
   private final TeacherMapper mapper;
   private final PasswordEncoder passwordEncoder;
   private final SecurityUtil securityUtil;
@@ -82,6 +85,10 @@ public class TeacherService {
       throw new ForbiddenAccessException("Only an admin can delete a teacher");
     }
     getEntityOrThrow(id);
+    if (gradeHistoryRepository.existsByChangedById(id)) {
+      throw new ConflictException(
+          "Teacher with id: " + id + " has recorded grade changes and cannot be deleted.");
+    }
     repository.softDeleteById(id);
   }
 }

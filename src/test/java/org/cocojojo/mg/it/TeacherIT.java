@@ -3,6 +3,8 @@ package org.cocojojo.mg.it;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.cocojojo.mg.conf.FacadeIT;
@@ -18,6 +20,9 @@ import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.AdminRepository;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.CourseRepository;
+import org.cocojojo.mg.repository.ExamRepository;
+import org.cocojojo.mg.repository.GradeHistoryRepository;
+import org.cocojojo.mg.repository.GradeRepository;
 import org.cocojojo.mg.repository.GroupRepository;
 import org.cocojojo.mg.repository.PromotionRepository;
 import org.cocojojo.mg.repository.StudentRepository;
@@ -25,6 +30,9 @@ import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JAdmin;
 import org.cocojojo.mg.repository.model.JCourse;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
+import org.cocojojo.mg.repository.model.JExam;
+import org.cocojojo.mg.repository.model.JGrade;
+import org.cocojojo.mg.repository.model.JGradeHistory;
 import org.cocojojo.mg.repository.model.JGroup;
 import org.cocojojo.mg.repository.model.JPromotion;
 import org.cocojojo.mg.repository.model.JStudent;
@@ -34,6 +42,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -46,6 +56,10 @@ class TeacherIT extends FacadeIT {
   @Autowired private CourseRepository courseRepository;
   @Autowired private GroupRepository groupRepository;
   @Autowired private CourseAssignmentRepository courseAssignmentRepository;
+  @Autowired private ExamRepository examRepository;
+  @Autowired private GradeRepository gradeRepository;
+  @Autowired private GradeHistoryRepository gradeHistoryRepository;
+  @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private JwtService jwtService;
   @Autowired private PasswordEncoder passwordEncoder;
 
@@ -57,6 +71,10 @@ class TeacherIT extends FacadeIT {
   @BeforeEach
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    // Grades are soft-deleted (is_deleted), so a physical purge is needed to free the
+    // grade.student_id and grade.exam_id FKs before those rows are removed elsewhere.
+    jdbcTemplate.execute("delete from \"grade_history\"");
+    jdbcTemplate.execute("delete from \"grade\"");
     adminEmail = "teacher-admin-" + UUID.randomUUID().toString().substring(0, 8) + "@hei.school";
     saveAdmin(adminEmail, "secret123", false);
   }
@@ -383,6 +401,24 @@ class TeacherIT extends FacadeIT {
   }
 
   @Test
+  void deletedTeacherCanBeRecreatedWithSameEmail() {
+    var email = uniqueEmail();
+    var teacher = createTeacher(email);
+
+    webTestClient
+        .delete()
+        .uri("/teachers/" + teacher.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    var recreated = createTeacher(email);
+    assertNotNull(recreated);
+    assertEquals(email, recreated.email());
+  }
+
+  @Test
   void teacherCannotDeleteATeacher() {
     var teacher = createTeacher(uniqueEmail());
 
@@ -415,6 +451,66 @@ class TeacherIT extends FacadeIT {
         .exchange()
         .expectStatus()
         .isNotFound();
+  }
+
+  @Test
+  void deletingATeacherWithRecordedGradeChangesIsRejected() {
+    var teacher = createTeacher(uniqueEmail());
+    var assignment = saveAssignment(teacherRepository.getReferenceById(teacher.id()));
+    var student =
+        studentRepository.save(
+            JStudent.builder()
+                .firstname("Alan")
+                .lastname("Turing")
+                .email(
+                    "teacher-grade-history-"
+                        + UUID.randomUUID().toString().substring(0, 8)
+                        + "@hei.school")
+                .password(passwordEncoder.encode("secret123"))
+                .std("TI-STD-" + UUID.randomUUID().toString().substring(0, 8))
+                .promotion(saveAssignmentPromotion())
+                .build());
+    var exam =
+        examRepository.save(
+            JExam.builder()
+                .courseAssignment(assignment)
+                .title("TI Exam")
+                .examDatetime(Instant.parse("2025-06-01T00:00:00Z"))
+                .coefficientNumerator(1)
+                .coefficientDenominator(2)
+                .build());
+    var grade =
+        gradeRepository.save(
+            JGrade.builder()
+                .exam(exam)
+                .student(student)
+                .value(new BigDecimal("15.5"))
+                .comment("ok")
+                .build());
+    gradeHistoryRepository.save(
+        JGradeHistory.builder()
+            .grade(grade)
+            .previousValue(new BigDecimal("14.0"))
+            .newValue(new BigDecimal("15.5"))
+            .reason("correction")
+            .changedBy(teacherRepository.getReferenceById(teacher.id()))
+            .build());
+
+    webTestClient
+        .delete()
+        .uri("/teachers/" + teacher.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isEqualTo(HttpStatus.CONFLICT);
+
+    webTestClient
+        .get()
+        .uri("/teachers/" + teacher.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isOk();
   }
 
   private JCourse saveCourse() {
