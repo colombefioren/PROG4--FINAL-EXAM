@@ -3,6 +3,7 @@ package org.cocojojo.mg.util;
 import java.util.Optional;
 import java.util.UUID;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
+import org.cocojojo.mg.endpoint.rest.controller.exception.UnauthorizedException;
 import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.repository.model.JAdmin;
 import org.cocojojo.mg.repository.model.JStudent;
@@ -36,7 +37,7 @@ public class SecurityUtil {
 
   public UUID getCurrentUserIdOrThrow() {
     return getCurrentUserId()
-        .orElseThrow(() -> new IllegalStateException("User not authenticated"));
+        .orElseThrow(() -> new UnauthorizedException("User not authenticated"));
   }
 
   public Optional<Role> getCurrentRole() {

@@ -31,7 +31,10 @@ public class JCourse {
   @Column(name = "\"id\"")
   private UUID id;
 
-  @Column(name = "\"code\"", nullable = false, unique = true)
+  // (code) uniqueness is enforced by a partial unique index that only covers
+  // live rows (see V66), so re-creating a course with the same code after a soft
+  // delete works.
+  @Column(name = "\"code\"", nullable = false)
   private String code;
 
   @Column(name = "\"name\"", nullable = false)

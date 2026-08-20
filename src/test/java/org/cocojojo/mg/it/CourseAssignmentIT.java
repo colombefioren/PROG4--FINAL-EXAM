@@ -1204,4 +1204,142 @@ class CourseAssignmentIT extends FacadeIT {
 
     assertNotNull(recreated);
   }
+
+  @Test
+  void updatingAssignmentWithExamsChangingCourseIsRejected() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var otherCourse = createCourse();
+    var teacher = createTeacher();
+    var token = adminToken();
+
+    var assignment =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        group.getId(),
+                        List.of(teacher.getId()),
+                        course.getCredits())))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    webTestClient
+        .put()
+        .uri("/course-assignments/" + assignment.id() + "/exams")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(examRequest(new Fraction(1, 2)))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            List.of(
+                CourseAssignmentRequest.builder()
+                    .id(assignment.id())
+                    .courseId(otherCourse.getId())
+                    .groupId(group.getId())
+                    .teacherIds(List.of(teacher.getId()))
+                    .academicYear(2024)
+                    .semester(Semester.S1)
+                    .credits(course.getCredits())
+                    .build()))
+        .exchange()
+        .expectStatus()
+        .isEqualTo(HttpStatus.CONFLICT);
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignment.id())
+        .header("Authorization", "Bearer " + token)
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(CourseAssignmentResponse.class)
+        .value(ca -> assertEquals(course.getId(), ca.courseId()));
+  }
+
+  @Test
+  void updatingAssignmentWithExamsChangingCreditsSucceeds() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var token = adminToken();
+
+    var assignment =
+        webTestClient
+            .put()
+            .uri("/course-assignments")
+            .header("Authorization", "Bearer " + token)
+            .bodyValue(
+                List.of(
+                    assignmentRequest(
+                        course.getId(),
+                        group.getId(),
+                        List.of(teacher.getId()),
+                        course.getCredits())))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(CourseAssignmentResponse.class)
+            .returnResult()
+            .getResponseBody()
+            .get(0);
+
+    webTestClient
+        .put()
+        .uri("/course-assignments/" + assignment.id() + "/exams")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(examRequest(new Fraction(1, 2)))
+        .exchange()
+        .expectStatus()
+        .isOk();
+
+    webTestClient
+        .put()
+        .uri("/course-assignments")
+        .header("Authorization", "Bearer " + token)
+        .bodyValue(
+            List.of(
+                CourseAssignmentRequest.builder()
+                    .id(assignment.id())
+                    .courseId(course.getId())
+                    .groupId(group.getId())
+                    .teacherIds(List.of(teacher.getId()))
+                    .academicYear(2024)
+                    .semester(Semester.S1)
+                    .credits(7)
+                    .build()))
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBodyList(CourseAssignmentResponse.class)
+        .returnResult()
+        .getResponseBody();
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignment.id())
+        .header("Authorization", "Bearer " + token)
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(CourseAssignmentResponse.class)
+        .value(ca -> assertEquals(7, ca.credits()));
+  }
 }

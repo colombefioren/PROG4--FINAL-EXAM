@@ -2,6 +2,7 @@ package org.cocojojo.mg.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
@@ -129,6 +130,18 @@ public class CourseAssignmentService {
                 () ->
                     new ResourceNotFoundException(
                         "CourseAssignment with id:" + request.id() + " not found."));
+    boolean structuralChange =
+        !course.getId().equals(entity.getCourse().getId())
+            || !group.getId().equals(entity.getGroup().getId())
+            || !Objects.equals(request.semester(), entity.getSemester())
+            || !Objects.equals(request.academicYear(), entity.getAcademicYear());
+    if (structuralChange && !examRepository.findByCourseAssignmentId(request.id()).isEmpty()) {
+      throw new ConflictException(
+          "Course assignment with id: "
+              + request.id()
+              + " has exams; changing its course, group, semester or academic year is not"
+              + " allowed.");
+    }
     entity.setCourse(course);
     entity.setGroup(group);
     entity.setTeachers(new ArrayList<>(teachers));
