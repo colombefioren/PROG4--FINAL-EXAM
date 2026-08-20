@@ -47,6 +47,14 @@ public class GroupFlowService {
             () -> new ResourceNotFoundException("Student with id:" + studentId + " has no group"));
   }
 
+  public List<UUID> historicJoinGroupIds(UUID studentId) {
+    return repository.findByStudentIdOrderByCreatedAtDesc(studentId).stream()
+        .filter(gf -> gf.getGroupFlowType() == GroupFlowType.JOIN)
+        .map(gf -> gf.getGroup().getId())
+        .distinct()
+        .toList();
+  }
+
   public List<UUID> getCurrentStudentIdsInGroup(UUID groupId) {
     return repository.findByGroupId(groupId).stream()
         .map(flow -> flow.getStudent().getId())

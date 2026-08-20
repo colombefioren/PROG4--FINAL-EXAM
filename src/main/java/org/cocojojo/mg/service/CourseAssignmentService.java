@@ -37,7 +37,6 @@ public class CourseAssignmentService {
   private final ExamRepository examRepository;
   private final CourseService courseService;
   private final TeacherService teacherService;
-  private final StudentService studentService;
   private final GroupService groupService;
   private final GroupFlowService groupFlowService;
   private final CourseAssignmentMapper mapper;
@@ -78,8 +77,10 @@ public class CourseAssignmentService {
       }
     }
     if (securityUtil.isStudent()) {
-      var currentGroup = studentService.getCurrentGroup(securityUtil.getCurrentUserId());
-      if (!entity.getGroup().getId().equals(currentGroup.id())) {
+      var currentUserId = securityUtil.getCurrentUserId();
+      boolean belongsToCurrentOrPastGroup =
+          groupFlowService.historicJoinGroupIds(currentUserId).contains(entity.getGroup().getId());
+      if (!belongsToCurrentOrPastGroup) {
         throw new ForbiddenAccessException("This course assignment is not part of your curriculum");
       }
     }
