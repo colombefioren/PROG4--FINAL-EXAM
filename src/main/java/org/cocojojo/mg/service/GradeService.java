@@ -124,8 +124,9 @@ public class GradeService {
     var entity = getGradeOrThrow(gradeId);
     requireCanManageExam(courseAssignmentMapper.toModel(entity.getExam().getCourseAssignment()));
     recordHistory(entity, entity.getValue(), null, reason, currentUser());
+    var result = history(entity);
     gradeRepository.delete(entity);
-    return history(entity);
+    return result;
   }
 
   public List<GradeHistoryResponse> getHistory(UUID gradeId) {
