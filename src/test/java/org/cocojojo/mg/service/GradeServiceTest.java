@@ -343,11 +343,13 @@ class GradeServiceTest {
         .willReturn(history);
     given(gradeHistoryRepository.save(history)).willReturn(history);
     given(gradeRepository.save(grade)).willReturn(grade);
-    given(mapper.toResponse(grade)).willReturn(response);
+    given(gradeHistoryRepository.findByGradeIdOrderByChangedAtDesc(gradeId))
+        .willReturn(List.of(history));
+    given(historyMapper.toResponse(history)).willReturn(historyResponse);
 
     var result = service.correct(examId, studentId, correction);
 
-    assertEquals(response, result);
+    assertEquals(List.of(historyResponse), result);
     assertEquals(new BigDecimal("18.00"), grade.getValue());
   }
 

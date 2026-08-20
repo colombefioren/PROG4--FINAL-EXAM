@@ -1142,7 +1142,8 @@ paths:
       summary: Correct a grade
       description: |
         Overrides a grade and records the correction (previous value, new value, reason, author) in
-        the grade history. Requires the ADMIN or TEACHER role.
+        the grade history. Returns the full correction history (most recent first). Requires the
+        ADMIN or TEACHER role.
       operationId: correctGrade
       parameters:
         - $ref: '#/components/parameters/ExamIdPath'
@@ -1155,11 +1156,13 @@ paths:
               $ref: '#/components/schemas/GradeCorrectionRequest'
       responses:
         '200':
-          description: Grade corrected
+          description: Grade corrected, full correction history returned (most recent first)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GradeResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/GradeHistoryResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
