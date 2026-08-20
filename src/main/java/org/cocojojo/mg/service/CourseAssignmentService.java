@@ -2,11 +2,13 @@ package org.cocojojo.mg.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CurriculumStatusResponse;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ConflictException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.CourseAssignmentMapper;
@@ -15,6 +17,7 @@ import org.cocojojo.mg.mapper.GroupMapper;
 import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
+import org.cocojojo.mg.repository.ExamRepository;
 import org.cocojojo.mg.repository.model.JCourse;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
 import org.cocojojo.mg.repository.model.JGroup;
@@ -31,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CourseAssignmentService {
 
   private final CourseAssignmentRepository repository;
+  private final ExamRepository examRepository;
   private final CourseService courseService;
   private final TeacherService teacherService;
   private final StudentService studentService;
@@ -126,6 +130,18 @@ public class CourseAssignmentService {
                 () ->
                     new ResourceNotFoundException(
                         "CourseAssignment with id:" + request.id() + " not found."));
+    boolean structuralChange =
+        !course.getId().equals(entity.getCourse().getId())
+            || !group.getId().equals(entity.getGroup().getId())
+            || !Objects.equals(request.semester(), entity.getSemester())
+            || !Objects.equals(request.academicYear(), entity.getAcademicYear());
+    if (structuralChange && !examRepository.findByCourseAssignmentId(request.id()).isEmpty()) {
+      throw new ConflictException(
+          "Course assignment with id: "
+              + request.id()
+              + " has exams; changing its course, group, semester or academic year is not"
+              + " allowed.");
+    }
     entity.setCourse(course);
     entity.setGroup(group);
     entity.setTeachers(new ArrayList<>(teachers));
@@ -146,6 +162,10 @@ public class CourseAssignmentService {
                         "CourseAssignment with id:" + id + " not found."));
     if (!securityUtil.isAdmin()) {
       throw new ForbiddenAccessException("Only an admin can remove a course assignment");
+    }
+    if (!examRepository.findByCourseAssignmentId(id).isEmpty()) {
+      throw new ConflictException(
+          "Course assignment with id: " + id + " has exams and cannot be deleted.");
     }
     repository.delete(entity);
   }

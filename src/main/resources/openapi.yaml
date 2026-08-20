@@ -201,7 +201,9 @@ paths:
     delete:
       tags: [Teachers]
       summary: Delete a teacher (soft delete)
-      description: Soft-deletes a teacher. Requires the ADMIN role.
+      description: |
+        Soft-deletes a teacher. Teachers who recorded grade changes cannot be deleted (409).
+        Requires the ADMIN role.
       operationId: deleteTeacher
       parameters:
         - $ref: '#/components/parameters/IdPath'
@@ -214,6 +216,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /students:
     get:
@@ -764,7 +768,9 @@ paths:
     delete:
       tags: [Courses]
       summary: Delete a course (soft delete)
-      description: Soft-deletes a course. Requires the ADMIN role.
+      description: |
+        Soft-deletes a course. Courses that still have live course assignments cannot be deleted
+        (409). Requires the ADMIN role.
       operationId: deleteCourse
       parameters:
         - $ref: '#/components/parameters/IdPath'
@@ -777,6 +783,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /course-assignments:
     get:
@@ -886,7 +894,9 @@ paths:
     delete:
       tags: [Course assignments]
       summary: Delete a course assignment
-      description: Requires the ADMIN role.
+      description: |
+        Deletes a course assignment. Assignments that still have exams cannot be deleted (409).
+        Requires the ADMIN role.
       operationId: deleteCourseAssignment
       parameters:
         - $ref: '#/components/parameters/IdPath'
@@ -899,6 +909,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /course-assignments/curriculum-status:
     get:
@@ -1040,7 +1052,9 @@ paths:
     delete:
       tags: [Exams]
       summary: Delete an exam
-      description: Requires the ADMIN or TEACHER role.
+      description: |
+        Deletes an exam. Exams that still have grades cannot be deleted (409).
+        Requires the ADMIN or TEACHER role.
       operationId: deleteExam
       parameters:
         - $ref: '#/components/parameters/CourseAssignmentIdPath'
@@ -1054,6 +1068,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /exams/{examId}/grades:
     get:
