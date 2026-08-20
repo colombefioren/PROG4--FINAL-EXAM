@@ -289,36 +289,16 @@ class TeacherIT extends FacadeIT {
   }
 
   @Test
-  void teacherCanReadTheirOwnProfile() {
-    var email = uniqueEmail();
-    var teacher = createTeacher(email);
+  void teacherCannotReadAnotherTeacherProfile() {
+    var other = createTeacher(uniqueEmail());
 
-    var token =
-        webTestClient
-            .post()
-            .uri("/auth/login")
-            .bodyValue(new LoginRequest(email, "password123"))
-            .exchange()
-            .expectStatus()
-            .isOk()
-            .expectBody(AuthResponse.class)
-            .returnResult()
-            .getResponseBody()
-            .token();
-
-    var fetched =
-        webTestClient
-            .get()
-            .uri("/teachers/" + teacher.id())
-            .header("Authorization", "Bearer " + token)
-            .exchange()
-            .expectStatus()
-            .isOk()
-            .expectBody(TeacherResponse.class)
-            .returnResult()
-            .getResponseBody();
-
-    assertEquals(teacher.id(), fetched.id());
+    webTestClient
+        .get()
+        .uri("/teachers/" + other.id())
+        .header("Authorization", "Bearer " + teacherToken())
+        .exchange()
+        .expectStatus()
+        .isForbidden();
   }
 
   @Test

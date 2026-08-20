@@ -8,12 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.cocojojo.mg.conf.FacadeIT;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeCorrectionRequest;
-import org.cocojojo.mg.endpoint.rest.controller.dto.GradeDeleteRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeHistoryResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.GradeResponse;
@@ -628,9 +626,13 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .method(HttpMethod.DELETE)
-        .uri("/grades/{gradeId}", gradeId)
+        .uri(
+            uriBuilder ->
+                uriBuilder
+                    .path("/grades/{gradeId}")
+                    .queryParam("reason", "Too harsh, removing")
+                    .build(gradeId))
         .header("Authorization", "Bearer " + token(admin))
-        .bodyValue(GradeDeleteRequest.builder().reason("Too harsh, removing").build())
         .exchange()
         .expectStatus()
         .isNoContent();
@@ -678,9 +680,13 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .method(HttpMethod.DELETE)
-        .uri("/grades/{gradeId}", gradeId)
+        .uri(
+            uriBuilder ->
+                uriBuilder
+                    .path("/grades/{gradeId}")
+                    .queryParam("reason", "Too harsh, removing")
+                    .build(gradeId))
         .header("Authorization", "Bearer " + token(admin))
-        .bodyValue(GradeDeleteRequest.builder().reason("Too harsh, removing").build())
         .exchange()
         .expectStatus()
         .isNoContent();
@@ -719,7 +725,6 @@ class GradeIT extends FacadeIT {
         .method(HttpMethod.DELETE)
         .uri("/grades/{gradeId}", gradeId)
         .header("Authorization", "Bearer " + token(admin))
-        .bodyValue(Map.of())
         .exchange()
         .expectStatus()
         .isBadRequest();
@@ -742,9 +747,13 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .method(HttpMethod.DELETE)
-        .uri("/grades/{gradeId}", grade.getId())
+        .uri(
+            uriBuilder ->
+                uriBuilder
+                    .path("/grades/{gradeId}")
+                    .queryParam("reason", "Teacher override")
+                    .build(grade.getId()))
         .header("Authorization", "Bearer " + token(teacher))
-        .bodyValue(GradeDeleteRequest.builder().reason("Teacher override").build())
         .exchange()
         .expectStatus()
         .isNoContent();
@@ -760,9 +769,13 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .method(HttpMethod.DELETE)
-        .uri("/grades/{gradeId}", grade.getId())
+        .uri(
+            uriBuilder ->
+                uriBuilder
+                    .path("/grades/{gradeId}")
+                    .queryParam("reason", "Nope")
+                    .build(grade.getId()))
         .header("Authorization", "Bearer " + token(teacher))
-        .bodyValue(GradeDeleteRequest.builder().reason("Nope").build())
         .exchange()
         .expectStatus()
         .isForbidden();
@@ -776,9 +789,13 @@ class GradeIT extends FacadeIT {
 
     webTestClient
         .method(HttpMethod.DELETE)
-        .uri("/grades/{gradeId}", grade.getId())
+        .uri(
+            uriBuilder ->
+                uriBuilder
+                    .path("/grades/{gradeId}")
+                    .queryParam("reason", "Nope")
+                    .build(grade.getId()))
         .header("Authorization", "Bearer " + token(student))
-        .bodyValue(GradeDeleteRequest.builder().reason("Nope").build())
         .exchange()
         .expectStatus()
         .isForbidden();

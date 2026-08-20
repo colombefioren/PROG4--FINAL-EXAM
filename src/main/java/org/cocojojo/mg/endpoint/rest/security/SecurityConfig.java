@@ -69,14 +69,14 @@ public class SecurityConfig {
                     .requestMatchers(
                         GET,
                         "/students",
-                        "/teachers",
-                        "/teachers/*",
                         "/groups",
                         "/groups/*/students",
                         "/courses",
                         "/courses/*",
                         "/promotions/*/courses")
                     .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(GET, "/teachers/*")
+                    .hasRole("ADMIN")
                     .requestMatchers(
                         GET, "/students/*", "/students/*/group-flows", "/students/*/grades")
                     .hasAnyRole("ADMIN", "TEACHER", "STUDENT")

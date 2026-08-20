@@ -167,23 +167,15 @@ class GradeControllerTest {
   @Test
   void delete_returns_no_content_and_passes_reason() throws Exception {
     mockMvc
-        .perform(
-            delete("/grades/{gradeId}", gradeId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"reason\":\"removed\"}"))
+        .perform(delete("/grades/{gradeId}", gradeId).param("reason", "removed"))
         .andExpect(status().isNoContent());
 
     then(service).should().delete(gradeId, "removed");
   }
 
   @Test
-  void delete_returns_bad_request_when_reason_blank() throws Exception {
-    mockMvc
-        .perform(
-            delete("/grades/{gradeId}", gradeId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"reason\":\"\"}"))
-        .andExpect(status().isBadRequest());
+  void delete_returns_bad_request_when_reason_missing() throws Exception {
+    mockMvc.perform(delete("/grades/{gradeId}", gradeId)).andExpect(status().isBadRequest());
 
     then(service).should(never()).delete(any(UUID.class), any(String.class));
   }
