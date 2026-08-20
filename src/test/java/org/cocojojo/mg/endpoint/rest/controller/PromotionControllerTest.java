@@ -44,7 +44,7 @@ class PromotionControllerTest {
   @MockBean private GraduateListService graduateListService;
   @MockBean private JwtService jwtService;
 
-  private final UUID promotionId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+  private final UUID promotionId = UUID.randomUUID();
 
   private PromotionResponse promotion() {
     return PromotionResponse.builder()

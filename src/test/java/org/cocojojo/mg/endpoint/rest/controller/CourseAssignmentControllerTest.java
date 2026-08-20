@@ -39,10 +39,10 @@ class CourseAssignmentControllerTest {
   @MockBean private CourseAssignmentService service;
   @MockBean private JwtService jwtService;
 
-  private final UUID id = UUID.fromString("33333333-3333-3333-3333-333333333333");
-  private final UUID courseId = UUID.fromString("44444444-4444-4444-4444-444444444444");
-  private final UUID groupId = UUID.fromString("55555555-5555-5555-5555-555555555555");
-  private final UUID teacherId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+  private final UUID id = UUID.randomUUID();
+  private final UUID courseId = UUID.randomUUID();
+  private final UUID groupId = UUID.randomUUID();
+  private final UUID teacherId = UUID.randomUUID();
 
   private CourseAssignmentResponse response() {
     return CourseAssignmentResponse.builder()

@@ -37,9 +37,9 @@ class GradeControllerTest {
   @MockBean private GradeService service;
   @MockBean private JwtService jwtService;
 
-  private final UUID gradeId = UUID.fromString("88888888-8888-8888-8888-888888888888");
-  private final UUID examId = UUID.fromString("77777777-7777-7777-7777-777777777777");
-  private final UUID studentId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+  private final UUID gradeId = UUID.randomUUID();
+  private final UUID examId = UUID.randomUUID();
+  private final UUID studentId = UUID.randomUUID();
 
   private GradeResponse response() {
     return GradeResponse.builder()

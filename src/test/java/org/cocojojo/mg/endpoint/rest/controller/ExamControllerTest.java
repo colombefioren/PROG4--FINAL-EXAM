@@ -36,8 +36,8 @@ class ExamControllerTest {
   @MockBean private ExamService service;
   @MockBean private JwtService jwtService;
 
-  private final UUID courseAssignmentId = UUID.fromString("33333333-3333-3333-3333-333333333333");
-  private final UUID examId = UUID.fromString("77777777-7777-7777-7777-777777777777");
+  private final UUID courseAssignmentId = UUID.randomUUID();
+  private final UUID examId = UUID.randomUUID();
 
   private ExamResponse response() {
     return ExamResponse.builder()

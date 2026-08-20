@@ -34,7 +34,7 @@ class AdminControllerTest {
   @MockBean private AdminService service;
   @MockBean private JwtService jwtService;
 
-  private final UUID id = UUID.fromString("22222222-2222-2222-2222-222222222222");
+  private final UUID id = UUID.randomUUID();
   private final AdminResponse response =
       AdminResponse.builder()
           .id(id)
