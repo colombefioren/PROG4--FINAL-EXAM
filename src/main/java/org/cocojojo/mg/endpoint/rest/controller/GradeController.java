@@ -44,7 +44,7 @@ public class GradeController {
   }
 
   @PatchMapping("/exams/{examId}/students/{studentId}/grade")
-  public GradeResponse correct(
+  public List<GradeHistoryResponse> correct(
       @PathVariable UUID examId,
       @PathVariable UUID studentId,
       @Valid @RequestBody GradeCorrectionRequest request) {

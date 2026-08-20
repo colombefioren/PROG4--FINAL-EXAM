@@ -415,11 +415,14 @@ class GradeIT extends FacadeIT {
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBody(GradeResponse.class)
+            .expectBodyList(GradeHistoryResponse.class)
             .returnResult()
             .getResponseBody();
     assertNotNull(corrected);
-    assertEquals(0, new BigDecimal("16.5").compareTo(corrected.value()));
+    assertEquals(2, corrected.size());
+    assertEquals(0, new BigDecimal("14.0").compareTo(corrected.get(0).previousValue()));
+    assertEquals(0, new BigDecimal("16.5").compareTo(corrected.get(0).newValue()));
+    assertEquals("Recheck", corrected.get(0).reason());
 
     var history =
         webTestClient
@@ -965,12 +968,12 @@ class GradeIT extends FacadeIT {
             .exchange()
             .expectStatus()
             .isOk()
-            .expectBody(GradeResponse.class)
+            .expectBodyList(GradeHistoryResponse.class)
             .returnResult()
             .getResponseBody();
     assertNotNull(corrected);
-    assertEquals(0, new BigDecimal("18.0").compareTo(corrected.value()));
-    assertEquals(grade.getId(), corrected.id());
+    assertEquals(0, new BigDecimal("18.0").compareTo(corrected.get(0).newValue()));
+    assertEquals(grade.getId(), corrected.get(0).gradeId());
   }
 
   @Test

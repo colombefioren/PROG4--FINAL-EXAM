@@ -70,7 +70,8 @@ public class GradeService {
   }
 
   @Transactional
-  public GradeResponse correct(UUID examId, UUID studentId, GradeCorrectionRequest request) {
+  public List<GradeHistoryResponse> correct(
+      UUID examId, UUID studentId, GradeCorrectionRequest request) {
     var exam = getExamOrThrow(examId);
     requireCanManageExam(courseAssignmentMapper.toModel(exam.getCourseAssignment()));
     var entity =
@@ -82,7 +83,8 @@ public class GradeService {
                         "Grade not found for exam " + examId + " and student " + studentId));
     recordHistory(entity, entity.getValue(), request.value(), request.reason(), currentUser());
     entity.setValue(request.value());
-    return mapper.toResponse(gradeRepository.save(entity));
+    gradeRepository.save(entity);
+    return history(entity);
   }
 
   public List<GradeResponse> getByStudentId(UUID studentId) {

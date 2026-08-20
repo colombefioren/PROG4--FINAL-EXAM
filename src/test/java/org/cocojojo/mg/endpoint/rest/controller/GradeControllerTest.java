@@ -119,9 +119,20 @@ class GradeControllerTest {
   }
 
   @Test
-  void correct_returns_corrected_grade() throws Exception {
+  void correct_returns_grade_history() throws Exception {
+    var history =
+        GradeHistoryResponse.builder()
+            .id(UUID.randomUUID())
+            .gradeId(gradeId)
+            .previousValue(new BigDecimal("14.50"))
+            .newValue(new BigDecimal("15.0"))
+            .reason("typo")
+            .changedById(studentId)
+            .changedByName("Grace Hopper")
+            .changedAt(Instant.parse("2024-10-05T08:00:00Z"))
+            .build();
     given(service.correct(any(UUID.class), any(UUID.class), any(GradeCorrectionRequest.class)))
-        .willReturn(response());
+        .willReturn(List.of(history));
 
     mockMvc
         .perform(
@@ -129,7 +140,9 @@ class GradeControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"value\":15.0,\"reason\":\"typo\"}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.value").value(14.5));
+        .andExpect(jsonPath("$[0].previousValue").value(14.5))
+        .andExpect(jsonPath("$[0].newValue").value(15.0))
+        .andExpect(jsonPath("$[0].reason").value("typo"));
   }
 
   @Test
