@@ -73,10 +73,10 @@ class CourseAssignmentServiceTest {
 
   @BeforeEach
   void setUp() {
-    id = UUID.fromString("33333333-3333-3333-3333-333333333333");
-    courseId = UUID.fromString("44444444-4444-4444-4444-444444444444");
-    groupId = UUID.fromString("55555555-5555-5555-5555-555555555555");
-    teacherId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+    id = UUID.randomUUID();
+    courseId = UUID.randomUUID();
+    groupId = UUID.randomUUID();
+    teacherId = UUID.randomUUID();
     jCourse =
         JCourse.builder()
             .id(courseId)
@@ -150,8 +150,7 @@ class CourseAssignmentServiceTest {
   @Test
   void getByFilter_filters_by_current_group_for_student() {
     given(securityUtil.isStudent()).willReturn(true);
-    given(securityUtil.getCurrentUserId())
-        .willReturn(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    given(securityUtil.getCurrentUserId()).willReturn(UUID.randomUUID());
     given(groupFlowService.findCurrentGroup(any(UUID.class))).willReturn(Optional.of(jGroup));
     var page = new PageImpl<>(List.of(entity));
     given(repository.findFilterPaged(groupId, null, null, null, Pageable.unpaged()))
@@ -166,8 +165,7 @@ class CourseAssignmentServiceTest {
   @Test
   void getByFilter_returns_empty_page_for_student_without_group() {
     given(securityUtil.isStudent()).willReturn(true);
-    given(securityUtil.getCurrentUserId())
-        .willReturn(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    given(securityUtil.getCurrentUserId()).willReturn(UUID.randomUUID());
     given(groupFlowService.findCurrentGroup(any(UUID.class))).willReturn(Optional.empty());
 
     var result = service.getByFilter(null, null, null, null, Pageable.unpaged());
@@ -211,8 +209,7 @@ class CourseAssignmentServiceTest {
   void getById_throws_forbidden_for_teacher_not_teaching_the_assignment() {
     given(repository.findById(id)).willReturn(Optional.of(entity));
     given(securityUtil.isTeacher()).willReturn(true);
-    given(securityUtil.getCurrentUserId())
-        .willReturn(UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+    given(securityUtil.getCurrentUserId()).willReturn(UUID.randomUUID());
 
     var ex = assertThrows(ForbiddenAccessException.class, () -> service.getById(id));
 
@@ -223,8 +220,7 @@ class CourseAssignmentServiceTest {
   void getById_allows_student_when_assignment_matches_current_group() {
     given(repository.findById(id)).willReturn(Optional.of(entity));
     given(securityUtil.isStudent()).willReturn(true);
-    given(securityUtil.getCurrentUserId())
-        .willReturn(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    given(securityUtil.getCurrentUserId()).willReturn(UUID.randomUUID());
     var currentGroup = Group.builder().id(groupId).ref("G1").build();
     given(studentService.getCurrentGroup(any(UUID.class))).willReturn(currentGroup);
     given(mapper.toResponse(entity)).willReturn(response);
@@ -238,13 +234,8 @@ class CourseAssignmentServiceTest {
   void getById_throws_forbidden_for_student_in_another_group() {
     given(repository.findById(id)).willReturn(Optional.of(entity));
     given(securityUtil.isStudent()).willReturn(true);
-    given(securityUtil.getCurrentUserId())
-        .willReturn(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
-    var otherGroup =
-        Group.builder()
-            .id(UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc"))
-            .ref("G2")
-            .build();
+    given(securityUtil.getCurrentUserId()).willReturn(UUID.randomUUID());
+    var otherGroup = Group.builder().id(UUID.randomUUID()).ref("G2").build();
     given(studentService.getCurrentGroup(any(UUID.class))).willReturn(otherGroup);
 
     var ex = assertThrows(ForbiddenAccessException.class, () -> service.getById(id));
@@ -446,7 +437,7 @@ class CourseAssignmentServiceTest {
         .willReturn(List.of());
     var common =
         Course.builder()
-            .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+            .id(UUID.randomUUID())
             .code("COM")
             .name("Common")
             .studentLevel(StudentLevel.L1)

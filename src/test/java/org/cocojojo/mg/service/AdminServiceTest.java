@@ -43,7 +43,7 @@ class AdminServiceTest {
 
   @BeforeEach
   void setUp() {
-    adminId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    adminId = UUID.randomUUID();
     entity =
         JAdmin.builder()
             .id(adminId)

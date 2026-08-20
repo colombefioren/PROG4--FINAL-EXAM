@@ -54,7 +54,7 @@ class GraduateListServiceTest {
 
   @BeforeEach
   void setUp() {
-    promotionId = UUID.fromString("12345678-1234-1234-1234-123456789012");
+    promotionId = UUID.randomUUID();
     promotion =
         JPromotion.builder()
             .id(promotionId)
@@ -64,7 +64,7 @@ class GraduateListServiceTest {
             .build();
     elStudent =
         JStudent.builder()
-            .id(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+            .id(UUID.randomUUID())
             .firstname("Grace")
             .lastname("Hopper")
             .std("STD25001")
@@ -72,7 +72,7 @@ class GraduateListServiceTest {
             .build();
     tnStudent =
         JStudent.builder()
-            .id(UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+            .id(UUID.randomUUID())
             .firstname("Alan")
             .lastname("Turing")
             .std("STD25002")

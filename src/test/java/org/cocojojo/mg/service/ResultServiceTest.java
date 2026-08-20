@@ -73,11 +73,11 @@ class ResultServiceTest {
 
   @BeforeEach
   void setUp() {
-    studentId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    groupId = UUID.fromString("55555555-5555-5555-5555-555555555555");
-    courseId = UUID.fromString("44444444-4444-4444-4444-444444444444");
-    assignmentId = UUID.fromString("99999999-9999-9999-9999-999999999999");
-    examId = UUID.fromString("77777777-7777-7777-7777-777777777777");
+    studentId = UUID.randomUUID();
+    groupId = UUID.randomUUID();
+    courseId = UUID.randomUUID();
+    assignmentId = UUID.randomUUID();
+    examId = UUID.randomUUID();
     promotion =
         JPromotion.builder().id(UUID.randomUUID()).ref("2025").name("2025").entryYear(2024).build();
     student =
@@ -471,7 +471,7 @@ class ResultServiceTest {
 
   @Test
   void currentTracks_maps_student_to_latest_join_track() {
-    var otherStudentId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    var otherStudentId = UUID.randomUUID();
     var otherStudent =
         JStudent.builder()
             .id(otherStudentId)

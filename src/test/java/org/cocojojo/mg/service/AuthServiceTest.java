@@ -49,7 +49,7 @@ class AuthServiceTest {
 
   @BeforeEach
   void setUp() {
-    userId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+    userId = UUID.randomUUID();
     request = new LoginRequest("ada@hei.school", "secret");
     user = JAdmin.builder().id(userId).email("ada@hei.school").password("encoded").build();
     model = User.builder().id(userId).email("ada@hei.school").password("encoded").build();

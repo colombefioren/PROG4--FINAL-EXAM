@@ -55,8 +55,8 @@ class ExamServiceTest {
 
   @BeforeEach
   void setUp() {
-    courseAssignmentId = UUID.fromString("44444444-4444-4444-4444-444444444444");
-    examId = UUID.fromString("77777777-7777-7777-7777-777777777777");
+    courseAssignmentId = UUID.randomUUID();
+    examId = UUID.randomUUID();
     assignmentEntity =
         JCourseAssignment.builder()
             .id(courseAssignmentId)
@@ -135,7 +135,7 @@ class ExamServiceTest {
         .willReturn(Optional.of(assignmentEntity));
     given(courseAssignmentMapper.toModel(assignmentEntity)).willReturn(assignmentModel);
     given(securityUtil.isTeacher()).willReturn(true);
-    var teacherId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+    var teacherId = UUID.randomUUID();
     given(securityUtil.getCurrentUserId()).willReturn(teacherId);
     doThrow(new ForbiddenAccessException("not your course"))
         .when(validator)
@@ -152,7 +152,7 @@ class ExamServiceTest {
         .willReturn(Optional.of(assignmentEntity));
     given(courseAssignmentMapper.toModel(assignmentEntity)).willReturn(assignmentModel);
     given(securityUtil.isStudent()).willReturn(true);
-    var studentId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    var studentId = UUID.randomUUID();
     given(securityUtil.getCurrentUserId()).willReturn(studentId);
     doThrow(new ForbiddenAccessException("not in curriculum"))
         .when(validator)
@@ -202,10 +202,7 @@ class ExamServiceTest {
 
   @Test
   void getById_throws_not_found_when_exam_belongs_to_another_assignment() {
-    var otherAssignment =
-        JCourseAssignment.builder()
-            .id(UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
-            .build();
+    var otherAssignment = JCourseAssignment.builder().id(UUID.randomUUID()).build();
     var otherExam =
         JExam.builder().id(examId).courseAssignment(otherAssignment).title("Other").build();
     given(examRepository.findById(examId)).willReturn(Optional.of(otherExam));
@@ -284,7 +281,7 @@ class ExamServiceTest {
         .willReturn(Optional.of(assignmentEntity));
     given(courseAssignmentMapper.toModel(assignmentEntity)).willReturn(assignmentModel);
     given(securityUtil.isTeacher()).willReturn(true);
-    var teacherId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+    var teacherId = UUID.randomUUID();
     given(securityUtil.getCurrentUserId()).willReturn(teacherId);
     doThrow(new ForbiddenAccessException("not your course"))
         .when(validator)
@@ -313,10 +310,7 @@ class ExamServiceTest {
 
   @Test
   void delete_throws_not_found_when_exam_belongs_to_another_assignment() {
-    var otherAssignment =
-        JCourseAssignment.builder()
-            .id(UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
-            .build();
+    var otherAssignment = JCourseAssignment.builder().id(UUID.randomUUID()).build();
     var otherExam =
         JExam.builder().id(examId).courseAssignment(otherAssignment).title("Other").build();
     given(examRepository.findById(examId)).willReturn(Optional.of(otherExam));

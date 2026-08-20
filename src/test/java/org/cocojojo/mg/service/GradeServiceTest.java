@@ -84,10 +84,10 @@ class GradeServiceTest {
 
   @BeforeEach
   void setUp() {
-    examId = UUID.fromString("77777777-7777-7777-7777-777777777777");
-    studentId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    gradeId = UUID.fromString("88888888-8888-8888-8888-888888888888");
-    teacherId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+    examId = UUID.randomUUID();
+    studentId = UUID.randomUUID();
+    gradeId = UUID.randomUUID();
+    teacherId = UUID.randomUUID();
     teacher = JTeacher.builder().id(teacherId).firstname("Ada").lastname("Lovelace").build();
     student =
         JStudent.builder()
@@ -99,20 +99,16 @@ class GradeServiceTest {
     changedBy = JUser.builder().id(teacherId).firstname("Ada").lastname("Lovelace").build();
     jCourse =
         JCourse.builder()
-            .id(UUID.fromString("44444444-4444-4444-4444-444444444444"))
+            .id(UUID.randomUUID())
             .code("ALG1")
             .name("Algorithms")
             .studentLevel(StudentLevel.L1)
             .track(Track.EL)
             .build();
-    jGroup =
-        JGroup.builder()
-            .id(UUID.fromString("55555555-5555-5555-5555-555555555555"))
-            .ref("G1")
-            .build();
+    jGroup = JGroup.builder().id(UUID.randomUUID()).ref("G1").build();
     assignment =
         JCourseAssignment.builder()
-            .id(UUID.fromString("99999999-9999-9999-9999-999999999999"))
+            .id(UUID.randomUUID())
             .course(jCourse)
             .group(jGroup)
             .teachers(List.of(teacher))
@@ -154,7 +150,7 @@ class GradeServiceTest {
             .build();
     history =
         JGradeHistory.builder()
-            .id(UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+            .id(UUID.randomUUID())
             .grade(grade)
             .previousValue(new BigDecimal("12.00"))
             .newValue(new BigDecimal("15.50"))
@@ -392,16 +388,12 @@ class GradeServiceTest {
 
   @Test
   void getByStudentId_drops_grades_from_courses_teacher_does_not_teach() {
-    var otherTeacher =
-        JTeacher.builder().id(UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc")).build();
+    var otherTeacher = JTeacher.builder().id(UUID.randomUUID()).build();
     var otherAssignment =
-        JCourseAssignment.builder()
-            .id(UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd"))
-            .teachers(List.of(otherTeacher))
-            .build();
+        JCourseAssignment.builder().id(UUID.randomUUID()).teachers(List.of(otherTeacher)).build();
     var otherExam =
         JExam.builder()
-            .id(UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"))
+            .id(UUID.randomUUID())
             .courseAssignment(otherAssignment)
             .title("Other")
             .build();
