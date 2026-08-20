@@ -49,10 +49,10 @@ public class CourseAssignmentService {
   public Page<CourseAssignmentResponse> getByFilter(
       UUID groupId, UUID teacherId, UUID courseId, Integer academicYear, Pageable pageable) {
     if (securityUtil.isTeacher()) {
-      teacherId = securityUtil.getCurrentUserIdOrThrow();
+      teacherId = securityUtil.getCurrentUserId();
     }
     if (securityUtil.isStudent()) {
-      var currentGroup = groupFlowService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow());
+      var currentGroup = groupFlowService.findCurrentGroup(securityUtil.getCurrentUserId());
       if (currentGroup.isEmpty()) {
         return Page.empty(pageable);
       }
@@ -72,13 +72,13 @@ public class CourseAssignmentService {
                     new ResourceNotFoundException(
                         "CourseAssignment with id:" + id + " not found."));
     if (securityUtil.isTeacher()) {
-      var currentTeacherId = securityUtil.getCurrentUserIdOrThrow();
+      var currentTeacherId = securityUtil.getCurrentUserId();
       if (entity.getTeachers().stream().noneMatch(t -> t.getId().equals(currentTeacherId))) {
         throw new ForbiddenAccessException("You may only access your own course assignments");
       }
     }
     if (securityUtil.isStudent()) {
-      var currentGroup = studentService.getCurrentGroup(securityUtil.getCurrentUserIdOrThrow());
+      var currentGroup = studentService.getCurrentGroup(securityUtil.getCurrentUserId());
       if (!entity.getGroup().getId().equals(currentGroup.id())) {
         throw new ForbiddenAccessException("This course assignment is not part of your curriculum");
       }

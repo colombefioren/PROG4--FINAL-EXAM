@@ -65,11 +65,7 @@ public class StudentService {
   }
 
   public Group getCurrentGroup(UUID studentId) {
-    return groupFlowService
-        .getCurrentGroup(studentId)
-        .map(groupMapper::toModel)
-        .orElseThrow(
-            () -> new ResourceNotFoundException("Student with id:" + studentId + " has no group"));
+    return groupMapper.toModel(groupFlowService.getCurrentGroup(studentId));
   }
 
   @Transactional
@@ -137,7 +133,7 @@ public class StudentService {
   }
 
   private StudentResponse toResponse(JStudent entity) {
-    var currentGroup = groupFlowService.getCurrentGroup(entity.getId()).orElse(null);
+    var currentGroup = groupFlowService.findCurrentGroup(entity.getId()).orElse(null);
     return mapper.toResponse(
         mapper.toModel(entity, currentGroup == null ? null : groupMapper.toModel(currentGroup)));
   }

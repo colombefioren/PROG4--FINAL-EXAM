@@ -3,7 +3,6 @@ package org.cocojojo.mg.util;
 import java.util.Optional;
 import java.util.UUID;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
-import org.cocojojo.mg.endpoint.rest.controller.exception.UnauthorizedException;
 import org.cocojojo.mg.model.enums.Role;
 import org.cocojojo.mg.repository.model.JAdmin;
 import org.cocojojo.mg.repository.model.JStudent;
@@ -27,7 +26,7 @@ public class SecurityUtil {
     return SecurityContextHolder.getContext().getAuthentication();
   }
 
-  public Optional<UUID> getCurrentUserId() {
+  public Optional<UUID> findCurrentUserId() {
     return Optional.ofNullable(getAuthentication())
         .filter(Authentication::isAuthenticated)
         .map(Authentication::getPrincipal)
@@ -35,12 +34,12 @@ public class SecurityUtil {
         .map(UUID::fromString);
   }
 
-  public UUID getCurrentUserIdOrThrow() {
-    return getCurrentUserId()
-        .orElseThrow(() -> new UnauthorizedException("User not authenticated"));
+  public UUID getCurrentUserId() {
+    return findCurrentUserId()
+        .orElseThrow(() -> new IllegalStateException("User not authenticated"));
   }
 
-  public Optional<Role> getCurrentRole() {
+  public Optional<Role> findCurrentRole() {
     return Optional.ofNullable(getAuthentication())
         .filter(Authentication::isAuthenticated)
         .map(Authentication::getAuthorities)
@@ -59,19 +58,19 @@ public class SecurityUtil {
   }
 
   public boolean isAdmin() {
-    return getCurrentRole().map(role -> role == Role.ADMIN).orElse(false);
+    return findCurrentRole().map(role -> role == Role.ADMIN).orElse(false);
   }
 
   public boolean isTeacher() {
-    return getCurrentRole().map(role -> role == Role.TEACHER).orElse(false);
+    return findCurrentRole().map(role -> role == Role.TEACHER).orElse(false);
   }
 
   public boolean isStudent() {
-    return getCurrentRole().map(role -> role == Role.STUDENT).orElse(false);
+    return findCurrentRole().map(role -> role == Role.STUDENT).orElse(false);
   }
 
   public void requireSelf(UUID userId) {
-    if (getCurrentUserIdOrThrow().equals(userId)) {
+    if (getCurrentUserId().equals(userId)) {
       return;
     }
     throw new ForbiddenAccessException("You may only access your own records");

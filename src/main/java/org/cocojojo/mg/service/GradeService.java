@@ -89,7 +89,7 @@ public class GradeService {
     securityUtil.requireSelfOrStaff(studentId);
     var grades = gradeRepository.findByStudentId(studentId);
     if (securityUtil.isTeacher()) {
-      var teacherId = securityUtil.getCurrentUserIdOrThrow();
+      var teacherId = securityUtil.getCurrentUserId();
       grades =
           grades.stream()
               .filter(
@@ -108,7 +108,7 @@ public class GradeService {
     }
     if (securityUtil.isTeacher()) {
       validator.validateTeacherTeaches(
-          securityUtil.getCurrentUserIdOrThrow(),
+          securityUtil.getCurrentUserId(),
           courseAssignmentMapper.toModel(entity.getExam().getCourseAssignment()));
       return mapper.toResponse(entity);
     }
@@ -134,7 +134,7 @@ public class GradeService {
     }
     if (securityUtil.isTeacher()) {
       validator.validateTeacherTeaches(
-          securityUtil.getCurrentUserIdOrThrow(),
+          securityUtil.getCurrentUserId(),
           courseAssignmentMapper.toModel(entity.getExam().getCourseAssignment()));
       return history(entity);
     }
@@ -197,7 +197,7 @@ public class GradeService {
 
   private JUser currentUser() {
     return userRepository
-        .findById(securityUtil.getCurrentUserIdOrThrow())
+        .findById(securityUtil.getCurrentUserId())
         .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
   }
 
@@ -206,7 +206,7 @@ public class GradeService {
       return;
     }
     if (securityUtil.isTeacher()) {
-      validator.validateTeacherTeaches(securityUtil.getCurrentUserIdOrThrow(), assignment);
+      validator.validateTeacherTeaches(securityUtil.getCurrentUserId(), assignment);
       return;
     }
     throw new ForbiddenAccessException("Only teachers and admins can manage grades");

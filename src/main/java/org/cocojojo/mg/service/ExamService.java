@@ -119,11 +119,11 @@ public class ExamService {
       return;
     }
     if (securityUtil.isTeacher()) {
-      validator.validateTeacherTeaches(securityUtil.getCurrentUserIdOrThrow(), assignment);
+      validator.validateTeacherTeaches(securityUtil.getCurrentUserId(), assignment);
       return;
     }
     if (securityUtil.isStudent()) {
-      validator.validateStudentInCurriculum(securityUtil.getCurrentUserIdOrThrow(), assignment);
+      validator.validateStudentInCurriculum(securityUtil.getCurrentUserId(), assignment);
       return;
     }
     throw new ForbiddenAccessException("Only students, teachers and admins can view exams");
@@ -134,7 +134,7 @@ public class ExamService {
       return;
     }
     if (securityUtil.isTeacher()) {
-      validator.validateTeacherTeaches(securityUtil.getCurrentUserIdOrThrow(), assignment);
+      validator.validateTeacherTeaches(securityUtil.getCurrentUserId(), assignment);
       return;
     }
     throw new ForbiddenAccessException("Only admins and teachers can manage exams");
