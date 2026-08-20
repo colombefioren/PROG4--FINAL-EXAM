@@ -15,4 +15,6 @@ public interface GradeHistoryRepository extends JpaRepository<JGradeHistory, UUI
   List<JGradeHistory> findByGradeIdOrderByChangedAtDesc(UUID gradeId);
 
   List<JGradeHistory> findByGradeIdIn(Collection<UUID> gradeIds);
+
+  boolean existsByChangedById(UUID id);
 }
