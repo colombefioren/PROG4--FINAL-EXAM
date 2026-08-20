@@ -53,7 +53,6 @@ class CourseAssignmentServiceTest {
   @Mock private ExamRepository examRepository;
   @Mock private CourseService courseService;
   @Mock private TeacherService teacherService;
-  @Mock private StudentService studentService;
   @Mock private GroupService groupService;
   @Mock private GroupFlowService groupFlowService;
   @Mock private CourseAssignmentMapper mapper;
@@ -221,12 +220,11 @@ class CourseAssignmentServiceTest {
   }
 
   @Test
-  void getById_allows_student_when_assignment_matches_current_group() {
+  void getById_allows_student_when_assignment_matches_current_or_past_group() {
     given(repository.findById(id)).willReturn(Optional.of(entity));
     given(securityUtil.isStudent()).willReturn(true);
     given(securityUtil.getCurrentUserId()).willReturn(UUID.randomUUID());
-    var currentGroup = Group.builder().id(groupId).ref("G1").build();
-    given(studentService.getCurrentGroup(any(UUID.class))).willReturn(currentGroup);
+    given(groupFlowService.historicJoinGroupIds(any(UUID.class))).willReturn(List.of(groupId));
     given(mapper.toResponse(entity)).willReturn(response);
 
     var result = service.getById(id);
@@ -239,8 +237,8 @@ class CourseAssignmentServiceTest {
     given(repository.findById(id)).willReturn(Optional.of(entity));
     given(securityUtil.isStudent()).willReturn(true);
     given(securityUtil.getCurrentUserId()).willReturn(UUID.randomUUID());
-    var otherGroup = Group.builder().id(UUID.randomUUID()).ref("G2").build();
-    given(studentService.getCurrentGroup(any(UUID.class))).willReturn(otherGroup);
+    given(groupFlowService.historicJoinGroupIds(any(UUID.class)))
+        .willReturn(List.of(UUID.randomUUID()));
 
     var ex = assertThrows(ForbiddenAccessException.class, () -> service.getById(id));
 

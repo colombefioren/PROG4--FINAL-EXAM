@@ -5,11 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.InvalidCurriculumException;
-import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.model.Course;
 import org.cocojojo.mg.model.CourseAssignment;
 import org.cocojojo.mg.model.Fraction;
@@ -57,6 +55,10 @@ class ExamValidatorTest {
   }
 
   private CourseAssignment assignment(List<Teacher> teachers) {
+    return assignment(teachers, groupId);
+  }
+
+  private CourseAssignment assignment(List<Teacher> teachers, UUID targetGroupId) {
     return CourseAssignment.builder()
         .id(courseAssignmentId)
         .course(
@@ -66,7 +68,7 @@ class ExamValidatorTest {
                 .studentLevel(StudentLevel.L1)
                 .track(Track.EL)
                 .build())
-        .group(Group.builder().id(groupId).ref("G1").track(Track.EL).build())
+        .group(Group.builder().id(targetGroupId).ref("G1").track(Track.EL).build())
         .teachers(teachers)
         .academicYear(2025)
         .semester(Semester.S1)
@@ -145,10 +147,26 @@ class ExamValidatorTest {
             .group(JGroup.builder().id(groupId).build())
             .groupFlowType(GroupFlowType.JOIN)
             .build();
-    given(groupFlowRepository.findFirstByStudentIdOrderByCreatedAtDesc(studentId))
-        .willReturn(Optional.of(flow));
+    given(groupFlowRepository.findByStudentIdOrderByCreatedAtDesc(studentId))
+        .willReturn(List.of(flow));
 
     validator.validateStudentInCurriculum(studentId, assignment(List.of()));
+  }
+
+  @Test
+  void validateStudentInCurriculum_accepts_when_student_historically_belonged_to_group() {
+    var pastAssignmentGroupId = UUID.randomUUID();
+    var pastFlow =
+        JGroupFlow.builder()
+            .id(UUID.randomUUID())
+            .student(JStudent.builder().id(studentId).build())
+            .group(JGroup.builder().id(pastAssignmentGroupId).build())
+            .groupFlowType(GroupFlowType.JOIN)
+            .build();
+    given(groupFlowRepository.findByStudentIdOrderByCreatedAtDesc(studentId))
+        .willReturn(List.of(pastFlow));
+
+    validator.validateStudentInCurriculum(studentId, assignment(List.of(), pastAssignmentGroupId));
   }
 
   @Test
@@ -160,8 +178,8 @@ class ExamValidatorTest {
             .group(JGroup.builder().id(UUID.randomUUID()).build())
             .groupFlowType(GroupFlowType.JOIN)
             .build();
-    given(groupFlowRepository.findFirstByStudentIdOrderByCreatedAtDesc(studentId))
-        .willReturn(Optional.of(flow));
+    given(groupFlowRepository.findByStudentIdOrderByCreatedAtDesc(studentId))
+        .willReturn(List.of(flow));
 
     var ex =
         assertThrows(
@@ -180,24 +198,23 @@ class ExamValidatorTest {
             .group(JGroup.builder().id(groupId).build())
             .groupFlowType(GroupFlowType.LEAVE)
             .build();
-    given(groupFlowRepository.findFirstByStudentIdOrderByCreatedAtDesc(studentId))
-        .willReturn(Optional.of(flow));
+    given(groupFlowRepository.findByStudentIdOrderByCreatedAtDesc(studentId))
+        .willReturn(List.of(flow));
 
     assertThrows(
-        ResourceNotFoundException.class,
+        ForbiddenAccessException.class,
         () -> validator.validateStudentInCurriculum(studentId, assignment(List.of())));
   }
 
   @Test
   void validateStudentInCurriculum_throws_when_no_flow_at_all() {
-    given(groupFlowRepository.findFirstByStudentIdOrderByCreatedAtDesc(studentId))
-        .willReturn(Optional.empty());
+    given(groupFlowRepository.findByStudentIdOrderByCreatedAtDesc(studentId)).willReturn(List.of());
 
     var ex =
         assertThrows(
-            ResourceNotFoundException.class,
+            ForbiddenAccessException.class,
             () -> validator.validateStudentInCurriculum(studentId, assignment(List.of())));
 
-    assertEquals("Student with id:" + studentId + " has no group", ex.getMessage());
+    assertEquals("This exam is not part of your curriculum", ex.getMessage());
   }
 }

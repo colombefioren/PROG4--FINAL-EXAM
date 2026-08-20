@@ -5,7 +5,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.InvalidCurriculumException;
-import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.model.CourseAssignment;
 import org.cocojojo.mg.model.Fraction;
 import org.cocojojo.mg.model.enums.GroupFlowType;
@@ -53,16 +52,11 @@ public class ExamValidator {
   }
 
   public void validateStudentInCurriculum(UUID studentId, CourseAssignment assignment) {
-    var groupId =
-        groupFlowRepository
-            .findFirstByStudentIdOrderByCreatedAtDesc(studentId)
-            .filter(flow -> flow.getGroupFlowType() == GroupFlowType.JOIN)
-            .map(flow -> flow.getGroup().getId())
-            .orElseThrow(
-                () ->
-                    new ResourceNotFoundException(
-                        "Student with id:" + studentId + " has no group"));
-    if (!groupId.equals(assignment.group().id())) {
+    boolean belongedToCurrentOrPastGroup =
+        groupFlowRepository.findByStudentIdOrderByCreatedAtDesc(studentId).stream()
+            .filter(gf -> gf.getGroupFlowType() == GroupFlowType.JOIN)
+            .anyMatch(gf -> gf.getGroup().getId().equals(assignment.group().id()));
+    if (!belongedToCurrentOrPastGroup) {
       throw new ForbiddenAccessException("This exam is not part of your curriculum");
     }
   }
