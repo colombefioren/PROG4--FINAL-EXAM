@@ -20,7 +20,7 @@ class GroupFlowValidatorTest {
 
   private GroupFlowValidator validator;
 
-  private final UUID studentId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+  private final UUID studentId = UUID.randomUUID();
 
   @BeforeEach
   void setUp() {

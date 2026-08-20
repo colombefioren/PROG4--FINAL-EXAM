@@ -35,9 +35,9 @@ class CourseAssignmentValidatorTest {
 
   private CourseAssignmentValidator validator;
 
-  private final UUID courseId = UUID.fromString("44444444-4444-4444-4444-444444444444");
-  private final UUID groupId = UUID.fromString("55555555-5555-5555-5555-555555555555");
-  private final UUID teacherId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+  private final UUID courseId = UUID.randomUUID();
+  private final UUID groupId = UUID.randomUUID();
+  private final UUID teacherId = UUID.randomUUID();
 
   @BeforeEach
   void setUp() {

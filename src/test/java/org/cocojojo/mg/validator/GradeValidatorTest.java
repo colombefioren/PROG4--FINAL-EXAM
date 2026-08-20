@@ -19,7 +19,7 @@ class GradeValidatorTest {
 
   private GradeValidator validator;
 
-  private final UUID teacherId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+  private final UUID teacherId = UUID.randomUUID();
 
   @BeforeEach
   void setUp() {

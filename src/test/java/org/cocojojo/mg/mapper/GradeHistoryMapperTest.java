@@ -27,9 +27,9 @@ class GradeHistoryMapperTest {
 
   private GradeHistoryMapper mapper;
 
-  private final UUID id = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-  private final UUID gradeId = UUID.fromString("88888888-8888-8888-8888-888888888888");
-  private final UUID changedById = UUID.fromString("22222222-2222-2222-2222-222222222222");
+  private final UUID id = UUID.randomUUID();
+  private final UUID gradeId = UUID.randomUUID();
+  private final UUID changedById = UUID.randomUUID();
 
   private JGrade grade;
   private JGradeHistory entity;

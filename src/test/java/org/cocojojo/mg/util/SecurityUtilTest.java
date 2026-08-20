@@ -22,7 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 class SecurityUtilTest {
 
   private final SecurityUtil util = new SecurityUtil();
-  private final UUID userId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+  private final UUID userId = UUID.randomUUID();
 
   @AfterEach
   void tearDown() {
@@ -152,7 +152,7 @@ class SecurityUtilTest {
   @Test
   void requireSelf_throws_when_id_differs() {
     authenticate(userId.toString(), "STUDENT");
-    var other = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    var other = UUID.randomUUID();
 
     var ex = assertThrows(ForbiddenAccessException.class, () -> util.requireSelf(other));
 
@@ -162,7 +162,7 @@ class SecurityUtilTest {
   @Test
   void requireSelfOrAdmin_passes_for_admin_on_any_id() {
     authenticate(userId.toString(), "ADMIN");
-    var other = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    var other = UUID.randomUUID();
 
     util.requireSelfOrAdmin(other);
   }
@@ -177,7 +177,7 @@ class SecurityUtilTest {
   @Test
   void requireSelfOrAdmin_throws_for_student_on_other_id() {
     authenticate(userId.toString(), "STUDENT");
-    var other = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    var other = UUID.randomUUID();
 
     assertThrows(ForbiddenAccessException.class, () -> util.requireSelfOrAdmin(other));
   }
@@ -185,7 +185,7 @@ class SecurityUtilTest {
   @Test
   void requireSelfOrStaff_passes_for_teacher_on_any_id() {
     authenticate(userId.toString(), "TEACHER");
-    var other = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    var other = UUID.randomUUID();
 
     util.requireSelfOrStaff(other);
   }
@@ -200,7 +200,7 @@ class SecurityUtilTest {
   @Test
   void requireSelfOrStaff_throws_for_student_on_other_id() {
     authenticate(userId.toString(), "STUDENT");
-    var other = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    var other = UUID.randomUUID();
 
     assertThrows(ForbiddenAccessException.class, () -> util.requireSelfOrStaff(other));
   }

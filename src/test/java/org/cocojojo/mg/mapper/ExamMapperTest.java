@@ -22,8 +22,8 @@ class ExamMapperTest {
 
   private ExamMapper mapper;
 
-  private final UUID id = UUID.fromString("77777777-7777-7777-7777-777777777777");
-  private final UUID courseAssignmentId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+  private final UUID id = UUID.randomUUID();
+  private final UUID courseAssignmentId = UUID.randomUUID();
 
   private JCourseAssignment assignment;
   private JExam entity;

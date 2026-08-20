@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class AdminMapperTest {
 
   private final AdminMapper mapper = new AdminMapper();
-  private final UUID id = UUID.fromString("22222222-2222-2222-2222-222222222222");
+  private final UUID id = UUID.randomUUID();
 
   @Test
   void toModel_maps_every_field() {

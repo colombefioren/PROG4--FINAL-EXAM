@@ -39,11 +39,11 @@ class ExamValidatorTest {
 
   private ExamValidator validator;
 
-  private final UUID courseAssignmentId = UUID.fromString("33333333-3333-3333-3333-333333333333");
-  private final UUID examId = UUID.fromString("77777777-7777-7777-7777-777777777777");
-  private final UUID teacherId = UUID.fromString("66666666-6666-6666-6666-666666666666");
-  private final UUID studentId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-  private final UUID groupId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+  private final UUID courseAssignmentId = UUID.randomUUID();
+  private final UUID examId = UUID.randomUUID();
+  private final UUID teacherId = UUID.randomUUID();
+  private final UUID studentId = UUID.randomUUID();
+  private final UUID groupId = UUID.randomUUID();
 
   @BeforeEach
   void setUp() {

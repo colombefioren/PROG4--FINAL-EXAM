@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class UserMapperTest {
 
   private final UserMapper mapper = new UserMapper();
-  private final UUID id = UUID.fromString("22222222-2222-2222-2222-222222222222");
+  private final UUID id = UUID.randomUUID();
 
   @Test
   void toModel_maps_every_field() {
