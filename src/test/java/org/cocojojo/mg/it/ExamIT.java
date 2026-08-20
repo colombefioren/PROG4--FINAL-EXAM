@@ -3,6 +3,7 @@ package org.cocojojo.mg.it;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import org.cocojojo.mg.repository.AdminRepository;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.CourseRepository;
 import org.cocojojo.mg.repository.ExamRepository;
+import org.cocojojo.mg.repository.GradeRepository;
 import org.cocojojo.mg.repository.GroupFlowRepository;
 import org.cocojojo.mg.repository.GroupRepository;
 import org.cocojojo.mg.repository.PromotionRepository;
@@ -29,6 +31,7 @@ import org.cocojojo.mg.repository.TeacherRepository;
 import org.cocojojo.mg.repository.model.JAdmin;
 import org.cocojojo.mg.repository.model.JCourse;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
+import org.cocojojo.mg.repository.model.JGrade;
 import org.cocojojo.mg.repository.model.JGroup;
 import org.cocojojo.mg.repository.model.JGroupFlow;
 import org.cocojojo.mg.repository.model.JPromotion;
@@ -38,6 +41,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -52,6 +57,8 @@ class ExamIT extends FacadeIT {
   @Autowired private GroupFlowRepository groupFlowRepository;
   @Autowired private CourseAssignmentRepository courseAssignmentRepository;
   @Autowired private ExamRepository examRepository;
+  @Autowired private GradeRepository gradeRepository;
+  @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private PasswordEncoder passwordEncoder;
 
   @LocalServerPort int port;
@@ -60,6 +67,10 @@ class ExamIT extends FacadeIT {
   @BeforeEach
   void setUp() {
     webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    // Grades are soft-deleted (is_deleted), so a physical purge is needed to free the
+    // grade.student_id FK before students can be removed.
+    jdbcTemplate.execute("delete from \"grade_history\"");
+    jdbcTemplate.execute("delete from \"grade\"");
     examRepository.deleteAll();
     courseAssignmentRepository.deleteAll();
     groupFlowRepository.deleteAll();
@@ -267,6 +278,43 @@ class ExamIT extends FacadeIT {
         .exchange()
         .expectStatus()
         .isNotFound();
+  }
+
+  @Test
+  void deletingExamWithGradesIsRejected() {
+    var promotion = createPromotion();
+    var group = createGroup(promotion);
+    var course = createCourse();
+    var teacher = createTeacher();
+    var student = createStudent(promotion, "student-" + UUID.randomUUID() + "@hei.school");
+    joinGroup(student, group);
+    var assignment = createAssignment(course, group, teacher);
+    var token = adminToken();
+    var created = createExam(token, assignment.getId());
+    var examEntity = examRepository.findById(created.id()).orElseThrow();
+    gradeRepository.save(
+        JGrade.builder()
+            .exam(examEntity)
+            .student(student)
+            .value(new BigDecimal("15.5"))
+            .comment("ok")
+            .build());
+
+    webTestClient
+        .delete()
+        .uri("/course-assignments/" + assignment.getId() + "/exams/" + created.id())
+        .header("Authorization", "Bearer " + token)
+        .exchange()
+        .expectStatus()
+        .isEqualTo(HttpStatus.CONFLICT);
+
+    webTestClient
+        .get()
+        .uri("/course-assignments/" + assignment.getId() + "/exams/" + created.id())
+        .header("Authorization", "Bearer " + token)
+        .exchange()
+        .expectStatus()
+        .isOk();
   }
 
   @Test
