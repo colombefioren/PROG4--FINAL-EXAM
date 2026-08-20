@@ -624,18 +624,27 @@ class GradeIT extends FacadeIT {
                     .build()));
     var gradeId = created.get(0).id();
 
-    webTestClient
-        .method(HttpMethod.DELETE)
-        .uri(
-            uriBuilder ->
-                uriBuilder
-                    .path("/grades/{gradeId}")
-                    .queryParam("reason", "Too harsh, removing")
-                    .build(gradeId))
-        .header("Authorization", "Bearer " + token(admin))
-        .exchange()
-        .expectStatus()
-        .isNoContent();
+    var deletion =
+        webTestClient
+            .method(HttpMethod.DELETE)
+            .uri(
+                uriBuilder ->
+                    uriBuilder
+                        .path("/grades/{gradeId}")
+                        .queryParam("reason", "Too harsh, removing")
+                        .build(gradeId))
+            .header("Authorization", "Bearer " + token(admin))
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBodyList(GradeHistoryResponse.class)
+            .returnResult()
+            .getResponseBody();
+    assertNotNull(deletion);
+    assertEquals(2, deletion.size());
+    assertEquals(0, new BigDecimal("12.0").compareTo(deletion.get(0).previousValue()));
+    assertNull(deletion.get(0).newValue());
+    assertEquals("Too harsh, removing", deletion.get(0).reason());
 
     webTestClient
         .get()
@@ -656,10 +665,10 @@ class GradeIT extends FacadeIT {
             gradeId);
 
     assertEquals(2, historyRows.size());
-    var deletion = historyRows.get(historyRows.size() - 1);
-    assertEquals(0, new BigDecimal("12.0").compareTo((BigDecimal) deletion[0]));
-    assertNull(deletion[1]);
-    assertEquals("Too harsh, removing", deletion[2]);
+    var deletionRow = historyRows.get(historyRows.size() - 1);
+    assertEquals(0, new BigDecimal("12.0").compareTo((BigDecimal) deletionRow[0]));
+    assertNull(deletionRow[1]);
+    assertEquals("Too harsh, removing", deletionRow[2]);
   }
 
   @Test
@@ -689,7 +698,7 @@ class GradeIT extends FacadeIT {
         .header("Authorization", "Bearer " + token(admin))
         .exchange()
         .expectStatus()
-        .isNoContent();
+        .isOk();
 
     var recreated =
         upsertGrades(
@@ -756,7 +765,10 @@ class GradeIT extends FacadeIT {
         .header("Authorization", "Bearer " + token(teacher))
         .exchange()
         .expectStatus()
-        .isNoContent();
+        .isOk()
+        .expectBodyList(GradeHistoryResponse.class)
+        .returnResult()
+        .getResponseBody();
   }
 
   @Test
