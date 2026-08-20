@@ -38,7 +38,10 @@ public class JUser {
   @Column(name = "\"lastname\"", nullable = false)
   private String lastname;
 
-  @Column(name = "\"email\"", nullable = false, unique = true)
+  // (email) uniqueness is enforced by a partial unique index that only covers
+  // live rows (see V65), so re-creating a user with the same email after a soft
+  // delete works.
+  @Column(name = "\"email\"", nullable = false)
   private String email;
 
   @Column(name = "\"password\"", nullable = false)

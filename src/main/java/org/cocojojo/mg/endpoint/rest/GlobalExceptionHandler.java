@@ -48,14 +48,9 @@ public class GlobalExceptionHandler {
     return error(HttpStatus.UNAUTHORIZED, ex.getMessage());
   }
 
-  @ExceptionHandler(IllegalStateException.class)
-  public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
-    return error(HttpStatus.UNAUTHORIZED, ex.getMessage());
-  }
-
-  @ExceptionHandler(NoSuchElementException.class)
-  public ResponseEntity<Map<String, String>> handleNoSuchElement(NoSuchElementException ex) {
-    return error(HttpStatus.UNAUTHORIZED, ex.getMessage());
+  @ExceptionHandler({IllegalStateException.class, NoSuchElementException.class})
+  public ResponseEntity<Map<String, String>> handleInternal(RuntimeException ex) {
+    return error(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
   }
 
   private ResponseEntity<Map<String, String>> error(HttpStatus status, String message) {

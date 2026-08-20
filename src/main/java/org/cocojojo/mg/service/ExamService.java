@@ -6,6 +6,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.cocojojo.mg.endpoint.rest.controller.dto.ExamRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.ExamResponse;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ConflictException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.CourseAssignmentMapper;
@@ -13,6 +14,7 @@ import org.cocojojo.mg.mapper.ExamMapper;
 import org.cocojojo.mg.model.CourseAssignment;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.ExamRepository;
+import org.cocojojo.mg.repository.GradeRepository;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
 import org.cocojojo.mg.repository.model.JExam;
 import org.cocojojo.mg.util.SecurityUtil;
@@ -26,6 +28,7 @@ public class ExamService {
 
   private final ExamRepository examRepository;
   private final CourseAssignmentRepository courseAssignmentRepository;
+  private final GradeRepository gradeRepository;
   private final ExamMapper mapper;
   private final CourseAssignmentMapper courseAssignmentMapper;
   private final ExamValidator validator;
@@ -85,6 +88,9 @@ public class ExamService {
       throw new ResourceNotFoundException("Exam with id:" + examId + " not found.");
     }
     requireCanManage(courseAssignmentMapper.toModel(entity.getCourseAssignment()));
+    if (!gradeRepository.findByExamId(examId).isEmpty()) {
+      throw new ConflictException("Exam with id: " + examId + " has grades and cannot be deleted.");
+    }
     examRepository.delete(entity);
   }
 

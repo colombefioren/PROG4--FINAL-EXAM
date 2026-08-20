@@ -344,6 +344,55 @@ class CourseIT extends FacadeIT {
   }
 
   @Test
+  void deletedCourseCanBeRecreatedWithSameCode() {
+    var code = uniqueCode();
+    var request =
+        CourseRequest.builder()
+            .code(code)
+            .name("Doomed course")
+            .credits(4)
+            .studentLevel(StudentLevel.L1)
+            .build();
+
+    var created =
+        webTestClient
+            .put()
+            .uri("/courses")
+            .header("Authorization", "Bearer " + adminToken())
+            .bodyValue(request)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(CourseResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    webTestClient
+        .delete()
+        .uri("/courses/" + created.id())
+        .header("Authorization", "Bearer " + adminToken())
+        .exchange()
+        .expectStatus()
+        .isNoContent();
+
+    var recreated =
+        webTestClient
+            .put()
+            .uri("/courses")
+            .header("Authorization", "Bearer " + adminToken())
+            .bodyValue(request)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(CourseResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(recreated);
+    assertEquals(code, recreated.code());
+  }
+
+  @Test
   void studentCannotDeleteACourse() {
     var course = saveCourse();
 

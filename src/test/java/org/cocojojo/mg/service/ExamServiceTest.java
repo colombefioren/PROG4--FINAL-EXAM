@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.cocojojo.mg.endpoint.rest.controller.dto.ExamRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.ExamResponse;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ConflictException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.CourseAssignmentMapper;
@@ -22,8 +23,10 @@ import org.cocojojo.mg.model.CourseAssignment;
 import org.cocojojo.mg.model.Fraction;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
 import org.cocojojo.mg.repository.ExamRepository;
+import org.cocojojo.mg.repository.GradeRepository;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
 import org.cocojojo.mg.repository.model.JExam;
+import org.cocojojo.mg.repository.model.JGrade;
 import org.cocojojo.mg.util.SecurityUtil;
 import org.cocojojo.mg.validator.ExamValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +41,7 @@ class ExamServiceTest {
 
   @Mock private ExamRepository examRepository;
   @Mock private CourseAssignmentRepository courseAssignmentRepository;
+  @Mock private GradeRepository gradeRepository;
   @Mock private ExamMapper mapper;
   @Mock private CourseAssignmentMapper courseAssignmentMapper;
   @Mock private ExamValidator validator;
@@ -294,11 +298,23 @@ class ExamServiceTest {
   void delete_removes_exam_for_admin() {
     given(examRepository.findById(examId)).willReturn(Optional.of(examEntity));
     given(courseAssignmentMapper.toModel(assignmentEntity)).willReturn(assignmentModel);
+    given(gradeRepository.findByExamId(examId)).willReturn(List.of());
     given(securityUtil.isAdmin()).willReturn(true);
 
     service.delete(courseAssignmentId, examId);
 
     then(examRepository).should().delete(examEntity);
+  }
+
+  @Test
+  void delete_throws_conflict_when_grades_exist() {
+    given(examRepository.findById(examId)).willReturn(Optional.of(examEntity));
+    given(courseAssignmentMapper.toModel(assignmentEntity)).willReturn(assignmentModel);
+    given(gradeRepository.findByExamId(examId)).willReturn(List.of(new JGrade()));
+    given(securityUtil.isAdmin()).willReturn(true);
+
+    assertThrows(ConflictException.class, () -> service.delete(courseAssignmentId, examId));
+    then(examRepository).should(never()).delete(any());
   }
 
   @Test

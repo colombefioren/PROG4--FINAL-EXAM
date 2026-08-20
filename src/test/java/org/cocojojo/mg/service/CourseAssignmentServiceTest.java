@@ -17,6 +17,7 @@ import java.util.UUID;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentRequest;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CourseAssignmentResponse;
 import org.cocojojo.mg.endpoint.rest.controller.dto.CurriculumStatusResponse;
+import org.cocojojo.mg.endpoint.rest.controller.exception.ConflictException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ForbiddenAccessException;
 import org.cocojojo.mg.endpoint.rest.controller.exception.ResourceNotFoundException;
 import org.cocojojo.mg.mapper.CourseAssignmentMapper;
@@ -28,8 +29,10 @@ import org.cocojojo.mg.model.enums.Semester;
 import org.cocojojo.mg.model.enums.StudentLevel;
 import org.cocojojo.mg.model.enums.Track;
 import org.cocojojo.mg.repository.CourseAssignmentRepository;
+import org.cocojojo.mg.repository.ExamRepository;
 import org.cocojojo.mg.repository.model.JCourse;
 import org.cocojojo.mg.repository.model.JCourseAssignment;
+import org.cocojojo.mg.repository.model.JExam;
 import org.cocojojo.mg.repository.model.JGroup;
 import org.cocojojo.mg.repository.model.JTeacher;
 import org.cocojojo.mg.util.SecurityUtil;
@@ -47,6 +50,7 @@ import org.springframework.data.domain.Pageable;
 class CourseAssignmentServiceTest {
 
   @Mock private CourseAssignmentRepository repository;
+  @Mock private ExamRepository examRepository;
   @Mock private CourseService courseService;
   @Mock private TeacherService teacherService;
   @Mock private StudentService studentService;
@@ -329,11 +333,22 @@ class CourseAssignmentServiceTest {
   @Test
   void delete_removes_assignment_for_admin() {
     given(repository.findById(id)).willReturn(Optional.of(entity));
+    given(examRepository.findByCourseAssignmentId(id)).willReturn(List.of());
     given(securityUtil.isAdmin()).willReturn(true);
 
     service.delete(id);
 
     then(repository).should().delete(entity);
+  }
+
+  @Test
+  void delete_throws_conflict_when_exams_exist() {
+    given(repository.findById(id)).willReturn(Optional.of(entity));
+    given(examRepository.findByCourseAssignmentId(id)).willReturn(List.of(new JExam()));
+    given(securityUtil.isAdmin()).willReturn(true);
+
+    assertThrows(ConflictException.class, () -> service.delete(id));
+    then(repository).should(never()).delete(any());
   }
 
   @Test
