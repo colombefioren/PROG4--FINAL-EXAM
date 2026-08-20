@@ -158,7 +158,10 @@ public class ResultService {
   }
 
   private boolean isTrackCompatible(JCourse course, Track currentTrack) {
-    return currentTrack == null || course.getTrack() == null || course.getTrack() == currentTrack;
+    if (course.getTrack() == null) {
+      return true;
+    }
+    return currentTrack != null && course.getTrack() == currentTrack;
   }
 
   private CourseResultResponse buildCourseResult(
